@@ -1,6 +1,6 @@
 from build_model import build_model
 from build_agent import build_agent
-from build_environment import ShowerEnv
+from build_environment import balloon2d
 
 import gym
 import random
@@ -8,8 +8,8 @@ import numpy as np
 from tensorflow.keras.optimizers import Adam
 
 # initialize environment, states and actions
-env = ShowerEnv()
-states = env.observation_space.shape
+env = balloon2d()
+states = env.observation_space.shape[0]
 actions = env.action_space.n
 
 # test random environment with OpenAI Gym

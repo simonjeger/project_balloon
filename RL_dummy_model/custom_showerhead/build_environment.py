@@ -6,7 +6,7 @@ import random
 class ShowerEnv(Env):
     def __init__(self):
         # action we can take: down, stay, up
-        self.action_space = Discrete(3) #discrete spcae
+        self.action_space = Discrete(3) #discrete space
         # temperature array
         self.observation_space = Box(low=np.array([0]), high=np.array([100])) #continious space
         # set start temp

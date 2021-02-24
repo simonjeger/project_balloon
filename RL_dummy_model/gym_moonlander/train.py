@@ -33,7 +33,7 @@ model = build_model(states, actions)
 # build agent with Keras-RL
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae']) #lr is learning rate
-dqn.fit(env, nb_steps=100000, visualize=False, verbose=1) #verbose is just an option on how to display the fitting process
+dqn.fit(env, nb_steps=500000, visualize=False, verbose=1) #verbose is just an option on how to display the fitting process
 
 # save agent / trained weights
 dqn.save_weights('weights/dqn_weights.h5f', overwrite=True)

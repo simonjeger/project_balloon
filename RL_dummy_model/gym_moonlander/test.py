@@ -16,5 +16,5 @@ dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 dqn.load_weights('weights/dqn_weights.h5f')
 
 # show result and print scores
-scores = dqn.test(env, nb_episodes=15, visualize=False)
+scores = dqn.test(env, nb_episodes=15, visualize=True)
 print(np.mean(scores.history['episode_reward']))

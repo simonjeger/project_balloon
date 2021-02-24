@@ -1,14 +1,15 @@
 from build_model import build_model
 from build_agent import build_agent
+from build_environment import ShowerEnv
 
 import gym
 import numpy as np
 from tensorflow.keras.optimizers import Adam
 
 # initialize model again and load weights
-env = gym.make('LunarLander-v2')
+env = ShowerEnv()
 actions = env.action_space.n
-states = env.observation_space.shape[0]
+states = env.observation_space.shape
 model = build_model(states, actions)
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
