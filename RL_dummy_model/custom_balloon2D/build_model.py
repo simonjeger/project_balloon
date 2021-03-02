@@ -8,8 +8,5 @@ def build_model(states, actions):
     model.add(Dense(24, activation='relu'))
     model.add(Dense(24, activation='relu'))
     model.add(Dense(24, activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(24, activation='relu'))
-    model.add(Dense(24, activation='relu'))
     model.add(Dense(actions, activation='linear'))
     return model

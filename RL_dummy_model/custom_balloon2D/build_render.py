@@ -1,6 +1,6 @@
 import pygame, sys
 
-def build_render(state, target, size_x, size_z, t):
+def build_render(state, target, size_x, size_z, t, world_name, train_or_test):
     # general setup
     pygame.init()
     clock = pygame.time.Clock()
@@ -29,19 +29,19 @@ def build_render(state, target, size_x, size_z, t):
 
     # generate background
     screen.fill(pygame.Color('grey12'))
-    bg = pygame.image.load("wind_map.png")
-    #bg = pygame.transform.scale(bg, (screen_width, screen_height))
-    #screen.blit(bg, (0, 0))
+    bg = pygame.image.load('data/' + train_or_test + '/image/' + world_name + '.png')
+    bg = pygame.transform.scale(bg, (screen_width, screen_height))
+    screen.blit(bg, (0, 0))
 
     # visuals
     pygame.draw.ellipse(screen, pygame.Color('LightGray'), rec_balloon)
     pygame.draw.ellipse(screen, pygame.Color('IndianRed'), rec_target)
 
     # writing which step we are rendering
-    myfont = pygame.font.SysFont('Arial', 15)
-    textsurface = myfont.render('remaining time: ' + str(t), False, pygame.Color('LightGray'))
-    screen.blit(textsurface,(0,0))
+    myfont = pygame.font.SysFont('Arial', 15, bold = True)
+    textsurface = myfont.render('time remaining: ' + str(t), False, pygame.Color('LightGray'))
+    screen.blit(textsurface,(10,10))
 
     # updating the window
     pygame.display.flip()
-    clock.tick(15) #cycles per second
+    clock.tick(60) #cycles per second
