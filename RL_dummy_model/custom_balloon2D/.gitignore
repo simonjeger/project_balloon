@@ -3,6 +3,5 @@
 
 # Folder
 __pycache__
-data/tensor
-data/image
+data/
 weights_*/

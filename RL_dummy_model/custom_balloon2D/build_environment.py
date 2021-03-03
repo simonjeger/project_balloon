@@ -1,4 +1,5 @@
 from build_render import build_render
+from build_autoencoder import Autoencoder
 
 import matplotlib.pyplot as plt
 from gym import Env
@@ -14,15 +15,19 @@ class balloon2d(Env):
         # which data to use
         self.train_or_test = train_or_test
 
+        # initialize autoencoder object
+        self.ae = Autoencoder()
+        self.ae.autoencoder_model.load_weights('weights_autoencoder/ae_weights.h5f')
+
         # load new world to get size_x, size_z
         self.load_new_world()
 
         # action we can take: down, stay, up
         self.action_space = Discrete(3) #discrete space
         # location array in x and z
-        regular_state_space_low = np.array([0,0,0,0])
+        regular_state_space_low = np.array([0,0])
         wind_compressed_state_space_low = np.array([-1]*len(self.wind_compressed))
-        regular_state_space_high = np.array([self.size_x,self.size_z,self.size_x,self.size_z])
+        regular_state_space_high = np.array([self.size_x,self.size_z])
         wind_compressed_state_space_high = np.array([1]*len(self.wind_compressed))
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, wind_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, wind_compressed_state_space_high), axis=0)) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
         # set start position
@@ -37,14 +42,23 @@ class balloon2d(Env):
         self.reset()
 
     def step(self, action):
-        coord = [int(i) for i in np.round(self.state)] #convert position into int so I can use it as index
+        coord = [int(i) for i in np.round(self.position)] #convert position into int so I can use it as index
         in_bounds = (0 <= coord[0] < self.size_x) & (0 <= coord[1] < self.size_z) #if still within bounds
         done = False
 
         if in_bounds:
             # apply wind
-            self.state[0] += self.mean_x[coord[0]][coord[1]]
-            self.state[1] += self.mean_z[coord[0]][coord[1]]
+            self.position[0] += self.mean_x[coord[0]][coord[1]]
+            self.position[1] += self.mean_z[coord[0]][coord[1]]
+
+            # generate wind window and update state
+            center = self.position[0]
+            x_train_window, mean, std = self.ae.window(self.wind_map, center)
+            x_train_window = np.array([x_train_window])
+
+            self.wind_compressed = self.ae.compress(x_train_window, mean, std)
+
+            self.state = np.concatenate((self.target.flatten() - self.position.flatten(), self.wind_compressed.flatten()), axis=0)
 
             """
             step_dist = np.sqrt(self.mean_x[coord[0]][coord[1]]**2 + self.mean_z[coord[0]][coord[1]]**2)
@@ -92,12 +106,13 @@ class balloon2d(Env):
             # reduce flight length by 1 second
             self.t -= 1
             # calculate reward
-            distance = np.abs(self.state[0] - self.target[0]) + np.abs(self.state[1] - self.target[1])
-            reward = - distance
+            distance = np.abs(self.state[0]) + np.abs(self.state[1])
+            reward = - distance - 10*abs(action)
 
             # check if flight is done
             if (self.t <= 0) | (distance <= self.radius):
                 done = True
+                
         else:
             worst = np.sqrt(self.size_x**2 + self.size_z**2)*self.t
             reward = - worst
@@ -113,7 +128,7 @@ class balloon2d(Env):
         return self.state, reward, done, info
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        build_render(self.state, self.target, self.size_x, self.size_z, self.t, self.world_name, self.train_or_test)
+        build_render(self.position, self.target, self.size_x, self.size_z, self.t, self.world_name, self.ae.window_size, self.train_or_test)
 
     def reset(self):
         # load new world
@@ -122,7 +137,8 @@ class balloon2d(Env):
         # reset initial position
         self.start = np.array([random.randint(0, self.size_x),random.randint(0, self.size_z)], dtype=float)
         self.target = np.array([random.randint(0, self.size_x),random.randint(0, self.size_z)], dtype=float)
-        self.state = np.concatenate((self.start.flatten(), self.target.flatten(), self.wind_compressed.flatten()), axis=0)
+        self.position = self.start
+        self.state = np.concatenate((self.target.flatten() - self.position.flatten(), self.wind_compressed.flatten()), axis=0)
 
         # reset flight time
         self.t = self.T
@@ -135,18 +151,23 @@ class balloon2d(Env):
         length = len(self.world_name)
         self.world_name = self.world_name[:length - 3]
         # read in wind_map
-        wind_map = torch.load('data/' + self.train_or_test + '/tensor/' + self.world_name + '.pt')
-        self.wind_compressed = torch.load('data/' + self.train_or_test + '/tensor_comp/' + self.world_name + '.pt')
+        self.wind_map = torch.load('data/' + self.train_or_test + '/tensor/' + self.world_name + '.pt')
+
+        # just to initialize len() of variable
+        x_train_window, mean, std = self.ae.window(self.wind_map)
+        x_train_window = np.array([x_train_window])
+        self.wind_compressed = self.ae.compress(x_train_window, mean, std) # just to initialize len() of variable
+        #self.wind_compressed = torch.load('data/' + self.train_or_test + '/tensor_comp/' + self.world_name + '.pt')
 
         """
-        self.mean_x = wind_map[:,:,0]
-        self.var_x = wind_map[:,:,1] + wind_map[:,:,2]
-        self.mean_z = wind_map[:,:,3]
-        self.var_z = wind_map[:,:,4] + wind_map[:,:,5]
+        self.mean_x = self.wind_map[:,:,0]
+        self.var_x = self.wind_map[:,:,1] + self.wind_map[:,:,2]
+        self.mean_z = self.wind_map[:,:,3]
+        self.var_z = self.wind_map[:,:,4] + self.wind_map[:,:,5]
         """
-        
-        self.mean_x = wind_map[:,:,0]
-        self.mean_z = wind_map[:,:,1]
+
+        self.mean_x = self.wind_map[:,:,0]
+        self.mean_z = self.wind_map[:,:,1]
 
         # define world size
         self.size_x = len(self.mean_x)

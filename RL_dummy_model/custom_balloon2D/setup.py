@@ -1,7 +1,6 @@
 from generate_wind_map import generate_wind_map
 from visualize_wind_map import visualize_wind_map
 from autoencoder_train import autoencoder_train
-from autoencoder_test import autoencoder_test
 
 from pathlib import Path
 
@@ -19,7 +18,7 @@ Path('data/train').mkdir(parents=True, exist_ok=True)
 Path('data/train/image').mkdir(parents=True, exist_ok=True)
 Path('data/train/tensor').mkdir(parents=True, exist_ok=True)
 Path('data/train/tensor_comp').mkdir(parents=True, exist_ok=True)
-
+"""
 size_x = 100
 size_z = 50
 generate_wind_map(size_x, size_z, 1000, 'train')
@@ -27,9 +26,7 @@ generate_wind_map(size_x, size_z, 100, 'test')
 
 visualize_wind_map('train')
 visualize_wind_map('test')
-
+"""
 autoencoder_train()
-autoencoder_test('train')
-autoencoder_test('test')
 
 import model_train

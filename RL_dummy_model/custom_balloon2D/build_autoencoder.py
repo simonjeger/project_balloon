@@ -15,8 +15,15 @@ from keras.layers import Input, Dense, Activation, BatchNormalization, Flatten, 
 from keras.layers import MaxPooling2D, Dropout, UpSampling2D
 
 class Autoencoder():
-    def __init__(self, size_x, size_z, size_c):
-        self.img_shape = (size_x, size_z, size_c)
+    def __init__(self):
+        # define size
+        self.window_size = 10
+        name_list = os.listdir('data/train/tensor/')
+        tensor = torch.load('data/train/tensor/' + name_list[0])
+        size_z = len(tensor[0])
+        size_c = len(tensor[0][0])
+
+        self.img_shape = (self.window_size*2, size_z, size_c)
 
         optimizer = Adam(lr=0.001)
         self.autoencoder_model = self.build_model()
@@ -28,7 +35,7 @@ class Autoencoder():
 
     def build_model(self):
         input_layer = Input(shape=self.img_shape)
-        self.n_bottleneck = 128
+        self.n_bottleneck = 32
 
         # encoder
         self.ec_c = Conv2D(64, (3, 3), activation='relu', padding='same')(input_layer)
@@ -81,22 +88,36 @@ class Autoencoder():
         preds = self.autoencoder_model.predict(x_test)
         return preds
 
-    def compress(self, x_test_data, x_test_norm, train_or_test):
-        preds = self.half_model.predict(x_test_data)
-        for n in range(len(preds)):
-            # torch = [mean, std, nodes_in_bottle_neck_layer]
-            torch.save(np.concatenate((x_test_norm[n], preds[n]), axis=0), 'data/' + train_or_test + '/tensor_comp/wind_map' + str(n).zfill(5) + '.pt')
+    def compress(self, data, mean, std):
+        pred = self.half_model.predict(data)
+        return np.append(pred, [mean, std])
+
+    def window(self, data, center=-1):
+        size_x = len(data)
+        size_z = len(data[0])
+        if center == -1:
+            center = np.random.randint(0,size_x)
+            #center = np.random.randint(self.window_size,size_x-self.window_size) #train without border cases
+        start = int(max(center - self.window_size, 0))
+        end = int(min(center + self.window_size, size_x))
+
+        window = np.ones((self.window_size*2,size_z,2))*0
+        mean = np.mean(data[start:end,:])
+        std = np.std(data[start:end,:])
+        data_norm = (data[start:end,:]-mean)/std
+        if start == 0: #if touching the left border
+            window[0:end,:] = data_norm
+        elif end == size_x: #if touching the right border
+            window[self.window_size*2 - (end-start):self.window_size*2,:] = data_norm
+        else: #if not touching anything
+            window = data_norm
+        return window, mean, std
 
 def load_tensor(path):
     name_list = os.listdir(path)
     name_list.sort()
-    norm_list = []
     tensor_list = []
     for name in name_list:
         tensor = torch.load(path + name)
-        mean = np.mean(tensor)
-        std = np.std(tensor)
-        tensor = (tensor - mean)/std #normalize
-        norm_list.append([mean, std])
         tensor_list.append(tensor)
-    return [np.array(tensor_list), np.array(norm_list)]
+    return np.array(tensor_list)
