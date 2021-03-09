@@ -5,8 +5,8 @@ from visualize_wind_map import visualize_wind_map
 import os
 import numpy as np
 import torch
-import cv2
 import matplotlib.pyplot as plt
+matplotlib.use("Agg") # is needed for processing on cluster
 from sklearn.model_selection import train_test_split
 
 def autoencoder_train():
@@ -17,7 +17,7 @@ def autoencoder_train():
     x_train_window = []
     for _ in range(5): #number of samples we take from the same
         for i in range(len(x_train_data)):
-            data, mean, std = ae.window(x_train_data[i])
+            data = ae.window(x_train_data[i])
             x_train_window.append(data)
     x_train_window = np.array(x_train_window)
 

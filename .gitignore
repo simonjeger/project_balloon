@@ -5,3 +5,4 @@
 __pycache__
 data/
 weights_*/
+intel_wind/

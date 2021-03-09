@@ -11,7 +11,7 @@ env = balloon2d('test')
 actions = env.action_space.n
 states = env.observation_space.shape[0]
 model = build_model(states, actions)
-dqn = build_agent(model, actions)
+dqn = build_agent(model, actions,'test')
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
 dqn.load_weights('weights_model/dqn_weights.h5f')

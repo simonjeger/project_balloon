@@ -4,7 +4,6 @@ import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import cv2
 import torch
 from sklearn.model_selection import train_test_split
 
@@ -17,7 +16,7 @@ from keras.layers import MaxPooling2D, Dropout, UpSampling2D
 class Autoencoder():
     def __init__(self):
         # define size
-        self.window_size = 10
+        self.window_size = 3
         name_list = os.listdir('data/train/tensor/')
         tensor = torch.load('data/train/tensor/' + name_list[0])
         size_z = len(tensor[0])
@@ -35,7 +34,7 @@ class Autoencoder():
 
     def build_model(self):
         input_layer = Input(shape=self.img_shape)
-        self.n_bottleneck = 32
+        self.n_bottleneck = 10
 
         # encoder
         self.ec_c = Conv2D(64, (3, 3), activation='relu', padding='same')(input_layer)
@@ -48,7 +47,7 @@ class Autoencoder():
         self.dc_r = Reshape(self.ec_p.shape[1::])(self.dc_d)
         self.dc_c = Conv2D(self.ec_c.shape[-1], (3, 3), activation='relu', padding='same')(self.dc_r)
         self.dc_u = UpSampling2D((2, 2))(self.dc_c)
-        output_layer = Conv2D(self.img_shape[-1], (3, 3), activation='sigmoid', padding='same')(self.dc_u)
+        output_layer = Conv2D(self.img_shape[-1], (3, 3), activation='linear', padding='same')(self.dc_u) #activation used to be sigmoid
 
         return Model(input_layer, output_layer)
 
@@ -88,30 +87,27 @@ class Autoencoder():
         preds = self.autoencoder_model.predict(x_test)
         return preds
 
-    def compress(self, data, mean, std):
+    def compress(self, data):
         pred = self.half_model.predict(data)
-        return np.append(pred, [mean, std])
+        return pred[0]
 
     def window(self, data, center=-1):
         size_x = len(data)
         size_z = len(data[0])
+        size_c = len(data[0][0])
         if center == -1:
             center = np.random.randint(0,size_x)
-            #center = np.random.randint(self.window_size,size_x-self.window_size) #train without border cases
         start = int(max(center - self.window_size, 0))
         end = int(min(center + self.window_size, size_x))
 
-        window = np.ones((self.window_size*2,size_z,2))*0
-        mean = np.mean(data[start:end,:])
-        std = np.std(data[start:end,:])
-        data_norm = (data[start:end,:]-mean)/std
+        window = np.ones((self.window_size*2,size_z,size_c))*0
         if start == 0: #if touching the left border
-            window[0:end,:] = data_norm
+            window[0:end,:] = data[start:end,:]
         elif end == size_x: #if touching the right border
-            window[self.window_size*2 - (end-start):self.window_size*2,:] = data_norm
+            window[self.window_size*2 - (end-start):self.window_size*2,:] = data[start:end,:]
         else: #if not touching anything
-            window = data_norm
-        return window, mean, std
+            window = data[start:end,:]
+        return window
 
 def load_tensor(path):
     name_list = os.listdir(path)

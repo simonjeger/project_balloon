@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from random import gauss
 import matplotlib.pyplot as plt
+matplotlib.use("Agg") # is needed for processing on cluster
 import os
 import cv2
 
@@ -19,23 +20,9 @@ def visualize_wind_map(train_or_test, tensor = 'empty'):
 
     num = len(tensor_list)
     for n in range(num):
-        """
-        mean_x = tensor_list[n][:,:,0]
-        epi_x = tensor_list[n][:,:,1]
-        ale_x = tensor_list[n][:,:,2]
-        mean_z = tensor_list[n][:,:,3]
-        epi_z = tensor_list[n][:,:,4]
-        ale_z = tensor_list[n][:,:,5]
-        size_x = len(mean_x)
-        size_z = len(mean_x[0])
-
-
-        # generate visual plot of wind_map
-        sig_xz = epi_x + ale_x + epi_z + ale_z
-        """
         mean_x = tensor_list[n][:,:,0]
         mean_z = tensor_list[n][:,:,1]
-        #sig_xz = tensor_list[n][:,:,2]
+        sig_xz = tensor_list[n][:,:,2]
         size_x = len(mean_x)
         size_z = len(mean_x[0])
 
@@ -45,8 +32,7 @@ def visualize_wind_map(train_or_test, tensor = 'empty'):
         ax.set_aspect(1)
 
         # generate quiver
-        #q = ax.quiver(x,z,mean_x,mean_z,sig_xz)
-        q = ax.quiver(x,z,mean_x,mean_z,color='grey')
+        q = ax.quiver(x,z,mean_x,mean_z,sig_xz)
 
         if type(tensor) is not str:
             plt.show()

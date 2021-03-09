@@ -1,7 +1,9 @@
+
 from build_render import build_render
 from build_autoencoder import Autoencoder
+from fake_autoencoder import fake_Autoencoder
+from build_character import character
 
-import matplotlib.pyplot as plt
 from gym import Env
 from gym.spaces import Discrete, Box
 import numpy as np
@@ -18,131 +20,76 @@ class balloon2d(Env):
         # initialize autoencoder object
         self.ae = Autoencoder()
         self.ae.autoencoder_model.load_weights('weights_autoencoder/ae_weights.h5f')
+        #self.ae = fake_Autoencoder()
 
         # load new world to get size_x, size_z
         self.load_new_world()
 
         # action we can take: down, stay, up
         self.action_space = Discrete(3) #discrete space
+
         # location array in x and z
-        regular_state_space_low = np.array([0,0])
+        regular_state_space_low = np.array([0,0,0,0,0,0]) #residual to target, distance to border
         wind_compressed_state_space_low = np.array([-1]*len(self.wind_compressed))
-        regular_state_space_high = np.array([self.size_x,self.size_z])
+        regular_state_space_high = np.array([self.size_x,self.size_z,0,self.size_x,0,self.size_z])
         wind_compressed_state_space_high = np.array([1]*len(self.wind_compressed))
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, wind_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, wind_compressed_state_space_high), axis=0)) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
+
         # set start position
         self.start = np.array([10,15], dtype=float)
         # set target position
         self.target = np.array([90,20], dtype=float)
-        # set target radius
-        self.radius = 5
         # set maximal duration of flight
-        self.T = 1000
+        self.T = 200
         # initialize state and time
+
         self.reset()
 
     def step(self, action):
-        coord = [int(i) for i in np.round(self.position)] #convert position into int so I can use it as index
-        in_bounds = (0 <= coord[0] < self.size_x) & (0 <= coord[1] < self.size_z) #if still within bounds
+        coord = [int(i) for i in np.round(self.character.position)] #convert position into int so I can use it as index
         done = False
 
+        # move character
+        in_bounds = self.character.update(action, self.wind_map, self.wind_compressed)
         if in_bounds:
-            # apply wind
-            self.position[0] += self.mean_x[coord[0]][coord[1]]
-            self.position[1] += self.mean_z[coord[0]][coord[1]]
-
-            # generate wind window and update state
-            center = self.position[0]
-            x_train_window, mean, std = self.ae.window(self.wind_map, center)
-            x_train_window = np.array([x_train_window])
-
-            self.wind_compressed = self.ae.compress(x_train_window, mean, std)
-
-            self.state = np.concatenate((self.target.flatten() - self.position.flatten(), self.wind_compressed.flatten()), axis=0)
-
-            """
-            step_dist = np.sqrt(self.mean_x[coord[0]][coord[1]]**2 + self.mean_z[coord[0]][coord[1]]**2)
-            step_t = 1
-
-            while step_t > 0:
-                speed_x = self.mean_x[coord[0]][coord[1]]
-                speed_z = self.mean_z[coord[0]][coord[1]]
-
-                sign_x = np.sign(speed_x)
-                sign_z = np.sign(speed_z)
-
-                if sign_x == 1:
-                    dist_x = np.ceil(self.state[0]) - self.state[0]
-                else:
-                    dist_x = self.state[0] - np.floor(self.state[0])
-                if sign_z == 1:
-                    dist_z = np.ceil(self.state[1]) - self.state[1]
-                else:
-                    dist_z = self.state[1] - np.floor(self.state[1])
-
-                time_to_border_x = dist_x / abs(speed_x)
-                time_to_border_z = dist_z / abs(speed_z)
-                time_in_this_box = min(min(time_to_border_x, time_to_border_z),1)
-
-                self.state[0] += speed_x * time_in_this_box
-                self.state[1] += speed_z * time_in_this_box
-
-                step_t -= time_in_this_box
-
-                print('state: ' + str(self.state))
-                print('dist_x: ' + str(dist_x))
-                print('dist_z: ' + str(dist_z))
-                print('speed_x: ' + str(speed_x))
-                print('speed_z: ' + str(speed_z))
-                print('time_to_border_x: ' + str(time_to_border_x))
-                print('time_to_border_z: ' + str(time_to_border_z))
-                print('time_in_this_box: ' + str(time_in_this_box))
-                print('step_t :' + str(step_t))
-                print('---------------')
-            """
-
-            # apply action
-            self.state[1] += action -1
-            # reduce flight length by 1 second
-            self.t -= 1
             # calculate reward
-            distance = np.abs(self.state[0]) + np.abs(self.state[1])
-            reward = - distance - 10*abs(action)
-
-            # check if flight is done
-            if (self.t <= 0) | (distance <= self.radius):
+            distance = np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2)
+            radius = 1
+            ramp = 30
+            if distance <= radius:
+                self.reward = np.sqrt(self.character.t)
                 done = True
-                
+            else:
+                self.reward = max(ramp - distance, 0)/ramp
+
+            if self.character.t <= 0:
+                self.reward = -1
+                done = True
+
         else:
-            worst = np.sqrt(self.size_x**2 + self.size_z**2)*self.t
-            reward = - worst
-            self.t = 0
+            self.reward = 0
+            self.character.t = -np.sqrt(self.character.t)
             done = True
 
-        # apply noise
-        #self.state[0] += random.randint(-1,1)
         # set placeholder for info
         info = {}
 
         # return step information
-        return self.state, reward, done, info
+        return self.character.state, self.reward, done, info
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        build_render(self.position, self.target, self.size_x, self.size_z, self.t, self.world_name, self.ae.window_size, self.train_or_test)
+        build_render(self.character, self.reward, self.world_name, self.ae.window_size, self.train_or_test)
 
     def reset(self):
         # load new world
         self.load_new_world()
 
-        # reset initial position
-        self.start = np.array([random.randint(0, self.size_x),random.randint(0, self.size_z)], dtype=float)
-        self.target = np.array([random.randint(0, self.size_x),random.randint(0, self.size_z)], dtype=float)
-        self.position = self.start
-        self.state = np.concatenate((self.target.flatten() - self.position.flatten(), self.wind_compressed.flatten()), axis=0)
+        border = 2
+        start = np.array([self.size_x/2,0], dtype=float)
+        target = np.array([random.randint(border, self.size_x - border),random.randint(border, self.size_z - border)], dtype=float)
+        self.character = character(self.size_x, self.size_z, start, target, self.T, self.wind_compressed) #weight should be 1000 kg for realistic dimensions
 
-        # reset flight time
-        self.t = self.T
-        return self.state
+        return self.character.state
 
     def load_new_world(self):
         # choose random wind_map
@@ -154,20 +101,13 @@ class balloon2d(Env):
         self.wind_map = torch.load('data/' + self.train_or_test + '/tensor/' + self.world_name + '.pt')
 
         # just to initialize len() of variable
-        x_train_window, mean, std = self.ae.window(self.wind_map)
+        x_train_window = self.ae.window(self.wind_map)
         x_train_window = np.array([x_train_window])
-        self.wind_compressed = self.ae.compress(x_train_window, mean, std) # just to initialize len() of variable
-        #self.wind_compressed = torch.load('data/' + self.train_or_test + '/tensor_comp/' + self.world_name + '.pt')
-
-        """
-        self.mean_x = self.wind_map[:,:,0]
-        self.var_x = self.wind_map[:,:,1] + self.wind_map[:,:,2]
-        self.mean_z = self.wind_map[:,:,3]
-        self.var_z = self.wind_map[:,:,4] + self.wind_map[:,:,5]
-        """
+        self.wind_compressed = self.ae.compress(x_train_window) # just to initialize len() of variable
 
         self.mean_x = self.wind_map[:,:,0]
         self.mean_z = self.wind_map[:,:,1]
+        self.sig_xz = self.wind_map[:,:,2]
 
         # define world size
         self.size_x = len(self.mean_x)

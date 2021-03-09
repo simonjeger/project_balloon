@@ -32,9 +32,9 @@ for episodes in range(1,episodes+1):
 model = build_model(states, actions)
 
 # build agent with Keras-RL
-dqn = build_agent(model, actions)
+dqn = build_agent(model, actions,'train')
 dqn.compile(Adam(lr=1e-3), metrics=['mae']) #lr is learning rate
-dqn.fit(env, nb_steps=500000, visualize=False, verbose=1) #verbose is just an option on how to display the fitting process
+dqn.fit(env, nb_steps=3000000, visualize=False, verbose=1) #verbose is just an option on how to display the fitting process
 
 # save agent / trained weights
 dqn.save_weights('weights_model/dqn_weights.h5f', overwrite=True)
