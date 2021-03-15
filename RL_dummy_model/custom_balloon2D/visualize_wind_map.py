@@ -2,7 +2,6 @@ import numpy as np
 import torch
 from random import gauss
 import matplotlib.pyplot as plt
-matplotlib.use("Agg") # is needed for processing on cluster
 import os
 import cv2
 

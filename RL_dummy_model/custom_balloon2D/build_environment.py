@@ -4,6 +4,8 @@ from build_autoencoder import Autoencoder
 from fake_autoencoder import fake_Autoencoder
 from build_character import character
 
+import pandas as pd
+import matplotlib.pyplot as plt
 from gym import Env
 from gym.spaces import Discrete, Box
 import numpy as np
@@ -12,6 +14,17 @@ import torch
 from random import gauss
 import os
 
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
+
+
 class balloon2d(Env):
     def __init__(self, train_or_test):
         # which data to use
@@ -19,7 +32,7 @@ class balloon2d(Env):
 
         # initialize autoencoder object
         self.ae = Autoencoder()
-        self.ae.autoencoder_model.load_weights('weights_autoencoder/ae_weights.h5f')
+        self.ae.autoencoder_model.load_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder/ae_weights.h5f')
         #self.ae = fake_Autoencoder()
 
         # load new world to get size_x, size_z
@@ -28,67 +41,98 @@ class balloon2d(Env):
         # action we can take: down, stay, up
         self.action_space = Discrete(3) #discrete space
 
+        # set maximal duration of flight
+        self.T = yaml_p['T']
+
         # location array in x and z
-        regular_state_space_low = np.array([0,0,0,0,0,0]) #residual to target, distance to border
-        wind_compressed_state_space_low = np.array([-1]*len(self.wind_compressed))
-        regular_state_space_high = np.array([self.size_x,self.size_z,0,self.size_x,0,self.size_z])
-        wind_compressed_state_space_high = np.array([1]*len(self.wind_compressed))
+        regular_state_space_low = np.array([0,0,0,0,0,0,0]) #residual to target, distance to border, time
+        wind_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
+        regular_state_space_high = np.array([self.size_x,self.size_z,0,self.size_x,0,self.size_z,self.T])
+        wind_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, wind_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, wind_compressed_state_space_high), axis=0)) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
 
-        # set start position
-        self.start = np.array([10,15], dtype=float)
-        # set target position
-        self.target = np.array([90,20], dtype=float)
-        # set maximal duration of flight
-        self.T = 200
         # initialize state and time
-
         self.reset()
 
+        # delete old path file if it exists
+        if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/path.csv'):
+            os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/path.csv')
+        self.epi = 0
+
     def step(self, action):
+        # Update compressed wind map
+        window = self.ae.window(self.wind_map, self.character.position[0])
+        window = np.array([window])
+        self.wind_compressed = self.ae.compress(window)
+
         coord = [int(i) for i in np.round(self.character.position)] #convert position into int so I can use it as index
         done = False
 
         # move character
         in_bounds = self.character.update(action, self.wind_map, self.wind_compressed)
-        if in_bounds:
-            # calculate reward
-            distance = np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2)
-            radius = 1
-            ramp = 30
-            if distance <= radius:
-                self.reward = np.sqrt(self.character.t)
-                done = True
-            else:
-                self.reward = max(ramp - distance, 0)/ramp
+        done = self.cost(in_bounds)
 
-            if self.character.t <= 0:
-                self.reward = -1
-                done = True
-
-        else:
-            self.reward = 0
-            self.character.t = -np.sqrt(self.character.t)
-            done = True
+        # write down path into file for analysis
+        path = pd.DataFrame([[self.epi, self.size_x, self.size_z, self.character.position[0], self.character.position[1], self.character.target[0], self.character.target[1]]])
+        path.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/path.csv', mode='a', header=False, index=False)
+        if done:
+            self.epi += 1
 
         # set placeholder for info
         info = {}
 
         # return step information
-        return self.character.state, self.reward, done, info
+        return self.character.state, self.reward_step, done, info
+
+    def cost(self, in_bounds):
+        if in_bounds:
+            # calculate reward
+            radius = yaml_p['radius']
+            ramp = yaml_p['ramp']
+            exp = yaml_p['exp']
+            lam = yaml_p['lam']
+            distance = np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2)
+
+            if distance <= radius:
+                self.reward_step = self.character.t
+                done = True
+            else:
+                self.reward_step = max(((ramp-distance)/ramp)**exp, 0) -1/self.T - abs(self.character.action - 1)*lam
+                done = False
+
+            if self.character.t <= 0:
+                self.reward_step = 0
+                done = True
+
+        else:
+            self.reward_step = -self.T
+            self.character.t = 0
+            done = True
+
+        self.reward_epi += self.reward_step
+        return done
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        build_render(self.character, self.reward, self.world_name, self.ae.window_size, self.train_or_test)
+        build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.train_or_test)
 
     def reset(self):
         # load new world
         self.load_new_world()
+        self.reward_step = 0
+        self.reward_epi = 0
 
+        # Set problem
         border = 2
-        start = np.array([self.size_x/2,0], dtype=float)
-        target = np.array([random.randint(border, self.size_x - border),random.randint(border, self.size_z - border)], dtype=float)
-        self.character = character(self.size_x, self.size_z, start, target, self.T, self.wind_compressed) #weight should be 1000 kg for realistic dimensions
+        start = np.array(yaml_p['start'], dtype=float)
+        #target = np.array([random.randint(border, self.size_x - border),random.randint(border, self.size_z - border)], dtype=float)
+        target = np.array(yaml_p['target'], dtype=float)
 
+        # Initial compressed wind map
+        window = self.ae.window(self.wind_map, start[0])
+        window = np.array([window])
+        self.wind_compressed = self.ae.compress(window)
+
+        self.character = character(self.size_x, self.size_z, start, target, self.T, self.wind_compressed) #weight should be 1000 kg for realistic dimensions
         return self.character.state
 
     def load_new_world(self):
@@ -99,11 +143,6 @@ class balloon2d(Env):
         self.world_name = self.world_name[:length - 3]
         # read in wind_map
         self.wind_map = torch.load('data/' + self.train_or_test + '/tensor/' + self.world_name + '.pt')
-
-        # just to initialize len() of variable
-        x_train_window = self.ae.window(self.wind_map)
-        x_train_window = np.array([x_train_window])
-        self.wind_compressed = self.ae.compress(x_train_window) # just to initialize len() of variable
 
         self.mean_x = self.wind_map[:,:,0]
         self.mean_z = self.wind_map[:,:,1]

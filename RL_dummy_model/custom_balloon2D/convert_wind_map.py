@@ -1,6 +1,5 @@
 from matplotlib import colors
 import matplotlib.pyplot as plt
-matplotlib.use("Agg") # is needed for processing on cluster
 import numpy as np
 import pandas as pd
 import netCDF4
@@ -85,15 +84,14 @@ for n in range(min(len(nc['U'][1,:,0,:]), len(nc['U'][1,:,:,0]))):
     # Build folder structure if it doesn't exist yet
     path = 'data/real/temp'
     Path(path).mkdir(parents=True, exist_ok=True)
-    plt.savefig(path + '/gif_' + str(n).zfill(3) + '.png')
+    plt.savefig(path + '/gif_' + str(n).zfill(5) + '.png')
     plt.close()
     print('saving frame nr. ' + str(n))
 
 # Build GIF
 with imageio.get_writer('data/real/mygif.gif', mode='I') as writer:
     name_list = os.listdir(path)
-    print(name_list)
-    print(name_list.sort())
+    name_list.sort()
     for name in name_list:
         print('writing ' + name + ' into gif')
         image = imageio.imread(path + '/' + name)

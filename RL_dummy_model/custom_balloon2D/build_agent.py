@@ -2,15 +2,25 @@ from rl.agents import DQNAgent #deep Q-network (DQN) algorithm is a model-free, 
 from rl.policy import LinearAnnealedPolicy, SoftmaxPolicy, EpsGreedyQPolicy, GreedyQPolicy, BoltzmannQPolicy, MaxBoltzmannQPolicy, BoltzmannGumbelQPolicy
 from rl.memory import SequentialMemory
 
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
+
 def build_agent(model, actions, train_or_test):
     if train_or_test == 'train':
-        policy = EpsGreedyQPolicy()
+        policy = MaxBoltzmannQPolicy(eps=yaml_p['eps'])
     elif train_or_test == 'test':
-        policy = EpsGreedyQPolicy()
+        policy = MaxBoltzmannQPolicy(eps=0)
     else:
         print('do you want to train or test?')
     memory = SequentialMemory(limit=50000, window_length=1) #we store #window_length of windows for #limit of episodes
-    dqn = DQNAgent(model=model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=10, target_model_update=1e-2) #nb_steps_warmup where agent collects information before training (doesn't learn in the first #nb_steps_warmup)
+    dqn = DQNAgent(model=model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=100, target_model_update=yaml_p['target_model_update']) #nb_steps_warmup where agent collects information before training (doesn't learn in the first #nb_steps_warmup)
     return dqn
 
 """

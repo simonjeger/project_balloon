@@ -1,0 +1,31 @@
+# general
+process_nr: 0
+
+# setup
+size_x: 30
+size_z: 10
+
+# autoencoder
+window_size: 3
+bottleneck: 10
+
+# model_train
+num_epochs: 5
+
+# build_agent
+gamma: 0.95
+buffer_size: 10000
+lr: 0.0005
+epsi_high: 0.9
+epsi_low: 0.05
+decay: 400
+update_target_step: 300
+
+# build_environment
+T: 200
+start: [15,0]
+target: [15,9]
+radius: 1
+ramp: 1
+exp: 1
+lam: 0.01

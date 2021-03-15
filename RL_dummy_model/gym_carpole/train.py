@@ -5,6 +5,7 @@ import gym
 import random
 import numpy as np
 from tensorflow.keras.optimizers import Adam
+import matplotlib.pyplot as plt
 
 # initialize environment, states and actions
 env = gym.make('CartPole-v0')
@@ -33,7 +34,22 @@ model = build_model(states, actions)
 # build agent with Keras-RL
 dqn = build_agent(model, actions)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
-dqn.fit(env, nb_steps=50000, visualize=False, verbose=1)
+history = dqn.fit(env, nb_steps=200000, visualize=False, verbose=1)
 
 # save agent / trained weights
 dqn.save_weights('weights/dqn_weights.h5f', overwrite=True)
+
+# plot
+episode_reward = history.history['episode_reward']
+N = int(len(episode_reward)/10)
+cumsum = np.cumsum(np.insert(episode_reward, 0, 0))
+mean_reward = (cumsum[N:] - cumsum[:-N]) / float(N)
+
+plt.plot(episode_reward)
+plt.plot(mean_reward)
+
+plt.ylabel('reward')
+plt.xlabel('epoch')
+plt.legend(['reward per episode', 'mean reward'], loc='upper left')
+plt.show()
+plt.close()

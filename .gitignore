@@ -3,6 +3,8 @@
 
 # Folder
 __pycache__
+yaml/
+process*/
 data/
-weights_*/
+render/
 intel_wind/

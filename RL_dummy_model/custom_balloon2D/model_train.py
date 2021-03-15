@@ -1,11 +1,21 @@
 from build_model import build_model
 from build_agent import build_agent
 from build_environment import balloon2d
+from analysis import plot_reward, plot_path
 
 import gym
 import random
-import numpy as np
 from tensorflow.keras.optimizers import Adam
+
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
 
 # initialize environment, states and actions
 env = balloon2d('train')
@@ -32,9 +42,13 @@ for episodes in range(1,episodes+1):
 model = build_model(states, actions)
 
 # build agent with Keras-RL
-dqn = build_agent(model, actions,'train')
-dqn.compile(Adam(lr=1e-3), metrics=['mae']) #lr is learning rate
-dqn.fit(env, nb_steps=3000000, visualize=False, verbose=1) #verbose is just an option on how to display the fitting process
+dqn = build_agent(model, actions, 'train')
+dqn.compile(optimizer=Adam(lr=1e-3), metrics=['mae']) #lr is learning rate (used to be 1e-3)
+history = dqn.fit(env, nb_steps=yaml_p['nb_steps'], visualize=False, verbose=1) #verbose is just an option on how to display the fitting process
 
 # save agent / trained weights
-dqn.save_weights('weights_model/dqn_weights.h5f', overwrite=True)
+dqn.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_model/dqn_weights.h5f', overwrite=True)
+
+# post analysis
+plot_reward(history)
+plot_path()
