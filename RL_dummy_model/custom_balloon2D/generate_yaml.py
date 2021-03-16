@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, ramp, exp, lam):
+def write(process_nr,decay,update_target_step):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -33,27 +33,33 @@ def write(process_nr, ramp, exp, lam):
     text = text + 'bottleneck: 10' + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
-    text = text + 'nb_steps: 30000' + '\n'
+    text = text + 'num_epochs: 400' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
-    text = text + 'eps: 0.1' + '\n'
-    text = text + 'target_model_update: 0.01' + '\n'
+    text = text + 'gamma: 0.95' + '\n'
+    text = text + 'buffer_size: 10000' + '\n'
+    text = text + 'lr: 0.0005' + '\n'
+    text = text + 'epsi_high: 0.9' + '\n'
+    text = text + 'epsi_low: 0.05' + '\n'
+    text = text + 'decay: ' + str(decay) + '\n'
+    text = text + 'update_target_step: ' + str(update_target_step) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 200' + '\n'
     text = text + 'start: [15,0]' + '\n'
-    text = text + 'target: [2,4]' + '\n'
+    text = text + 'target: [15,9]' + '\n'
     text = text + 'radius: 1' + '\n'
-    text = text + 'ramp: 15' + '\n'
-    text = text + 'exp: 2' + '\n'
-    text = text + 'lam: 0.2' + '\n'
+    text = text + 'ramp: 1' + '\n'
+    text = text + 'exp: 1' + '\n'
+    text = text + 'lam: -0.1' + '\n'
+    text = text + 'overtime: -1' + '\n'
 
     file.write(text)
     file.close()
 
 process_nr = 0
-for ramp in [0,5,15]:
-    for exp in [1,2,3]:
-        for lam in [0.1, 0.5, 1]:
-            write(process_nr, ramp, exp, lam)
+for decay in [200, 250, 300, 350]:
+    for update_target_step in [200, 300, 400, 500]:
+        for lr in [0.005, 0.001, 0.0005, 0.0001]:
+            write(process_nr, decay, update_target_step)
             process_nr += 1

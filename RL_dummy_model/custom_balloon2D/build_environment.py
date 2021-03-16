@@ -1,7 +1,6 @@
 
 from build_render import build_render
 from build_autoencoder import Autoencoder
-from fake_autoencoder import fake_Autoencoder
 from build_character import character
 
 import pandas as pd
@@ -55,8 +54,8 @@ class balloon2d(Env):
         self.reset()
 
         # delete old path file if it exists
-        if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/path.csv'):
-            os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/path.csv')
+        if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv'):
+            os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
         self.epi = 0
 
     def step(self, action):
@@ -72,9 +71,9 @@ class balloon2d(Env):
         in_bounds = self.character.update(action, self.wind_map, self.wind_compressed)
         done = self.cost(in_bounds)
 
-        # write down path into file for analysis
-        path = pd.DataFrame([[self.epi, self.size_x, self.size_z, self.character.position[0], self.character.position[1], self.character.target[0], self.character.target[1]]])
-        path.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/path.csv', mode='a', header=False, index=False)
+        # write in log file
+        df = pd.DataFrame([[self.epi, self.size_x, self.size_z, self.character.position[0], self.character.position[1], self.character.target[0], self.character.target[1], self.reward_step, self.reward_epi]])
+        df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', mode='a', header=False, index=False)
         if done:
             self.epi += 1
 
@@ -97,11 +96,11 @@ class balloon2d(Env):
                 self.reward_step = self.character.t
                 done = True
             else:
-                self.reward_step = max(((ramp-distance)/ramp)**exp, 0) -1/self.T - abs(self.character.action - 1)*lam
+                self.reward_step = max(((ramp-distance)/ramp), 0)**exp -1/self.T + abs(self.character.action - 1)*lam
                 done = False
 
             if self.character.t <= 0:
-                self.reward_step = 0
+                self.reward_step = yaml_p['overtime']
                 done = True
 
         else:
