@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, decay, update_target_step, lr):
+def write(process_nr, decay, lr):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -33,7 +33,7 @@ def write(process_nr, decay, update_target_step, lr):
     text = text + 'bottleneck: 10' + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
-    text = text + 'num_epochs: 800' + '\n'
+    text = text + 'num_epochs: 2000' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'gamma: 0.95' + '\n'
@@ -42,25 +42,25 @@ def write(process_nr, decay, update_target_step, lr):
     text = text + 'epsi_high: 0.9' + '\n'
     text = text + 'epsi_low: 0.05' + '\n'
     text = text + 'decay: ' + str(decay) + '\n'
-    text = text + 'update_target_step: ' + str(update_target_step) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 200' + '\n'
     text = text + 'start: [2,0]' + '\n'
     text = text + 'target: "random"' + '\n'
     text = text + 'radius: 1' + '\n'
-    text = text + 'ramp: 2.5' + '\n'
-    text = text + 'exp: 1' + '\n'
-    text = text + 'lam: -0.1' + '\n'
-    text = text + 'overtime: -1' + '\n'
+    text = text + 'hit: 1' + '\n'
+    text = text + 'step: -0.1' + '\n'
+    text = text + 'action: -0.1' + '\n'
+    text = text + 'overtime: 0' + '\n'
+    text = text + 'min_distance: 0.1' + '\n'
+    text = text + 'bounds: -1' + '\n'
 
     file.write(text)
     file.close()
 
-process_nr = 190
-for decay in [300, 400, 500]:
-    for update_target_step in [200, 300, 400]:
-        for lr in [0.005]:
-            for repeat in range(2):
-                write(process_nr, decay, update_target_step, lr)
-                process_nr += 1
+process_nr = 250
+for decay in [200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100]:
+    for lr in [0.005]:
+        for repeat in range(2):
+            write(process_nr, decay, lr)
+            process_nr += 1

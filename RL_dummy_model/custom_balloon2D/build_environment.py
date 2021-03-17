@@ -87,17 +87,13 @@ class balloon2d(Env):
     def cost(self, in_bounds):
         if in_bounds:
             # calculate reward
-            radius = yaml_p['radius']
-            ramp = yaml_p['ramp']
-            exp = yaml_p['exp']
-            lam = yaml_p['lam']
             distance = np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2)
 
-            if distance <= radius:
-                self.reward_step = self.character.t
+            if distance <= yaml_p['radius']:
+                self.reward_step = yaml_p['hit']
                 done = True
             else:
-                self.reward_step = max(((ramp-distance)/ramp), 0)**exp -1/self.T + abs(self.character.action - 1)*lam
+                self.reward_step = yaml_p['step'] + abs(self.character.action - 1)*yaml_p['action']
                 done = False
 
             if self.character.t <= 0:
@@ -105,7 +101,7 @@ class balloon2d(Env):
                 done = True
 
         else:
-            self.reward_step = -self.T + (self.T - self.character.t)/self.T #hitting a wall should always cost the same
+            self.reward_step = yaml_p['bounds'] + 1/self.character.min_distance*yaml_p['min_distance']
             self.character.t = 0
             done = True
 

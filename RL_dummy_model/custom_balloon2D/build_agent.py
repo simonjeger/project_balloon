@@ -46,14 +46,14 @@ class DQN_RND:
         self.optimizer = torch.optim.Adam(self.model.parameters(),lr=yaml_p['lr']) #used to be 1e-3
         self.batch_size = 64
         self.buffer_size = yaml_p['buffer_size']
-        self.step_counter = 0
+        #self.step_counter = 0
         self.epsi_high = yaml_p['epsi_high']
         self.epsi_low = yaml_p['epsi_low']
         self.steps = 0
         self.count = 0
         self.decay = yaml_p['decay']
         self.eps = self.epsi_high
-        self.update_target_step = yaml_p['update_target_step']
+        #self.update_target_step = yaml_p['update_target_step']
         self.log = logger()
         self.log.add_log('real_return')
         self.log.add_log('combined_return')
@@ -71,7 +71,8 @@ class DQN_RND:
         sum_tot_r = 0
         mean_loss = mean_val()
 
-        t = 0
+        self.target_model.load_state_dict(self.model.state_dict())
+
         while True:
             self.steps += 1
             self.eps = self.epsi_low + (self.epsi_high-self.epsi_low) * (np.exp(-1.0 * self.steps/self.decay))
@@ -93,11 +94,13 @@ class DQN_RND:
             mean_loss.append(loss)
             obs = new_state
 
+            """ #update model every episode, not every fixed ammounts of steps
             self.step_counter = self.step_counter + 1
             if (self.step_counter > self.update_target_step):
                 self.target_model.load_state_dict(self.model.state_dict())
                 self.step_counter = 0
                 print('updated target model')
+            """
 
             df = pd.DataFrame([[self.eps]])
             df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)

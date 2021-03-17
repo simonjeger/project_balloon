@@ -24,7 +24,7 @@ alg = DQN_RND(env)
 num_epochs = yaml_p['num_epochs']
 for i in range(num_epochs):
     log = alg.run_epoch()
-    print('epoch: {}. return: {}'.format(i,np.round(log.get_current('real_return')),2))
+    print('epoch: {}. return: {}'.format(i,np.round(log.get_current('real_return'),3),2))
 
 alg.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_model/')
 
