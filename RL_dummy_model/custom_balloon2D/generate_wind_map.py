@@ -18,7 +18,8 @@ def generate_wind_map(size_x, size_z, num, train_or_test):
         for i in range(m):
             rand_x = int(size_x - size_x/m*i - 1)
             rand_z = int(size_z - size_z/m*i - 1)
-            mean_x[:, rand_z] = gauss(seed_x*(-1)**i,0.01)
+            #mean_x[:, rand_z] = gauss(seed_x*(-1)**i,0.01)
+            mean_x[:, rand_z] = gauss(seed_x,0.01)
             mean_z[rand_x, :] = gauss(0,0.01)
             sig_xz[rand_x, rand_z] = abs(gauss(0,0.001))
             mean_x = gaussian_filter(mean_x, sigma = 2)
@@ -28,10 +29,6 @@ def generate_wind_map(size_x, size_z, num, train_or_test):
         mean_x /= np.max(abs(mean_x))
         mean_z /= np.max(abs(mean_z))*5
         sig_xz /= np.max(abs(sig_xz))*10
-
-        mean_x *= 0
-        mean_z *= 0
-        sig_xz *= 0
 
         # generate uncertainty
         tensor = np.dstack((mean_x, mean_z, sig_xz))

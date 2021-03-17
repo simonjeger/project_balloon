@@ -28,6 +28,7 @@ def plot_reward():
     mean_reward = (cumsum[N:] - cumsum[:-N]) / float(N)
 
     fig, ax1 = plt.subplots()
+    ax1.set_title('max mean: ' + str(np.round(max(mean_reward),2)) + '   last mean: ' + str(np.round(mean_reward[-1],2)))
     ax1.set_xlabel('step')
     ax1.set_ylabel('reward')
     ax1.tick_params(axis='y')

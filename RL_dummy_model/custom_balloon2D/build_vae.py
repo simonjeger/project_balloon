@@ -1,254 +1,145 @@
-# example from https://github.com/pytorch/examples/blob/master/vae/main.py
-# commented and type annotated by Charl Botha <cpbotha@vxlabs.com>
-
-import os
 import torch
-import torch.utils.data
-from torch import nn, optim
-from torch.autograd import Variable
-from torch.nn import functional as F
-from torchvision import datasets, transforms
-from torchvision.utils import save_image
+import numpy as np
+import copy
+import torch.nn.functional as F
+from collections import deque
+import random
+from log_utils import logger, mean_val
+import os
+import pandas as pd
 
-# changed configuration to this instead of argparse for easier interaction
-CUDA = False
-SEED = 1
-BATCH_SIZE = 128
-LOG_INTERVAL = 10
-EPOCHS = 10
+import yaml
+import argparse
 
-# connections through the autoencoder bottleneck
-# in the pytorch VAE example, this is 20
-ZDIMS = 20
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
 
-# I do this so that the MNIST dataset is downloaded where I want it
-os.chdir('data/vae')
+class NN(torch.nn.Module):
+    def __init__(self,in_dim,out_dim,n_hid):
+        super(QNet, self).__init__()
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        self.n_hid = n_hid
 
-torch.manual_seed(SEED)
-if CUDA:
-    torch.cuda.manual_seed(SEED)
+        self.fc1 = torch.nn.Linear(in_dim,n_hid,'relu')
+        self.fc2 = torch.nn.Linear(n_hid,out_dim,'linear')
 
-# DataLoader instances will load tensors directly into GPU memory
-kwargs = {'num_workers': 1, 'pin_memory': True} if CUDA else {}
+    def forward(self,x):
+        x = F.relu(self.fc1(x))
+        y = self.fc2(x)
+        return y
 
-# Download or load downloaded MNIST dataset
-# shuffle data at every epoch
-train_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('data', train=True, download=True,
-                   transform=transforms.ToTensor()),
-    batch_size=BATCH_SIZE, shuffle=True, **kwargs)
+class VAE:
+    def __init__(self, wind):
+        self.wind = wind
+        acts = env.action_space
+        self.model = QNet(obs.shape[0],acts.n,64)
+        self.target_model = copy.deepcopy(self.model)
+        self.rnd = RND(obs.shape[0],64,124)
+        self.gamma = yaml_p['gamma']
+        self.optimizer = torch.optim.Adam(self.model.parameters(),lr=yaml_p['lr']) #used to be 1e-3
+        self.batch_size = 64
+        self.buffer_size = yaml_p['buffer_size']
+        self.step_counter = 0
+        self.epsi_high = yaml_p['epsi_high']
+        self.epsi_low = yaml_p['epsi_low']
+        self.steps = 0
+        self.count = 0
+        self.decay = yaml_p['decay']
+        self.eps = self.epsi_high
+        self.update_target_step = yaml_p['update_target_step']
+        self.log = logger()
+        self.log.add_log('real_return')
+        self.log.add_log('combined_return')
+        self.log.add_log('avg_loss')
 
-# Same for test data
-test_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('data', train=False, transform=transforms.ToTensor()),
-    batch_size=BATCH_SIZE, shuffle=True, **kwargs)
+        self.replay_buffer = deque(maxlen=self.buffer_size)
 
+        # initialize log file
+        if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv'):
+            os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv')
 
-class VAE(nn.Module):
-    def __init__(self):
-        super(VAE, self).__init__()
+    def run_episode(self):
+        obs = self.env.reset()
+        sum_r = 0
+        sum_tot_r = 0
+        mean_loss = mean_val()
 
-        # ENCODER
-        # 28 x 28 pixels = 784 input pixels, 400 outputs
-        self.fc1 = nn.Linear(784, 400)
-        # rectified linear unit layer from 400 to 400
-        # max(0, x)
-        self.relu = nn.ReLU()
-        self.fc21 = nn.Linear(400, ZDIMS)  # mu layer
-        self.fc22 = nn.Linear(400, ZDIMS)  # logvariance layer
-        # this last layer bottlenecks through ZDIMS connections
+        t = 0
+        while True:
+            self.steps += 1
+            self.eps = self.epsi_low + (self.epsi_high-self.epsi_low) * (np.exp(-1.0 * self.steps/self.decay))
+            state = torch.Tensor(obs).unsqueeze(0)
+            Q = self.model(state)
+            num = np.random.rand()
+            if (num < self.eps):
+                action = torch.randint(0,Q.shape[1],(1,)).type(torch.LongTensor)
+            else:
+                action = torch.argmax(Q,dim=1)
+            new_state, reward, done, info = self.env.step((action.item()))
+            sum_r = sum_r + reward
+            reward_i = self.rnd.get_reward(state).detach().clamp(-1.0,1.0).item()
+            combined_reward = reward + reward_i
+            sum_tot_r += combined_reward
 
-        # DECODER
-        # from bottleneck to hidden 400
-        self.fc3 = nn.Linear(ZDIMS, 400)
-        # from hidden 400 to 784 outputs
-        self.fc4 = nn.Linear(400, 784)
-        self.sigmoid = nn.Sigmoid()
+            self.replay_buffer.append([obs,action,combined_reward,new_state,done])
+            loss = self.update_model()
+            mean_loss.append(loss)
+            obs = new_state
 
-    def encode(self, x: Variable) -> (Variable, Variable):
-        """Input vector x -> fully connected 1 -> ReLU -> (fully connected
-        21, fully connected 22)
+            self.step_counter = self.step_counter + 1
+            if (self.step_counter > self.update_target_step):
+                self.target_model.load_state_dict(self.model.state_dict())
+                self.step_counter = 0
+                print('updated target model')
 
-        Parameters
-        ----------
-        x : [128, 784] matrix; 128 digits of 28x28 pixels each
+            df = pd.DataFrame([[self.eps]])
+            df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
 
-        Returns
-        -------
+            #self.env.render(mode=True)
 
-        (mu, logvar) : ZDIMS mean units one for each latent dimension, ZDIMS
-            variance units one for each latent dimension
+            if done:
+                break
 
-        """
+        self.log.add_item('real_return',sum_r)
+        self.log.add_item('combined_return',sum_tot_r)
+        self.log.add_item('avg_loss',mean_loss.get())
 
-        # h1 is [128, 400]
-        h1 = self.relu(self.fc1(x))  # type: Variable
-        return self.fc21(h1), self.fc22(h1)
+    def update_model(self):
+        self.optimizer.zero_grad()
+        num = len(self.replay_buffer)
+        K = np.min([num,self.batch_size])
+        samples = random.sample(self.replay_buffer, K)
 
-    def reparameterize(self, mu: Variable, logvar: Variable) -> Variable:
-        """THE REPARAMETERIZATION IDEA:
+        S0, A0, R1, S1, D1 = zip(*samples)
+        S0 = torch.tensor( S0, dtype=torch.float)
+        A0 = torch.tensor( A0, dtype=torch.long).view(K, -1)
+        R1 = torch.tensor( R1, dtype=torch.float).view(K, -1)
+        S1 = torch.tensor( S1, dtype=torch.float)
+        D1 = torch.tensor( D1, dtype=torch.float)
 
-        For each training sample (we get 128 batched at a time)
+        Ri = self.rnd.get_reward(S0)
+        self.rnd.update(Ri)
+        target_q = R1.squeeze() + self.gamma*self.target_model(S1).max(dim=1)[0].detach()*(1 - D1)
+        policy_q = self.model(S0).gather(1,A0)
+        L = F.smooth_l1_loss(policy_q.squeeze(),target_q.squeeze())
+        L.backward()
+        self.optimizer.step()
+        return L.detach().item()
 
-        - take the current learned mu, stddev for each of the ZDIMS
-          dimensions and draw a random sample from that distribution
-        - the whole network is trained so that these randomly drawn
-          samples decode to output that looks like the input
-        - which will mean that the std, mu will be learned
-          *distributions* that correctly encode the inputs
-        - due to the additional KLD term (see loss_function() below)
-          the distribution will tend to unit Gaussians
+    def run_epoch(self):
+        self.run_episode()
+        return self.log
 
-        Parameters
-        ----------
-        mu : [128, ZDIMS] mean matrix
-        logvar : [128, ZDIMS] variance matrix
+    def save_weights(self, path):
+        torch.save(self.model.state_dict(), path + 'dqn_weights.h5f')
+        torch.save(self.rnd.model.state_dict(), path + 'rnd_weights.h5f')
 
-        Returns
-        -------
-
-        During training random sample from the learned ZDIMS-dimensional
-        normal distribution; during inference its mean.
-
-        """
-
-        if self.training:
-            # multiply log variance with 0.5, then in-place exponent
-            # yielding the standard deviation
-            std = logvar.mul(0.5).exp_()  # type: Variable
-            # - std.data is the [128,ZDIMS] tensor that is wrapped by std
-            # - so eps is [128,ZDIMS] with all elements drawn from a mean 0
-            #   and stddev 1 normal distribution that is 128 samples
-            #   of random ZDIMS-float vectors
-            eps = Variable(std.data.new(std.size()).normal_())
-            # - sample from a normal distribution with standard
-            #   deviation = std and mean = mu by multiplying mean 0
-            #   stddev 1 sample with desired std and mu, see
-            #   https://stats.stackexchange.com/a/16338
-            # - so we have 128 sets (the batch) of random ZDIMS-float
-            #   vectors sampled from normal distribution with learned
-            #   std and mu for the current input
-            return eps.mul(std).add_(mu)
-
-        else:
-            # During inference, we simply spit out the mean of the
-            # learned distribution for the current input.  We could
-            # use a random sample from the distribution, but mu of
-            # course has the highest probability.
-            return mu
-
-    def decode(self, z: Variable) -> Variable:
-        h3 = self.relu(self.fc3(z))
-        return self.sigmoid(self.fc4(h3))
-
-    def forward(self, x: Variable) -> (Variable, Variable, Variable):
-        mu, logvar = self.encode(x.view(-1, 784))
-        z = self.reparameterize(mu, logvar)
-        return self.decode(z), mu, logvar
-
-
-model = VAE()
-if CUDA:
-    model.cuda()
-
-
-def loss_function(recon_x, x, mu, logvar) -> Variable:
-    # how well do input x and output recon_x agree?
-    BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784))
-
-    # KLD is Kullback–Leibler divergence -- how much does one learned
-    # distribution deviate from another, in this specific case the
-    # learned distribution from the unit Gaussian
-
-    # see Appendix B from VAE paper:
-    # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
-    # https://arxiv.org/abs/1312.6114
-    # - D_{KL} = 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
-    # note the negative D_{KL} in appendix B of the paper
-    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    # Normalise by same number of elements as in reconstruction
-    KLD /= BATCH_SIZE * 784
-
-    # BCE tries to make our reconstruction as accurate as possible
-    # KLD tries to push the distributions as close as possible to unit Gaussian
-    return BCE + KLD
-
-# Dr Diederik Kingma: as if VAEs weren't enough, he also gave us Adam!
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
-
-def train(epoch):
-    # toggle model to train mode
-    model.train()
-    train_loss = 0
-    # in the case of MNIST, len(train_loader.dataset) is 60000
-    # each `data` is of BATCH_SIZE samples and has shape [128, 1, 28, 28]
-    for batch_idx, (data, _) in enumerate(train_loader):
-        data = Variable(data)
-        if CUDA:
-            data = data.cuda()
-        optimizer.zero_grad()
-
-        # push whole batch of data through VAE.forward() to get recon_loss
-        recon_batch, mu, logvar = model(data)
-        # calculate scalar loss
-        loss = loss_function(recon_batch, data, mu, logvar)
-        # calculate the gradient of the loss w.r.t. the graph leaves
-        # i.e. input variables -- by the power of pytorch!
-        loss.backward()
-        train_loss += loss.data[0]
-        optimizer.step()
-        if batch_idx % LOG_INTERVAL == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader),
-                loss.data[0] / len(data)))
-
-    print('====> Epoch: {} Average loss: {:.4f}'.format(
-          epoch, train_loss / len(train_loader.dataset)))
-
-
-def test(epoch):
-    # toggle model to test / inference mode
-    model.eval()
-    test_loss = 0
-
-    # each data is of BATCH_SIZE (default 128) samples
-    for i, (data, _) in enumerate(test_loader):
-        if CUDA:
-            # make sure this lives on the GPU
-            data = data.cuda()
-
-        # we're only going to infer, so no autograd at all required: volatile=True
-        data = Variable(data, volatile=True)
-        recon_batch, mu, logvar = model(data)
-        test_loss += loss_function(recon_batch, data, mu, logvar).data[0]
-        if i == 0:
-          n = min(data.size(0), 8)
-          # for the first 128 batch of the epoch, show the first 8 input digits
-          # with right below them the reconstructed output digits
-          comparison = torch.cat([data[:n],
-                                  recon_batch.view(BATCH_SIZE, 1, 28, 28)[:n]])
-          save_image(comparison.data.cpu(),
-                     'results/reconstruction_' + str(epoch) + '.png', nrow=n)
-
-    test_loss /= len(test_loader.dataset)
-    print('====> Test set loss: {:.4f}'.format(test_loss))
-
-
-for epoch in range(1, EPOCHS + 1):
-    train(epoch)
-    test(epoch)
-
-    # 64 sets of random ZDIMS-float vectors, i.e. 64 locations / MNIST
-    # digits in latent space
-    sample = Variable(torch.randn(64, ZDIMS))
-    if CUDA:
-        sample = sample.cuda()
-    sample = model.decode(sample).cpu()
-
-    # save out as an 8x8 matrix of MNIST digits
-    # this will give you a visual idea of how well latent space can generate things
-    # that look like digits
-    save_image(sample.data.view(64, 1, 28, 28),
-               'results/sample_' + str(epoch) + '.png')
+    def load_weights(self, path):
+        self.model.load_state_dict(torch.load(path + 'dqn_weights.h5f'))
+        self.target_model = copy.deepcopy(self.model)
+        self.rnd.model.load_state_dict(torch.load(path + 'rnd_weights.h5f'))

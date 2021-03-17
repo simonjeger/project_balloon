@@ -22,6 +22,7 @@ class fake_Autoencoder():
         tensor = torch.load('data/train/tensor/' + name_list[0])
         self.size_z = len(tensor[0])
         self.size_c = len(tensor[0][0])
+        self.bottleneck = int(self.size_z/self.box_size)*2
 
     def compress(self, data):
         mean_x = data[0][:,:,0]

@@ -1,6 +1,7 @@
 
 from build_render import build_render
 from build_autoencoder import Autoencoder
+from fake_autoencoder import fake_Autoencoder
 from build_character import character
 
 import pandas as pd
@@ -104,7 +105,7 @@ class balloon2d(Env):
                 done = True
 
         else:
-            self.reward_step = -self.T
+            self.reward_step = -self.T + (self.T - self.character.t)/self.T #hitting a wall should always cost the same
             self.character.t = 0
             done = True
 
@@ -122,9 +123,15 @@ class balloon2d(Env):
 
         # Set problem
         border = 2
-        start = np.array(yaml_p['start'], dtype=float)
-        #target = np.array([random.randint(border, self.size_x - border),random.randint(border, self.size_z - border)], dtype=float)
-        target = np.array(yaml_p['target'], dtype=float)
+        if isinstance(yaml_p['start'], str):
+            start = np.array([random.randint(border, self.size_x/2 - border),0], dtype=float)
+        else:
+            start = np.array(yaml_p['start'], dtype=float)
+        if isinstance(yaml_p['target'], str):
+            #target = np.array([random.randint(border + self.size_x/2, self.size_x - border),random.randint(border, self.size_z - border)], dtype=float)
+            target = np.array([25,random.randint(border, self.size_z - border)], dtype=float)
+        else:
+            target = np.array(yaml_p['target'], dtype=float)
 
         # Initial compressed wind map
         window = self.ae.window(self.wind_map, start[0])
