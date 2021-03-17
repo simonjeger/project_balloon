@@ -57,7 +57,7 @@ def write(process_nr, decay, update_target_step, lr):
     file.write(text)
     file.close()
 
-process_nr = 170
+process_nr = 190
 for decay in [300, 400, 500]:
     for update_target_step in [200, 300, 400]:
         for lr in [0.005]:

@@ -31,9 +31,9 @@ class balloon2d(Env):
         self.train_or_test = train_or_test
 
         # initialize autoencoder object
-        self.ae = Autoencoder()
-        self.ae.autoencoder_model.load_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder/ae_weights.h5f')
-        #self.ae = fake_Autoencoder()
+        #self.ae = Autoencoder()
+        #self.ae.autoencoder_model.load_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder/ae_weights.h5f')
+        self.ae = fake_Autoencoder()
 
         # load new world to get size_x, size_z
         self.load_new_world()
