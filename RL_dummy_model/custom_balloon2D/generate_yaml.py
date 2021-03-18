@@ -9,7 +9,7 @@ def write(process_nr, decay, lr):
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -W 24:00 -R "rusage[mem=30000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -46,14 +46,17 @@ def write(process_nr, decay, lr):
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 200' + '\n'
     text = text + 'start: [2,0]' + '\n'
-    text = text + 'target: "random"' + '\n'
+    text = text + 'target: [28,6]' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
-    text = text + 'step: -0.1' + '\n'
-    text = text + 'action: -0.1' + '\n'
+    text = text + 'step: -0.005' + '\n'
+    text = text + 'action: -0.01' + '\n'
     text = text + 'overtime: 0' + '\n'
-    text = text + 'min_distance: 0.1' + '\n'
+    text = text + 'min_distance: 1' + '\n'
     text = text + 'bounds: -1' + '\n'
+
+    text = text + '\n' + '# analysis' + '\n'
+    text = text + 'duration: 30' + '\n'
 
     file.write(text)
     file.close()

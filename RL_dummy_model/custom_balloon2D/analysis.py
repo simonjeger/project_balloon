@@ -43,70 +43,62 @@ def plot_reward():
 
 def plot_path():
     # sort by episode
-    df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', header=None)
-    df_ag = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', header=None)
+    df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
+    df_ag = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', names=['eps'])
 
-    epi = np.array(df_env.iloc[:,0])
-    size_x = np.array(df_env.iloc[:,1])
-    size_z = np.array(df_env.iloc[:,2])
-    pos_x = np.array(df_env.iloc[:,3])
-    pos_z = np.array(df_env.iloc[:,4])
-    tar_x = np.array(df_env.iloc[:,5])
-    tar_z = np.array(df_env.iloc[:,6])
-    eps = np.array(df_ag.iloc[:,0])
+    duration = yaml_p['duration']
+    N = df_env.iloc[-1,0]+1
+    fps = min(int(N/duration),20)
 
-    n = epi[-1]
-    list_size_x = [[] for i in range(n+1)]
-    list_size_z = [[] for i in range(n+1)]
-    list_pos_x = [[] for i in range(n+1)]
-    list_pos_z = [[] for i in range(n+1)]
-    list_tar_x = [[] for i in range(n+1)]
-    list_tar_z = [[] for i in range(n+1)]
-
-    for i in range(len(epi)):
-        list_size_x[epi[i]].append(size_x[i])
-        list_size_z[epi[i]].append(size_z[i])
-        list_pos_x[epi[i]].append(pos_x[i])
-        list_pos_z[epi[i]].append(pos_z[i])
-        list_tar_x[epi[i]].append(tar_x[i])
-        list_tar_z[epi[i]].append(tar_z[i])
+    n_f = duration*fps
+    idx = np.linspace(0,N-N/n_f,n_f)
+    idx = [int(i) for i in idx]
 
     step = 0
-    # save pictre
-    for n in range(len(list_pos_x)):
-        step += len(list_pos_x[n])
-
+    for i in range(len(idx)-1):
         fig, axs = plt.subplots(2,1)
 
-        # plot path
-        axs[0].plot(list_pos_x[n], list_pos_z[n])
-        axs[0].scatter(list_tar_x[n], list_tar_z[n])
-        axs[0].set_xlim(0,list_size_x[n][0])
-        axs[0].set_ylim(0,list_size_z[n][0])
+        idx_fra = np.arange(idx[i], idx[i+1],1)
+        df_env_fra = df_env[df_env['epi'].isin(idx_fra)]
+        df_ag_fra = df_ag[df_env['epi'].isin(idx_fra)]
+
+        for j in idx_fra:
+            df_env_loc = df_env_fra[df_env_fra['epi'].isin([j])]
+
+            # plot path
+            axs[0].plot(df_env_loc['pos_x'], df_env_loc['pos_z'], color='grey')
+            axs[0].scatter(df_env_loc['tar_x'], df_env_loc['tar_z'], color='grey')
+            axs[0].set_xlim(0,df_env_loc['size_x'].iloc[0])
+            axs[0].set_ylim(0,df_env_loc['size_z'].iloc[0])
+
+            step += len(df_env_loc['pos_x'])
+
         axs[0].set_aspect('equal')
-        axs[0].set_title(str(int(n/len(list_pos_x)*100)) + ' %')
+        axs[0].set_title(str(int(i/n_f*100)) + ' %')
 
         # plot epsilon
-        axs[1].plot(np.arange(0,step,1), eps[0:step])
-        axs[1].set_ylim(0,step)
+        axs[1].plot(df_ag.iloc[0:step], color='grey')
+        axs[1].set_xlabel('steps')
+        axs[1].set_ylabel('epsilon')
+        axs[1].set_xlim(0,step)
         axs[1].set_ylim(0,1)
 
         # Build folder structure if it doesn't exist yet
         path = 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
-        plt.savefig(path + '/gif_' + str(n).zfill(5) + '.png', dpi=50)
+        plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50)
         plt.close()
-        print('saving frames: ' + str(int(n/len(list_pos_x)*100)) + ' %')
+        print('saving frames: ' + str(int(i/n_f*100)) + ' %')
 
     # Build GIF
-    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/path.gif', mode='I') as writer:
+    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/path.gif', mode='I', fps=fps) as writer:
         name_list = os.listdir(path)
         name_list.sort()
         n = 0
         for name in name_list:
             image = imageio.imread(path + '/' + name)
             writer.append_data(image)
-            print('generating gif: ' + str(int(n/len(list_pos_x)*100)) + ' %')
+            print('generating gif: ' + str(int(n/n_f*100)) + ' %')
             n += 1
 
     # Delete temp folder
