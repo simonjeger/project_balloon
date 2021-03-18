@@ -1,11 +1,13 @@
 from build_environment import balloon2d
 from build_agent import DQN_RND
-from analysis import plot_reward, plot_path
+from analysis import plot_reward, plot_path, plot_qmap
 
 import numpy as np
 import gym
 import matplotlib.pyplot as plt
 import torch
+from pathlib import Path
+import shutil
 
 import yaml
 import argparse
@@ -24,10 +26,17 @@ alg = DQN_RND(env)
 num_epochs = yaml_p['num_epochs']
 for i in range(num_epochs):
     log = alg.run_epoch()
+
     print('epoch: {}. return: {}'.format(i,np.round(log.get_current('real_return'),3),2))
+
+    # write in log file
+    Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/').mkdir(parents=True, exist_ok=True)
+    Q_vis = alg.visualize_q_map()
+    torch.save(Q_vis, 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
 
 alg.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_model/')
 
 # analyse
 plot_reward()
 plot_path()
+plot_qmap()

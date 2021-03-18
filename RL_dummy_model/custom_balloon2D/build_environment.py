@@ -54,7 +54,7 @@ class balloon2d(Env):
         # initialize state and time
         self.reset()
 
-        # delete old path file if it exists
+        # delete old log-file if it exists
         if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv'):
             os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
         self.epi = 0
@@ -134,7 +134,7 @@ class balloon2d(Env):
         window = np.array([window])
         self.wind_compressed = self.ae.compress(window)
 
-        self.character = character(self.size_x, self.size_z, start, target, self.T, self.wind_compressed) #weight should be 1000 kg for realistic dimensions
+        self.character = character(self.size_x, self.size_z, start, target, self.T, self.wind_compressed)
         return self.character.state
 
     def load_new_world(self):
@@ -153,3 +153,11 @@ class balloon2d(Env):
         # define world size
         self.size_x = len(self.mean_x)
         self.size_z = len(self.mean_x[0])
+
+    def character_v(self, position):
+        window = self.ae.window(self.wind_map, position[0])
+        window = np.array([window])
+        wind_compressed = self.ae.compress(window)
+        character_v = character(self.size_x, self.size_z, position, self.character.target, self.T, wind_compressed)
+
+        return character_v.state

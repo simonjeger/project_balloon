@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import imageio
 import os
+import torch
 
 import yaml
 import argparse
@@ -42,10 +43,11 @@ def plot_reward():
 
 
 def plot_path():
-    # sort by episode
+    # import from log files
     df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
     df_ag = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', names=['eps'])
 
+    # set up parameters to generate gif
     duration = yaml_p['duration']
     N = df_env.iloc[-1,0]+1
     fps = min(int(N/duration),20)
@@ -92,6 +94,75 @@ def plot_path():
 
     # Build GIF
     with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/path.gif', mode='I', fps=fps) as writer:
+        name_list = os.listdir(path)
+        name_list.sort()
+        n = 0
+        for name in name_list:
+            image = imageio.imread(path + '/' + name)
+            writer.append_data(image)
+            print('generating gif: ' + str(int(n/n_f*100)) + ' %')
+            n += 1
+
+    # Delete temp folder
+    shutil.rmtree(path)
+
+def plot_qmap():
+    # import from log files
+    df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
+
+    name_list = os.listdir('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
+    name_list.sort()
+    tensor_list = []
+    for name in name_list:
+        tensor_list.append(torch.load('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/' + name))
+
+    # set up parameters to generate gif
+    duration = yaml_p['duration']
+    N = df_env.iloc[-1,0]+1
+    fps = min(int(N/duration),20)
+
+    n_f = duration*fps
+    idx = np.linspace(0,N-N/n_f,n_f)
+    idx = [int(i) for i in idx]
+
+    step = 0
+    for i in range(len(idx)-1):
+        fig, axs = plt.subplots(4,1)
+
+        idx_fra = np.arange(idx[i], idx[i+1],1)
+        df_env_fra = df_env[df_env['epi'].isin(idx_fra)]
+
+        for j in idx_fra:
+            df_env_loc = df_env_fra[df_env_fra['epi'].isin([j])]
+            step += len(df_env_loc['pos_x'])
+
+        # plot qmap
+        a0 = np.transpose(tensor_list[i][:,:,0])
+        a1 = np.transpose(tensor_list[i][:,:,1])
+        a2 = np.transpose(tensor_list[i][:,:,2])
+        a3 = np.transpose(tensor_list[i][:,:,3])
+
+        vmin = np.min(tensor_list[i])
+        vmax = np.max(tensor_list[i])
+
+        q = axs[0].imshow(a0, vmin=vmin, vmax=vmax)
+        axs[1].imshow(a1, vmin=vmin, vmax=vmax)
+        axs[2].imshow(a2, vmin=vmin, vmax=vmax)
+        a = axs[3].imshow(a3, vmin=0, vmax=2)
+
+        axs[0].set_title(str(int(i/n_f*100)) + ' %')
+        fig.colorbar(q, ax=axs[0:3], orientation="vertical")
+        fig.colorbar(a, ax=axs[3], orientation="vertical")
+
+        # Build folder structure if it doesn't exist yet
+        path = 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
+        Path(path).mkdir(parents=True, exist_ok=True)
+        plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50)
+        plt.close()
+        print('saving frames: ' + str(int(i/n_f*100)) + ' %')
+
+    # Build GIF
+    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=fps) as writer:
         name_list = os.listdir(path)
         name_list.sort()
         n = 0

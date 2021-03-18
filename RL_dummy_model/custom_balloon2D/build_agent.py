@@ -148,3 +148,19 @@ class DQN_RND:
         self.model.load_state_dict(torch.load(path + 'dqn_weights.h5f'))
         self.target_model = copy.deepcopy(self.model)
         self.rnd.model.load_state_dict(torch.load(path + 'rnd_weights.h5f'))
+
+    def visualize_q_map(self):
+        Q_vis = np.zeros((self.env.size_x, self.env.size_z, 4))
+
+        for i in range(self.env.size_x):
+            for j in range(self.env.size_z):
+                position = np.array([i,j])
+                obs = self.env.character_v(position)
+                state = torch.Tensor(obs).unsqueeze(0)
+                Q = self.model(state)
+                Q_vis[i,j,0] = Q[0][0]
+                Q_vis[i,j,1] = Q[0][1]
+                Q_vis[i,j,2] = Q[0][2]
+                Q_vis[i,j,3] = np.argmax(Q_vis[i,j,:])
+
+        return Q_vis
