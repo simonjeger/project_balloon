@@ -137,10 +137,10 @@ def plot_qmap():
             step += len(df_env_loc['pos_x'])
 
         # plot qmap
-        a0 = np.transpose(tensor_list[i][:,:,0])
-        a1 = np.transpose(tensor_list[i][:,:,1])
-        a2 = np.transpose(tensor_list[i][:,:,2])
-        a3 = np.transpose(tensor_list[i][:,:,3])
+        a0 = np.flip(np.transpose(tensor_list[i][:,:,0]), axis=1)
+        a1 = np.flip(np.transpose(tensor_list[i][:,:,1]), axis=1)
+        a2 = np.flip(np.transpose(tensor_list[i][:,:,2]), axis=1)
+        a3 = np.flip(np.transpose(tensor_list[i][:,:,3]), axis=1)
 
         vmin = np.min(tensor_list[i])
         vmax = np.max(tensor_list[i])
@@ -157,7 +157,7 @@ def plot_qmap():
         # Build folder structure if it doesn't exist yet
         path = 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
-        plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50)
+        plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50, bbox_inches='tight')
         plt.close()
         print('saving frames: ' + str(int(i/n_f*100)) + ' %')
 

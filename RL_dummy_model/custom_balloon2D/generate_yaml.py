@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, decay, lr):
+def write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -33,15 +33,16 @@ def write(process_nr, decay, lr):
     text = text + 'bottleneck: 10' + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
-    text = text + 'num_epochs: 2000' + '\n'
+    text = text + 'num_epochs: ' + str(num_epochs) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: 10000' + '\n'
-    text = text + 'lr: ' + str(lr) + '\n'
+    text = text + 'lr: 0.005' + '\n'
     text = text + 'epsi_high: 0.9' + '\n'
-    text = text + 'epsi_low: 0.05' + '\n'
+    text = text + 'epsi_low: ' + str(epsi_low) + '\n'
     text = text + 'decay: ' + str(decay) + '\n'
+    text = text + 'rnd: ' + str(rnd) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 200' + '\n'
@@ -52,7 +53,7 @@ def write(process_nr, decay, lr):
     text = text + 'step: -0.005' + '\n'
     text = text + 'action: -0.01' + '\n'
     text = text + 'overtime: 0' + '\n'
-    text = text + 'min_distance: 1' + '\n'
+    text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
 
     text = text + '\n' + '# analysis' + '\n'
@@ -61,9 +62,12 @@ def write(process_nr, decay, lr):
     file.write(text)
     file.close()
 
-process_nr = 250
-for decay in [200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100]:
-    for lr in [0.005]:
-        for repeat in range(2):
-            write(process_nr, decay, lr)
-            process_nr += 1
+process_nr = 280
+for num_epochs in [4000, 16000]:
+    for decay in [200, 500, 1000]:
+        for epsi_low in [0.1, 0.05, 0.01]:
+            for rnd in [0, 0.5]:
+                for min_distance in [0.5, 0.75, 0.9]:
+                    for repeat in range(2):
+                        write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance)
+                        process_nr += 1

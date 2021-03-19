@@ -40,6 +40,7 @@ class DQN_RND:
         acts = env.action_space
         obs = env.observation_space
         self.model = QNet(obs.shape[0],acts.n,64)
+        #self.model.apply(self.weights_init) # initialize weights of NN (not sure if nescessary)
         self.target_model = copy.deepcopy(self.model)
         self.rnd = RND(obs.shape[0],64,124)
         self.gamma = yaml_p['gamma']
@@ -86,7 +87,8 @@ class DQN_RND:
             new_state, reward, done, info = self.env.step((action.item()))
             sum_r = sum_r + reward
             reward_i = self.rnd.get_reward(state).detach().clamp(-1.0,1.0).item()
-            combined_reward = reward + reward_i
+            #combined_reward = reward + reward_i #used to be that...
+            combined_reward = reward + reward_i*yaml_p['rnd']
             sum_tot_r += combined_reward
 
             self.replay_buffer.append([obs,action,combined_reward,new_state,done])
@@ -148,6 +150,10 @@ class DQN_RND:
         self.model.load_state_dict(torch.load(path + 'dqn_weights.h5f'))
         self.target_model = copy.deepcopy(self.model)
         self.rnd.model.load_state_dict(torch.load(path + 'rnd_weights.h5f'))
+
+    def weights_init(self, m):
+        if isinstance(m, torch.nn.Linear):
+            m.weight.data.normal_(0.0, 0.001)
 
     def visualize_q_map(self):
         Q_vis = np.zeros((self.env.size_x, self.env.size_z, 4))
