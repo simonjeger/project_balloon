@@ -59,6 +59,7 @@ def write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance):
 
     text = text + '\n' + '# logger' + '\n'
     text = text + 'duration: 30' + '\n'
+    text = text + 'fps: 20' + '\n'
     text = text + 'clear: True' + '\n'
 
     file.write(text)

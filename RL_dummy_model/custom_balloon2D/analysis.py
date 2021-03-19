@@ -50,7 +50,7 @@ def plot_path():
     # set up parameters to generate gif
     duration = yaml_p['duration']
     N = df_env.iloc[-1,0]+1
-    fps = min(int(N/duration),20)
+    fps = min(int(N/duration),yaml_p['fps'])
 
     n_f = duration*fps
     idx = np.linspace(0,N-N/n_f,n_f)
@@ -116,25 +116,9 @@ def plot_qmap():
     for name in name_list:
         tensor_list.append(torch.load('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/' + name))
 
-    # set up parameters to generate gif
-    duration = yaml_p['duration']
-    N = df_env.iloc[-1,0]+1
-    fps = min(int(N/duration),20)
-
-    n_f = duration*fps
-    idx = np.linspace(0,N-N/n_f,n_f)
-    idx = [int(i) for i in idx]
-
     step = 0
-    for i in range(len(idx)-1):
+    for i in range(len(name_list)):
         fig, axs = plt.subplots(4,1)
-
-        idx_fra = np.arange(idx[i], idx[i+1],1)
-        df_env_fra = df_env[df_env['epi'].isin(idx_fra)]
-
-        for j in idx_fra:
-            df_env_loc = df_env_fra[df_env_fra['epi'].isin([j])]
-            step += len(df_env_loc['pos_x'])
 
         # plot qmap
         a0 = np.flip(np.transpose(tensor_list[i][:,:,0]), axis=1)
@@ -150,7 +134,7 @@ def plot_qmap():
         axs[2].imshow(a2, vmin=vmin, vmax=vmax)
         a = axs[3].imshow(a3, vmin=0, vmax=2)
 
-        axs[0].set_title(str(int(i/n_f*100)) + ' %')
+        axs[0].set_title(str(int(i/len(tensor_list)*100)) + ' %')
         fig.colorbar(q, ax=axs[0:3], orientation="vertical")
         fig.colorbar(a, ax=axs[3], orientation="vertical")
 
@@ -159,17 +143,17 @@ def plot_qmap():
         Path(path).mkdir(parents=True, exist_ok=True)
         plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50, bbox_inches='tight')
         plt.close()
-        print('saving frames: ' + str(int(i/n_f*100)) + ' %')
+        print('saving frames: ' + str(int(i/len(name_list)*100)) + ' %')
 
     # Build GIF
-    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=fps) as writer:
+    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=yaml_p['fps']) as writer:
         name_list = os.listdir(path)
         name_list.sort()
         n = 0
         for name in name_list:
             image = imageio.imread(path + '/' + name)
             writer.append_data(image)
-            print('generating gif: ' + str(int(n/n_f*100)) + ' %')
+            print('generating gif: ' + str(int(n/len(name_list)*100)) + ' %')
             n += 1
 
     # Delete temp folder
