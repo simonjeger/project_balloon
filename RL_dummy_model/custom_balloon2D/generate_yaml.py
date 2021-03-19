@@ -36,6 +36,7 @@ def write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance):
     text = text + 'num_epochs: ' + str(num_epochs) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
+    text = text + 'init: True' + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: 10000' + '\n'
     text = text + 'lr: 0.005' + '\n'
@@ -56,15 +57,16 @@ def write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance):
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
 
-    text = text + '\n' + '# analysis' + '\n'
+    text = text + '\n' + '# logger' + '\n'
     text = text + 'duration: 30' + '\n'
+    text = text + 'clear: True' + '\n'
 
     file.write(text)
     file.close()
 
 process_nr = 280
-for num_epochs in [4000, 16000]:
-    for decay in [200, 500, 1000]:
+for num_epochs in [4000, 20000]:
+    for decay in [200, 1000]:
         for epsi_low in [0.1, 0.05, 0.01]:
             for rnd in [0, 0.5]:
                 for min_distance in [0.5, 0.75, 0.9]:

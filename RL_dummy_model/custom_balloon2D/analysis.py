@@ -174,3 +174,10 @@ def plot_qmap():
 
     # Delete temp folder
     shutil.rmtree(path)
+
+def clear():
+    # Delete log files
+    if yaml_p['clear']:
+        shutil.rmtree('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
+        os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
+        os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv')

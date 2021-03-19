@@ -40,7 +40,8 @@ class DQN_RND:
         acts = env.action_space
         obs = env.observation_space
         self.model = QNet(obs.shape[0],acts.n,64)
-        #self.model.apply(self.weights_init) # initialize weights of NN (not sure if nescessary)
+        if yaml_p['init']:
+            self.model.apply(self.weights_init) # delibratly initialize weights of NN as defined in function below
         self.target_model = copy.deepcopy(self.model)
         self.rnd = RND(obs.shape[0],64,124)
         self.gamma = yaml_p['gamma']
@@ -153,7 +154,7 @@ class DQN_RND:
 
     def weights_init(self, m):
         if isinstance(m, torch.nn.Linear):
-            m.weight.data.normal_(0.0, 0.001)
+            m.weight.data.normal_(0.0, 0.01)
 
     def visualize_q_map(self):
         Q_vis = np.zeros((self.env.size_x, self.env.size_z, 4))

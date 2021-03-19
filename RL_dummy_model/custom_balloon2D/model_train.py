@@ -1,6 +1,6 @@
 from build_environment import balloon2d
 from build_agent import DQN_RND
-from analysis import plot_reward, plot_path, plot_qmap
+from analysis import plot_reward, plot_path, plot_qmap, clear
 
 import numpy as np
 import gym
@@ -40,3 +40,4 @@ alg.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_mode
 plot_reward()
 plot_path()
 plot_qmap()
+clear() #only clears out log files if yaml parameter is set
