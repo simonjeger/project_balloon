@@ -66,7 +66,7 @@ def write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance):
     file.close()
 
 process_nr = 280
-for num_epochs in [4000, 20000]:
+for num_epochs in [100000]:
     for decay in [200, 1000]:
         for epsi_low in [0.1, 0.05, 0.01]:
             for rnd in [0, 0.5]:

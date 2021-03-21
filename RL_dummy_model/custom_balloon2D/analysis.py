@@ -121,13 +121,13 @@ def plot_qmap():
         fig, axs = plt.subplots(4,1)
 
         # plot qmap
-        a0 = np.flip(np.transpose(tensor_list[i][:,:,0]), axis=1)
-        a1 = np.flip(np.transpose(tensor_list[i][:,:,1]), axis=1)
-        a2 = np.flip(np.transpose(tensor_list[i][:,:,2]), axis=1)
-        a3 = np.flip(np.transpose(tensor_list[i][:,:,3]), axis=1)
+        a0 = np.flip(np.transpose(tensor_list[i][:,:,0]), axis=0)
+        a1 = np.flip(np.transpose(tensor_list[i][:,:,1]), axis=0)
+        a2 = np.flip(np.transpose(tensor_list[i][:,:,2]), axis=0)
+        a3 = np.flip(np.transpose(tensor_list[i][:,:,3]), axis=0)
 
-        vmin = np.min(tensor_list[i])
-        vmax = np.max(tensor_list[i])
+        vmin = np.min(tensor_list[i][:,:,0:3])
+        vmax = np.max(tensor_list[i][:,:,0:3])
 
         q = axs[0].imshow(a0, vmin=vmin, vmax=vmax)
         axs[1].imshow(a1, vmin=vmin, vmax=vmax)

@@ -33,7 +33,6 @@ ratio = np.floor(num_epochs/n_f)
 
 for i in range(num_epochs):
     log = alg.run_epoch()
-
     print('epoch: {}. return: {}'.format(i,np.round(log.get_current('real_return'),3),2))
 
     # write in log file
@@ -42,6 +41,10 @@ for i in range(num_epochs):
         Q_vis = alg.visualize_q_map()
         torch.save(Q_vis, 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
 
+        # save weights every now and then as a backup
+        alg.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_model/')
+
+# save weights at the end
 alg.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_model/')
 
 # analyse

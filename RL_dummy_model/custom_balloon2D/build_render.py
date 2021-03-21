@@ -60,8 +60,8 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
 
     # text
     myfont = pygame.font.SysFont('Arial', 15, bold = True)
-    reward_step = myfont.render('reward_step: ' + str(round(reward_step,2)), False, pygame.Color('LightGray'))
-    reward_epi = myfont.render('reward_epi: ' + str(round(reward_epi,2)), False, pygame.Color('LightGray'))
+    reward_step = myfont.render('reward_step: ' + str(round(reward_step,4)), False, pygame.Color('LightGray'))
+    reward_epi = myfont.render('reward_epi: ' + str(round(reward_epi,4)), False, pygame.Color('LightGray'))
     residual = myfont.render('residual: ' + str(np.round(character.state[0:2],2)), False, pygame.Color('LightGray'))
     border = myfont.render('border: ' + str(np.round(character.state[2:6],2)), False, pygame.Color('LightGray'))
     time_remaining = myfont.render('time remaining: ' + str(character.state[6]), False, pygame.Color('LightGray'))

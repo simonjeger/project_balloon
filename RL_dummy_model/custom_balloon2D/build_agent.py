@@ -55,7 +55,6 @@ class DQN_RND:
         self.count = 0
         self.decay = yaml_p['decay']
         self.eps = self.epsi_high
-        #self.update_target_step = yaml_p['update_target_step']
         self.log = logger()
         self.log.add_log('real_return')
         self.log.add_log('combined_return')
@@ -73,8 +72,7 @@ class DQN_RND:
         sum_tot_r = 0
         mean_loss = mean_val()
 
-        self.target_model.load_state_dict(self.model.state_dict())
-
+        import copy
         while True:
             self.steps += 1
             self.eps = self.epsi_low + (self.epsi_high-self.epsi_low) * (np.exp(-1.0 * self.steps/self.decay))
@@ -111,6 +109,7 @@ class DQN_RND:
             #self.env.render(mode=True)
 
             if done:
+                self.target_model.load_state_dict(self.model.state_dict())
                 break
 
         self.log.add_item('real_return',sum_r)
@@ -157,17 +156,19 @@ class DQN_RND:
             m.weight.data.normal_(0.0, 0.01)
 
     def visualize_q_map(self):
-        Q_vis = np.zeros((self.env.size_x, self.env.size_z, 4))
+        res = 1
 
-        for i in range(self.env.size_x):
-            for j in range(self.env.size_z):
-                position = np.array([i,j])
+        Q_vis = np.zeros((self.env.size_x*res, self.env.size_z*res, 4))
+        for i in range(self.env.size_x*res):
+            for j in range(self.env.size_z*res):
+                position = np.array([i/10,j/10])
                 obs = self.env.character_v(position)
                 state = torch.Tensor(obs).unsqueeze(0)
                 Q = self.model(state)
+
                 Q_vis[i,j,0] = Q[0][0]
                 Q_vis[i,j,1] = Q[0][1]
                 Q_vis[i,j,2] = Q[0][2]
-                Q_vis[i,j,3] = np.argmax(Q_vis[i,j,:])
+                Q_vis[i,j,3] = torch.argmax(Q,dim=1)
 
         return Q_vis

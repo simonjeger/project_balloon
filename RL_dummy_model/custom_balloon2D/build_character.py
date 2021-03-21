@@ -23,7 +23,8 @@ class character():
         self.min_z = self.position[1] - 0
         self.max_z = self.size_z - self.position[1]
 
-        self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z, self.t], wind_compressed.flatten()), axis=0)
+        #self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z, self.t], wind_compressed.flatten()), axis=0)
+        self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], wind_compressed.flatten()), axis=0)
         self.path = [self.position.copy(), self.position.copy()]
         self.min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2)
 
@@ -38,7 +39,8 @@ class character():
         self.max_x = self.size_x - self.position[0]
         self.min_z = self.position[1] - 0
         self.max_z = self.size_z - self.position[1]
-        self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z, self.t], wind_compressed.flatten()), axis=0)
+        #self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z, self.t], wind_compressed.flatten()), axis=0)
+        self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], wind_compressed.flatten()), axis=0)
 
         min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2)
         if min_distance < self.min_distance:
