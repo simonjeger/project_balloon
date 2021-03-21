@@ -116,7 +116,6 @@ def plot_qmap():
     for name in name_list:
         tensor_list.append(torch.load('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/' + name))
 
-    step = 0
     for i in range(len(name_list)):
         fig, axs = plt.subplots(4,1)
 
@@ -145,8 +144,12 @@ def plot_qmap():
         plt.close()
         print('saving frames: ' + str(int(i/len(name_list)*100)) + ' %')
 
+    # set up parameters to generate gif
+    duration = yaml_p['duration']
+    fps = min(int(len(name_list)/duration),yaml_p['fps'])
+
     # Build GIF
-    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=yaml_p['fps']) as writer:
+    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=fps) as writer:
         name_list = os.listdir(path)
         name_list.sort()
         n = 0

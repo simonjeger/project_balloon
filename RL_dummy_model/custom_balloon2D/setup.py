@@ -21,7 +21,7 @@ with open(args.yaml_file, 'rt') as fh:
 # Build folder structure if it doesn't exist yet
 Path('process' + str(yaml_p['process_nr']).zfill(5)).mkdir(parents=True, exist_ok=True)
 Path('process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder').mkdir(parents=True, exist_ok=True)
-Path('process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_model').mkdir(parents=True, exist_ok=True)
+Path('process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_agent').mkdir(parents=True, exist_ok=True)
 Path('data').mkdir(parents=True, exist_ok=True)
 Path('data/test').mkdir(parents=True, exist_ok=True)
 Path('data/test/image').mkdir(parents=True, exist_ok=True)
@@ -30,7 +30,6 @@ Path('data/test/tensor_comp').mkdir(parents=True, exist_ok=True)
 Path('data/train').mkdir(parents=True, exist_ok=True)
 Path('data/train/image').mkdir(parents=True, exist_ok=True)
 Path('data/train/tensor').mkdir(parents=True, exist_ok=True)
-Path('data/train/tensor_comp').mkdir(parents=True, exist_ok=True)
 
 shutil.copy(args.yaml_file, 'process' + str(yaml_p['process_nr']).zfill(5))
 

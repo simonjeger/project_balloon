@@ -4,12 +4,12 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance):
+def write(process_nr, num_epochs, decay, epsi_low, min_distance):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('bsub -W 24:00 -R "rusage[mem=30000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -W 24:00 -R "rusage[mem=100000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -30,25 +30,23 @@ def write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance):
 
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'window_size: 3' + '\n'
-    text = text + 'bottleneck: 10' + '\n'
+    text = text + 'bottleneck: 2' + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'num_epochs: ' + str(num_epochs) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
-    text = text + 'init: True' + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: 10000' + '\n'
     text = text + 'lr: 0.005' + '\n'
     text = text + 'epsi_high: 0.9' + '\n'
     text = text + 'epsi_low: ' + str(epsi_low) + '\n'
     text = text + 'decay: ' + str(decay) + '\n'
-    text = text + 'rnd: ' + str(rnd) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
-    text = text + 'T: 200' + '\n'
+    text = text + 'T: 300' + '\n'
     text = text + 'start: [2,0]' + '\n'
-    text = text + 'target: [28,6]' + '\n'
+    text = text + 'target: [20,7]' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: -0.005' + '\n'
@@ -66,11 +64,10 @@ def write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance):
     file.close()
 
 process_nr = 280
-for num_epochs in [100000]:
-    for decay in [200, 1000]:
+for num_epochs in [50000]:
+    for decay in [10000, 50000, 1000000]:
         for epsi_low in [0.1, 0.05, 0.01]:
-            for rnd in [0, 0.5]:
-                for min_distance in [0.5, 0.75, 0.9]:
-                    for repeat in range(2):
-                        write(process_nr, num_epochs, decay, epsi_low, rnd, min_distance)
-                        process_nr += 1
+            for min_distance in [0.85]:
+                for repeat in range(2):
+                    write(process_nr, num_epochs, decay, epsi_low, min_distance)
+                    process_nr += 1

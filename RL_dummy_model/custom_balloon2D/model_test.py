@@ -1,5 +1,5 @@
 from build_environment import balloon2d
-from build_agent import DQN_RND
+from build_agent import Agent
 from analysis import plot_reward, plot_path
 
 import numpy as np
@@ -18,21 +18,10 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 env = balloon2d('train')
-alg = DQN_RND(env)
-alg.load_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_model/')
+ag = Agent(env)
+ag.load_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
-for i in range(15):
-    # reset
-    obs = env.reset()
-
-    # loop
-    while True:
-        x = torch.Tensor(obs).unsqueeze(0)
-        Q = alg.model(x)
-        action = Q.argmax().detach().item()
-        new_obs, reward, done, info = env.step(action)
-        obs = new_obs
-        env.render(mode=True)
-
-        if done:
-            break
+with ag.agent.eval_mode():
+    for i in range(15):
+        print('epoch: ' + str(i))
+        log = ag.run_epoch(True)
