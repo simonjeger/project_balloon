@@ -103,7 +103,8 @@ class balloon2d(Env):
                 done = True
 
         else:
-            self.reward_step = yaml_p['bounds'] + 1/self.character.min_distance*yaml_p['min_distance']
+            init_min = np.sqrt((self.character.target[0] - self.character.start[0])**2 + (self.character.target[1] - self.character.start[1])**2)
+            self.reward_step = yaml_p['bounds'] + (init_min - self.character.min_distance)/init_min * yaml_p['min_distance']
             self.character.t = 0
             done = True
 

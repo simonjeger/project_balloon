@@ -19,8 +19,8 @@ def generate_wind_map(size_x, size_z, num, train_or_test):
         for i in range(m):
             rand_x = int(size_x - size_x/m*i - 1)
             rand_z = int(size_z - size_z/m*i - 1)
-            #mean_x[:, rand_z] = gauss(seed_x*(-1)**i,0.01)
-            mean_x[:, rand_z] = gauss(seed_x,0.01)
+            mean_x[:, rand_z] = gauss(seed_x*(-1)**i,0.01) #non-uniform
+            #mean_x[:, rand_z] = gauss(seed_x,0.01) #uniform
             mean_z[rand_x, :] = gauss(0,0.01)
             sig_xz[rand_x, rand_z] = abs(gauss(0,0.001))
 

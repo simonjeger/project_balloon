@@ -46,6 +46,10 @@ class Agent:
         decay = yaml_p['decay']
         explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps=decay, random_action_func=env.action_space.sample)
 
+        replay_start_size = yaml_p['replay_start_size']
+        update_interval = yaml_p['update_interval']
+        target_update_interval = yaml_p['target_update_interval']
+
         phi = lambda x: x.astype(np.float32, copy=False)
         gpu = -1
 
@@ -55,10 +59,10 @@ class Agent:
             replay_buffer, #number of experiences I train my NN with
             gamma, #discount factor
             explorer, #how to choose next action
-            replay_start_size=500, #number of experiences in replay buffer when training begins
-            update_interval=1,
-            target_update_interval=5, #taget network is copy of QFunction that is held constant to serve as a stable target for learning for fixed number of timesteps
-            phi=phi,
+            replay_start_size=replay_start_size, #number of experiences in replay buffer when training begins
+            update_interval=update_interval,
+            target_update_interval=target_update_interval, #taget network is copy of QFunction that is held constant to serve as a stable target for learning for fixed number of timesteps
+            phi=phi, #feature extractor applied to observations
             gpu=gpu, #actual GPU used for computation
         )
 
@@ -75,7 +79,7 @@ class Agent:
             new_state, reward, done, _ = self.env.step(action)
             sum_r = sum_r + reward
 
-            self.agent.observe(new_state, reward, done, False)
+            self.agent.observe(new_state, reward, done, False) #False is b.c. termination via time is handeled by environment
 
             df = pd.DataFrame([[self.agent.explorer.epsilon]])
             df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)

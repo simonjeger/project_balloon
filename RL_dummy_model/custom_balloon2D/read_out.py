@@ -1,5 +1,3 @@
-from build_environment import balloon2d
-from build_agent import DQN_RND
 from analysis import plot_reward, plot_path, plot_qmap, clear
 
 import numpy as np
@@ -30,6 +28,6 @@ ratio = np.floor(num_epochs/n_f)
 
 # analyse
 plot_reward()
-#plot_path()
+plot_path()
 plot_qmap()
 #clear() #only clears out log files if yaml parameter is set

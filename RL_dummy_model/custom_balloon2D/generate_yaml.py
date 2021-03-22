@@ -42,6 +42,9 @@ def write(process_nr, num_epochs, decay, epsi_low, min_distance):
     text = text + 'epsi_high: 0.9' + '\n'
     text = text + 'epsi_low: ' + str(epsi_low) + '\n'
     text = text + 'decay: ' + str(decay) + '\n'
+    text = text + 'replay_start_size: 500' + '\n'
+    text = text + 'update_interval: 1' + '\n'
+    text = text + 'target_update_interval: 5' + '\n'm
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 300' + '\n'

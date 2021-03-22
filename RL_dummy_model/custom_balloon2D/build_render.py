@@ -62,16 +62,16 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     myfont = pygame.font.SysFont('Arial', 15, bold = True)
     reward_step = myfont.render('reward_step: ' + str(round(reward_step,4)), False, pygame.Color('LightGray'))
     reward_epi = myfont.render('reward_epi: ' + str(round(reward_epi,4)), False, pygame.Color('LightGray'))
-    residual = myfont.render('residual: ' + str(np.round(character.state[0:2],2)), False, pygame.Color('LightGray'))
-    border = myfont.render('border: ' + str(np.round(character.state[2:6],2)), False, pygame.Color('LightGray'))
-    time_remaining = myfont.render('time remaining: ' + str(character.state[6]), False, pygame.Color('LightGray'))
+    residual = myfont.render('residual: ' + str(np.round(character.state[0:2],4)), False, pygame.Color('LightGray'))
+    border = myfont.render('border: ' + str(np.round(character.state[2:6],4)), False, pygame.Color('LightGray'))
+    min_distance = myfont.render('min_distance: ' + str(np.round(character.min_distance,4)), False, pygame.Color('LightGray'))
     wind_compressed = myfont.render('wind_compressed: ' + str(np.round(character.state[7:],2)), False, pygame.Color('LightGray'))
 
     screen.blit(reward_step,(10,10))
     screen.blit(reward_epi,(10,25))
     screen.blit(residual,(10,55))
     screen.blit(border,(10,70))
-    screen.blit(time_remaining,(10,85))
+    screen.blit(min_distance,(10,85))
     screen.blit(wind_compressed,(10,100))
 
     # updating the window
