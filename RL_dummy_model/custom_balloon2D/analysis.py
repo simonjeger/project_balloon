@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.pylab as pl
 import pandas as pd
 from pathlib import Path
 import shutil
@@ -56,6 +57,12 @@ def plot_path():
     idx = np.linspace(0,N-N/n_f,n_f)
     idx = [int(i) for i in idx]
 
+    vmin = min(df_env['rew_epi'])
+    vmax = max(df_env['rew_epi'])
+    vn = 100
+    spectrum = np.linspace(vmin, vmax, vn)
+    colors = pl.cm.jet(np.linspace(0,1,vn))
+
     step = 0
     for i in range(len(idx)-1):
         fig, axs = plt.subplots(2,1)
@@ -67,9 +74,11 @@ def plot_path():
         for j in idx_fra:
             df_env_loc = df_env_fra[df_env_fra['epi'].isin([j])]
 
+            c = np.argmin(np.abs(spectrum - df_env_loc['rew_epi'].iloc[-1]))
+
             # plot path
-            axs[0].plot(df_env_loc['pos_x'], df_env_loc['pos_z'], color='grey')
-            axs[0].scatter(df_env_loc['tar_x'], df_env_loc['tar_z'], color='grey')
+            axs[0].plot(df_env_loc['pos_x'], df_env_loc['pos_z'], color=colors[c])
+            axs[0].scatter(df_env_loc['tar_x'], df_env_loc['tar_z'], s=20, facecolors='none', edgecolors='grey')
             axs[0].set_xlim(0,df_env_loc['size_x'].iloc[0])
             axs[0].set_ylim(0,df_env_loc['size_z'].iloc[0])
 

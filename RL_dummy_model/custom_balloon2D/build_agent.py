@@ -36,32 +36,31 @@ class Agent:
         acts = env.action_space
         obs = env.observation_space
         self.qfunction = QFunction(obs.shape[0],acts.n)
+
+        optimizer = torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']) #used to be 1e-2
         gamma = yaml_p['gamma']
-        optimizer = torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']) #used to be 1e-3
-        buffer_size = yaml_p['buffer_size']
+        replay_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size'])
+
         epsi_high = yaml_p['epsi_high']
         epsi_low = yaml_p['epsi_low']
         decay = yaml_p['decay']
+        explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps=decay, random_action_func=env.action_space.sample)
 
-        explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps = decay, random_action_func=env.action_space.sample)
-        replay_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=10 ** 6)
         phi = lambda x: x.astype(np.float32, copy=False)
         gpu = -1
 
         self.agent = pfrl.agents.DQN(
             self.qfunction,
-            optimizer,
-            replay_buffer,
-            gamma,
-            explorer,
-            replay_start_size=500,
+            optimizer, #in my case ADAMS
+            replay_buffer, #number of experiences I train my NN with
+            gamma, #discount factor
+            explorer, #how to choose next action
+            replay_start_size=500, #number of experiences in replay buffer when training begins
             update_interval=1,
-            target_update_interval=100,
+            target_update_interval=5, #taget network is copy of QFunction that is held constant to serve as a stable target for learning for fixed number of timesteps
             phi=phi,
-            gpu=gpu,
+            gpu=gpu, #actual GPU used for computation
         )
-
-        replay_buffer = deque(maxlen=buffer_size)
 
         # initialize log file
         if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv'):
@@ -89,10 +88,10 @@ class Agent:
                 break
 
     def save_weights(self, path):
-        self.agent.save(path + 'weights_agent.h5f')
+        self.agent.save(path + 'weights_agent')
 
     def load_weights(self, path):
-        self.agent.load(path + 'weights_agent.h5f')
+        self.agent.load(path + 'weights_agent')
 
     def visualize_q_map(self):
         res = 1

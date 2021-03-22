@@ -9,7 +9,7 @@ def write(process_nr, num_epochs, decay, epsi_low, min_distance):
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('bsub -W 24:00 -R "rusage[mem=100000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -W 24:00 -R "rusage[mem=30000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -49,7 +49,7 @@ def write(process_nr, num_epochs, decay, epsi_low, min_distance):
     text = text + 'target: [20,7]' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
-    text = text + 'step: -0.005' + '\n'
+    text = text + 'step: -0.001' + '\n'
     text = text + 'action: -0.01' + '\n'
     text = text + 'overtime: 0' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
@@ -63,11 +63,11 @@ def write(process_nr, num_epochs, decay, epsi_low, min_distance):
     file.write(text)
     file.close()
 
-process_nr = 280
-for num_epochs in [50000]:
-    for decay in [10000, 50000, 1000000]:
-        for epsi_low in [0.1, 0.05, 0.01]:
-            for min_distance in [0.85]:
+process_nr = 300
+for num_epochs in [10000]:
+    for decay in [1000, 50000, 100000]:
+        for epsi_low in [0.2, 0.1, 0.01]:
+            for min_distance in [0.5, 0.85]:
                 for repeat in range(2):
                     write(process_nr, num_epochs, decay, epsi_low, min_distance)
                     process_nr += 1
