@@ -29,14 +29,19 @@ num_epochs = yaml_p['num_epochs']
 duration = yaml_p['duration']
 fps = min(int(num_epochs/duration),yaml_p['fps'])
 n_f = duration*fps
-ratio = np.floor(num_epochs/n_f)
+ratio = num_epochs/n_f
+print(duration)
+print(fps)
+print(n_f)
+print(num_epochs)
+print(ratio)
 
 for i in range(num_epochs):
     print('epoch: ' + str(i))
     log = ag.run_epoch(False)
 
     # write in log file
-    if i%ratio == 0:
+    if np.floor(i%ratio) == 0:
         Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/').mkdir(parents=True, exist_ok=True)
         Q_vis = ag.visualize_q_map()
         torch.save(Q_vis, 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')

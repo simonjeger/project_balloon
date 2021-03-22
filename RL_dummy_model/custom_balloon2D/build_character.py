@@ -1,6 +1,7 @@
 import numpy as np
 import scipy
 from random import gauss
+import copy
 
 class character():
     def __init__(self, size_x, size_z, start, target, T, wind_compressed):
@@ -16,7 +17,7 @@ class character():
         self.t = T
         self.action = 2
 
-        self.position = self.start
+        self.position = copy.copy(self.start)
         self.residual = self.target - self.position
         self.min_x = self.position[0] - 0
         self.max_x = self.size_x - self.position[0]

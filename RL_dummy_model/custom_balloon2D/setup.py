@@ -36,7 +36,7 @@ shutil.copy(args.yaml_file, 'process' + str(yaml_p['process_nr']).zfill(5))
 size_x = yaml_p['size_x']
 size_z = yaml_p['size_z']
 
-#generate_wind_map(size_x, size_z, 200, 'train')
+#generate_wind_map(size_x, size_z, 1, 'train')
 #generate_wind_map(size_x, size_z, 100, 'test')
 
 #visualize_wind_map('train')
