@@ -36,6 +36,7 @@ class Agent:
         acts = env.action_space
         obs = env.observation_space
         self.qfunction = QFunction(obs.shape[0],acts.n)
+        #self.qfunction.apply(self.weights_init) # delibratly initialize weights of NN as defined in function below
 
         optimizer = torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']) #used to be 1e-2
         gamma = yaml_p['gamma']
@@ -53,7 +54,7 @@ class Agent:
         phi = lambda x: x.astype(np.float32, copy=False)
         gpu = -1
 
-        self.agent = pfrl.agents.DQN(
+        self.agent = pfrl.agents.DoubleDQN(
             self.qfunction,
             optimizer, #in my case ADAMS
             replay_buffer, #number of experiences I train my NN with
@@ -88,8 +89,13 @@ class Agent:
                 self.env.render(mode=True)
 
             if done:
-                print('reward: ' + str(sum_r))
                 break
+
+        return sum_r
+
+    def weights_init(self, m):
+        if isinstance(m, torch.nn.Linear):
+            m.weight.data.normal_(0.0, 0.0001)
 
     def save_weights(self, path):
         self.agent.save(path + 'weights_agent')
@@ -100,17 +106,68 @@ class Agent:
     def visualize_q_map(self):
         res = 1
 
-        Q_vis = np.zeros((self.env.size_x*res, self.env.size_z*res,4))
+        Q_vis = np.zeros((self.env.size_x*res, self.env.size_z*res,8))
         for i in range(self.env.size_x*res):
             for j in range(self.env.size_z*res):
-                position = np.array([i/10,j/10])
+                position = np.array([int(i/res),int(j/res)])
                 obs = self.env.character_v(position)
                 state = torch.Tensor(obs).unsqueeze(0)
-                Q = self.qfunction.forward(state)
+                Q = self.agent.model.forward(state)
+                Q_tar = self.agent.target_model.forward(state)
 
+                # model
                 Q_vis[i,j,0] = Q.q_values[0][0]
                 Q_vis[i,j,1] = Q.q_values[0][1]
                 Q_vis[i,j,2] = Q.q_values[0][2]
                 Q_vis[i,j,3] = Q.greedy_actions
 
+                # target model
+                Q_vis[i,j,4] = Q_tar.q_values[0][0]
+                Q_vis[i,j,5] = Q_tar.q_values[0][1]
+                Q_vis[i,j,6] = Q_tar.q_values[0][2]
+                Q_vis[i,j,7] = Q_tar.greedy_actions
+
         return Q_vis
+
+    def run_fake_epoch(self, j,render):
+        obs = self.env.reset()
+        sum_r = 0
+
+        duration = yaml_p['T']
+        if j<150:
+            list_0 = [2]*1
+            list_1 = [1]*j
+            list_2 = [2]*(duration - j)
+            list_3 = []
+        elif j<250:
+            j-=150
+            list_0 = [2]*1
+            list_1 = [2]*j
+            list_2 = [0]*j
+            list_3 = [1]*(duration - j)
+        else:
+            j-=250
+            list_0 = [0]*duration
+            list_1 = []
+            list_2 = []
+            list_3 = []
+
+        list = list_0 + list_1 + list_2 + list_3
+
+        for i in range(duration):
+            action = self.agent.act(obs)
+            action = list[i]
+            new_state, reward, done, _ = self.env.step(action)
+            sum_r = sum_r + reward
+
+            self.agent.observe(new_state, reward, done, False) #False is b.c. termination via time is handeled by environment
+            df = pd.DataFrame([[self.agent.explorer.epsilon]])
+            df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
+
+            if render:
+                self.env.render(mode=True)
+
+            if done:
+                break
+
+        return sum_r

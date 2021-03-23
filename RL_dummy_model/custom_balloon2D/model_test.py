@@ -23,5 +23,5 @@ ag.load_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
 with ag.agent.eval_mode():
     for i in range(15):
-        print('epoch: ' + str(i))
         log = ag.run_epoch(True)
+        print('epoch: ' + str(i) + ' reward: ' + str(log))

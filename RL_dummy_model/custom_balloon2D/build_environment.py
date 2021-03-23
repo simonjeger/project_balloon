@@ -107,7 +107,7 @@ class balloon2d(Env):
             self.reward_step = yaml_p['bounds'] + (init_min - self.character.min_distance)/init_min * yaml_p['min_distance']
             self.character.t = 0
             done = True
-            
+
         self.reward_epi += self.reward_step
         return done
 

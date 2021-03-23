@@ -34,6 +34,7 @@ def write(process_nr, num_epochs, buffer_size, lr, epsi_low, decay, replay_start
 
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'num_epochs: ' + str(num_epochs) + '\n'
+    text = text + 'phase: 5' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'gamma: 0.95' + '\n'
@@ -71,10 +72,10 @@ for num_epochs in [50000]:
     for buffer_size in [1000000]:
         for lr in [0.01, 0.005, 0.001]:
             for epsi_low in [0.2, 0.05]:
-                for decay in [50000, 100000]:
-                    for replay_start_size in [10000, 100000]:
-                        for update_interval in [1, 10]:
-                            for target_update_interval in [5, 100]:
+                for decay in [50000, 100000, 200000]:
+                    for replay_start_size in [1000]:
+                        for update_interval in [1]:
+                            for target_update_interval in [100, 200]:
                                 for min_distance in [0.9]:
                                     for repeat in range(2):
                                         write(process_nr, num_epochs, buffer_size, lr, epsi_low, decay, replay_start_size, update_interval, target_update_interval, min_distance)

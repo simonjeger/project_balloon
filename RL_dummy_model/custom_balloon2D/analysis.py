@@ -126,25 +126,43 @@ def plot_qmap():
         tensor_list.append(torch.load('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/' + name))
 
     for i in range(len(name_list)):
-        fig, axs = plt.subplots(4,1)
+        fig, axs = plt.subplots(4,2)
 
         # plot qmap
-        a0 = np.flip(np.transpose(tensor_list[i][:,:,0]), axis=0)
-        a1 = np.flip(np.transpose(tensor_list[i][:,:,1]), axis=0)
-        a2 = np.flip(np.transpose(tensor_list[i][:,:,2]), axis=0)
-        a3 = np.flip(np.transpose(tensor_list[i][:,:,3]), axis=0)
+        q0 = np.flip(np.transpose(tensor_list[i][:,:,0]), axis=0)
+        q1 = np.flip(np.transpose(tensor_list[i][:,:,1]), axis=0)
+        q2 = np.flip(np.transpose(tensor_list[i][:,:,2]), axis=0)
+        q3 = np.flip(np.transpose(tensor_list[i][:,:,3]), axis=0)
 
-        vmin = np.min(tensor_list[i][:,:,0:3])
-        vmax = np.max(tensor_list[i][:,:,0:3])
+        a0 = np.flip(np.transpose(tensor_list[i][:,:,4]), axis=0)
+        a1 = np.flip(np.transpose(tensor_list[i][:,:,5]), axis=0)
+        a2 = np.flip(np.transpose(tensor_list[i][:,:,6]), axis=0)
+        a3 = np.flip(np.transpose(tensor_list[i][:,:,7]), axis=0)
 
-        q = axs[0].imshow(a0, vmin=vmin, vmax=vmax)
-        axs[1].imshow(a1, vmin=vmin, vmax=vmax)
-        axs[2].imshow(a2, vmin=vmin, vmax=vmax)
-        a = axs[3].imshow(a3, vmin=0, vmax=2)
+        vmin_q = np.min(tensor_list[i][:,:,0:3])
+        vmax_q = np.max(tensor_list[i][:,:,0:3])
 
-        axs[0].set_title(str(int(i/len(tensor_list)*100)) + ' %')
-        fig.colorbar(q, ax=axs[0:3], orientation="vertical")
-        fig.colorbar(a, ax=axs[3], orientation="vertical")
+        vmin_a = np.min(tensor_list[i][:,:,4:7])
+        vmax_a = np.max(tensor_list[i][:,:,4:7])
+
+        img_02 = axs[0,0].imshow(q0, vmin=vmin_q, vmax=vmax_q)
+        axs[1,0].imshow(q1, vmin=vmin_q, vmax=vmax_q)
+        axs[2,0].imshow(q2, vmin=vmin_q, vmax=vmax_q)
+        img_3 = axs[3,0].imshow(q3, vmin=0, vmax=2)
+
+        img_46 = axs[0,1].imshow(a0, vmin=vmin_a, vmax=vmax_a)
+        axs[1,1].imshow(a1, vmin=vmin_a, vmax=vmax_a)
+        axs[2,1].imshow(a2, vmin=vmin_a, vmax=vmax_a)
+        img_7 = axs[3,1].imshow(a3, vmin=0, vmax=2)
+
+        axs[0,0].set_title('model')
+        axs[0,1].set_title('target model')
+        fig.colorbar(img_02, ax=axs[0:3,0], orientation="vertical")
+        fig.colorbar(img_3, ax=axs[3,0], orientation="vertical")
+        fig.colorbar(img_46, ax=axs[0:3,1], orientation="vertical")
+        fig.colorbar(img_7, ax=axs[3,1], orientation="vertical")
+
+        fig.suptitle(str(int(i/len(tensor_list)*100)) + ' %')
 
         # Build folder structure if it doesn't exist yet
         path = 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'

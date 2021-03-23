@@ -27,10 +27,11 @@ def generate_wind_map(size_x, size_z, num, train_or_test):
             mean_z = gaussian_filter(mean_z, sigma = 5)
             sig_xz = gaussian_filter(sig_xz, sigma = 5)
 
+        #mean_x *= 0
+        #mean_x += 1/3
         mean_x *= 0
-        mean_x += 1/3
-        mean_z *= 10e-6
-        sig_xz *= 10e-6
+        mean_z *= 0
+        sig_xz *= 0
 
         sig_xz *= 0 # deterministic case
 
