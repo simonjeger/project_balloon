@@ -36,8 +36,8 @@ current_phase = 0
 best_phase = -np.inf
 
 for i in range(num_epochs):
-    # run perfect fake episode
-    #if (0 < i) & (i < 290):
+    # run exploring fake episode
+    #if (0 < i) & (i < 2000):
     if False:
         log = ag.run_fake_epoch(i,False)
         print('fake epoch: ' + str(i) + ' reward: ' + str(log))

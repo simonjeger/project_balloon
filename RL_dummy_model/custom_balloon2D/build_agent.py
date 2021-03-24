@@ -61,8 +61,10 @@ class Agent:
             gamma, #discount factor
             explorer, #how to choose next action
             replay_start_size=replay_start_size, #number of experiences in replay buffer when training begins
-            update_interval=update_interval,
-            target_update_interval=target_update_interval, #taget network is copy of QFunction that is held constant to serve as a stable target for learning for fixed number of timesteps
+            update_interval=99999,
+            target_update_method='soft',
+            soft_update_tau=1, #taget network is copy of QFunction that is held constant to serve as a stable target for learning for fixed number of timesteps
+            target_update_interval=99999,
             phi=phi, #feature extractor applied to observations
             gpu=gpu, #actual GPU used for computation
         )
@@ -76,11 +78,11 @@ class Agent:
         sum_r = 0
 
         while True:
-            action = self.agent.act(obs)
-            new_state, reward, done, _ = self.env.step(action)
-            sum_r = sum_r + reward
+            action = self.agent.act(obs) #uses self.agent.model to decide next step
+            obs, reward, done, _ = self.env.step(action)
 
-            self.agent.observe(new_state, reward, done, False) #False is b.c. termination via time is handeled by environment
+            sum_r = sum_r + reward
+            self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
 
             df = pd.DataFrame([[self.agent.explorer.epsilon]])
             df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
@@ -89,6 +91,7 @@ class Agent:
                 self.env.render(mode=True)
 
             if done:
+                self.agent.replay_updater.update_if_necessary(99999)
                 break
 
         return sum_r
@@ -133,34 +136,53 @@ class Agent:
         obs = self.env.reset()
         sum_r = 0
 
-        duration = yaml_p['T']
+        if j > 300:
+            j-=300
+
+        if j > 600:
+            j-=600
+
+        if j > 900:
+            j-=900
+
+        if j > 1200:
+            j-=1200
+
+        T = yaml_p['T']
+
         if j<150:
             list_0 = [2]*1
             list_1 = [1]*j
-            list_2 = [2]*(duration - j)
+            list_2 = [2]*(T - j)
             list_3 = []
         elif j<250:
             j-=150
             list_0 = [2]*1
             list_1 = [2]*j
             list_2 = [0]*j
-            list_3 = [1]*(duration - j)
+            list_3 = [1]*(T - j)
         else:
             j-=250
-            list_0 = [0]*duration
+            list_0 = [0]*T
             list_1 = []
             list_2 = []
             list_3 = []
 
         list = list_0 + list_1 + list_2 + list_3
 
-        for i in range(duration):
+        """# perfect trajectory
+        list_0 = [2]*18
+        list_1 = [0]*12
+        list_2 = [1]*(T)
+        list = list_0 + list_1 + list_2"""
+
+        for i in range(T):
             action = self.agent.act(obs)
             action = list[i]
-            new_state, reward, done, _ = self.env.step(action)
+            obs, reward, done, _ = self.env.step(action)
             sum_r = sum_r + reward
 
-            self.agent.observe(new_state, reward, done, False) #False is b.c. termination via time is handeled by environment
+            self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
             df = pd.DataFrame([[self.agent.explorer.epsilon]])
             df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
 

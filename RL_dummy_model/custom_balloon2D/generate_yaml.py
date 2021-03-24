@@ -9,7 +9,7 @@ def write(process_nr, num_epochs, buffer_size, lr, epsi_low, decay, replay_start
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('bsub -W 24:00 -R "rusage[mem=30000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -W 24:00 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -67,16 +67,16 @@ def write(process_nr, num_epochs, buffer_size, lr, epsi_low, decay, replay_start
     file.write(text)
     file.close()
 
-process_nr = 340
+process_nr = 420
 for num_epochs in [50000]:
     for buffer_size in [1000000]:
-        for lr in [0.01, 0.005, 0.001]:
+        for lr in [0.005, 0.001, 0.0005]:
             for epsi_low in [0.2, 0.05]:
                 for decay in [50000, 100000, 200000]:
                     for replay_start_size in [1000]:
                         for update_interval in [1]:
-                            for target_update_interval in [100, 200]:
+                            for target_update_interval in [100]:
                                 for min_distance in [0.9]:
-                                    for repeat in range(2):
+                                    for repeat in range(3):
                                         write(process_nr, num_epochs, buffer_size, lr, epsi_low, decay, replay_start_size, update_interval, target_update_interval, min_distance)
                                         process_nr += 1
