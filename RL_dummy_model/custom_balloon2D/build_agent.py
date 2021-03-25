@@ -4,6 +4,7 @@ from collections import deque
 import os
 import pandas as pd
 import pfrl
+import copy
 
 import yaml
 import argparse
@@ -38,36 +39,38 @@ class Agent:
         self.qfunction = QFunction(obs.shape[0],acts.n)
         #self.qfunction.apply(self.weights_init) # delibratly initialize weights of NN as defined in function below
 
-        optimizer = torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']) #used to be 1e-2
-        gamma = yaml_p['gamma']
-        replay_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size'])
-
         epsi_high = yaml_p['epsi_high']
         epsi_low = yaml_p['epsi_low']
         decay = yaml_p['decay']
-        explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps=decay, random_action_func=env.action_space.sample)
+        scale = yaml_p['scale']
 
-        replay_start_size = yaml_p['replay_start_size']
-        update_interval = yaml_p['update_interval']
-        target_update_interval = yaml_p['target_update_interval']
+        if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
+            explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps=decay, random_action_func=env.action_space.sample)
+        elif yaml_p['explorer_type'] == 'Boltzmann':
+            explorer = pfrl.explorers.Boltzmann()
+        elif yaml_p['explorer_type'] == 'AdditiveGaussian':
+            explorer = pfrl.explorers.AdditiveGaussian(scale, low=0, high=2)
 
-        phi = lambda x: x.astype(np.float32, copy=False)
-        gpu = -1
+        epi_target_update_interval = yaml_p['epi_target_update_interval']
 
-        self.agent = pfrl.agents.DoubleDQN(
-            self.qfunction,
-            optimizer, #in my case ADAMS
-            replay_buffer, #number of experiences I train my NN with
-            gamma, #discount factor
-            explorer, #how to choose next action
-            replay_start_size=replay_start_size, #number of experiences in replay buffer when training begins
-            update_interval=99999,
-            target_update_method='soft',
-            soft_update_tau=1, #taget network is copy of QFunction that is held constant to serve as a stable target for learning for fixed number of timesteps
-            target_update_interval=99999,
-            phi=phi, #feature extractor applied to observations
-            gpu=gpu, #actual GPU used for computation
-        )
+        if yaml_p['agent_type'] == 'DoubleDQN':
+            self.agent = pfrl.agents.DoubleDQN(
+                self.qfunction,
+                torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']), #in my case ADAMS
+                pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size']), #number of experiences I train my NN with
+                yaml_p['gamma'], #discount factor
+                explorer, #how to choose next action
+                clip_delta=True,
+                max_grad_norm=1,
+                replay_start_size=yaml_p['replay_start_size'], #number of experiences in replay buffer when training begins
+                update_interval=yaml_p['T'], #in later parts of the code I set the timer to this, so it updates every episode
+                target_update_interval=yaml_p['T']*epi_target_update_interval,
+                phi=lambda x: x.astype(np.float32, copy=False), #feature extractor applied to observations
+                gpu=-1, #actual GPU used for computation
+            )
+
+        else:
+            print('please choose one of the available agents')
 
         # initialize log file
         if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv'):
@@ -84,14 +87,18 @@ class Agent:
             sum_r = sum_r + reward
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
 
-            df = pd.DataFrame([[self.agent.explorer.epsilon]])
+            if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
+                df = pd.DataFrame([[self.agent.explorer.epsilon]])
+            else:
+                df = pd.DataFrame([[0]])
+
             df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
 
             if render:
                 self.env.render(mode=True)
 
             if done:
-                self.agent.replay_updater.update_if_necessary(99999)
+                self.agent.replay_updater.update_if_necessary(yaml_p['T'])
                 break
 
         return sum_r
@@ -100,8 +107,11 @@ class Agent:
         if isinstance(m, torch.nn.Linear):
             m.weight.data.normal_(0.0, 0.0001)
 
+    def stash_weights(self):
+        self.stash_agent = copy.deepcopy(self.agent)
+
     def save_weights(self, path):
-        self.agent.save(path + 'weights_agent')
+        self.stash_agent.save(path + 'weights_agent')
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')

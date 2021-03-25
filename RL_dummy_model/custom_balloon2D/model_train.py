@@ -22,6 +22,9 @@ with open(args.yaml_file, 'rt') as fh:
 env = balloon2d('train')
 ag = Agent(env)
 
+# clear out any previously created log files and data
+clear()
+
 # model_train
 num_epochs = yaml_p['num_epochs']
 
@@ -32,28 +35,20 @@ n_f = duration*fps
 ratio = num_epochs/n_f
 
 phase = yaml_p['phase']
-current_phase = 0
-best_phase = -np.inf
+current_phase = [-np.inf]*phase
+best_phase = current_phase[:]
 
 for i in range(num_epochs):
-    # run exploring fake episode
-    #if (0 < i) & (i < 2000):
-    if False:
-        log = ag.run_fake_epoch(i,False)
-        print('fake epoch: ' + str(i) + ' reward: ' + str(log))
+    log = ag.run_epoch(False)
+    current_phase.pop(0)
+    current_phase.append(log)
+    print('epoch: ' + str(i) + ' reward: ' + str(log))
 
-    else:
-        log = ag.run_epoch(False)
-        current_phase += log
-        print('epoch: ' + str(i) + ' reward: ' + str(log))
-
-        # save best set of weights over a phase after exploring phase in the beginning is over
-        if np.floor(i%phase) == 0:
-            if (current_phase > best_phase) & (ag.agent.explorer.epsilon < 1.01*yaml_p['epsi_low']):
-                ag.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/')
-                print('weights saved')
-                best_phase = current_phase
-            current_phase = 0
+    if sum(current_phase) > sum(best_phase):
+        ag.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/')
+        print('weights saved')
+        best_phase = current_phase[:]
+    ag.stash_weights()
 
     # write in log file
     if np.floor(i%ratio) == 0:
@@ -65,4 +60,7 @@ for i in range(num_epochs):
 plot_reward()
 plot_path()
 plot_qmap()
-clear() #only clears out log files if yaml parameter is set
+
+# Delete log files
+if yaml_p['clear']:
+    clear()

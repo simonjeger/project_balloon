@@ -23,23 +23,38 @@ def plot_reward():
     df = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', header=None)
     epi = np.array(df.iloc[:,0])
     rew_step = np.array(df.iloc[:,7])
+    rew_epi = np.array(df.iloc[:,8].dropna())
 
     # plot reward
-    N = int(len(rew_step)/10)
-    cumsum = np.cumsum(np.insert(rew_step, 0, 0))
-    mean_reward = (cumsum[N:] - cumsum[:-N]) / float(N)
+    N_epi = min(int(len(rew_epi)/10),10)
+    cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
+    mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
 
-    fig, ax1 = plt.subplots()
-    ax1.set_title('max mean: ' + str(np.round(max(mean_reward),2)) + '   last mean: ' + str(np.round(mean_reward[-1],2)))
-    ax1.set_xlabel('step')
-    ax1.set_ylabel('reward')
-    ax1.tick_params(axis='y')
+    N_step = min(int(len(rew_step)/10),1000)
+    cumsum_step = np.cumsum(np.insert(rew_step, 0, 0))
+    mean_reward_step = (cumsum_step[N_step:] - cumsum_step[:-N_step]) / float(N_step)
 
-    ax1.plot(mean_reward, color='firebrick')
+    fig, axs = plt.subplots(2,1)
+    axs[0].plot(rew_epi, alpha=0.9)
+    axs[0].plot(mean_reward_epi)
+    axs[1].plot(rew_step, alpha=0.9)
+    axs[1].plot(mean_reward_step)
 
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    axs[0].set_title('max mean: ' + str(np.round(max(mean_reward_epi),5)))
+    axs[0].set_xlabel('episode')
+    axs[0].set_ylabel('reward')
+    axs[0].tick_params(axis='y')
 
-    ax1.legend(['mean reward'], loc='upper left')
+    axs[1].set_title('max mean: ' + str(np.round(max(mean_reward_step),5)))
+    axs[1].set_xlabel('step')
+    axs[1].set_ylabel('reward')
+    axs[1].tick_params(axis='y')
+
+    axs[0].legend(['reward', 'running mean over ' + str(N_epi) + ' episodes'], loc='upper left')
+    axs[1].legend(['reward', 'running mean over ' + str(N_step) + ' steps'], loc='upper left')
+
+    fig.suptitle('learning rate over ' + str(len(rew_epi)) + ' episodes')
+    fig.tight_layout()
     plt.savefig('process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
 
 
@@ -190,8 +205,18 @@ def plot_qmap():
     shutil.rmtree(path)
 
 def clear():
-    # Delete log files
-    if yaml_p['clear']:
-        shutil.rmtree('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
-        os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
-        os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv')
+    dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/temp')
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
+
+    dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
+
+    dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
+    if dirpath.exists() and dirpath.is_file():
+        os.remove(dirpath)
+
+    dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv')
+    if dirpath.exists() and dirpath.is_file():
+        os.remove(dirpath)

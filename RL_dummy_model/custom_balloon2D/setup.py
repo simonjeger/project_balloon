@@ -3,7 +3,7 @@ matplotlib.use('Agg') # this needs to be called at the very beginning on cluster
 
 from generate_wind_map import generate_wind_map
 from visualize_wind_map import visualize_wind_map
-from autoencoder_train import autoencoder_train
+#from autoencoder_train import autoencoder_train
 
 from pathlib import Path
 import shutil

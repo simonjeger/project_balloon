@@ -7,12 +7,6 @@ import matplotlib.pyplot as plt
 import torch
 from sklearn.model_selection import train_test_split
 
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.callbacks import EarlyStopping
-from keras.layers import Input, Dense, Activation, BatchNormalization, Flatten, Reshape, Conv2D
-from keras.layers import MaxPooling2D, Dropout, UpSampling2D
-
 class fake_Autoencoder():
     def __init__(self):
         # define size

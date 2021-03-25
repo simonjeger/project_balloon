@@ -1,6 +1,6 @@
 
 from build_render import build_render
-from build_autoencoder import Autoencoder
+#from build_autoencoder import Autoencoder
 from fake_autoencoder import fake_Autoencoder
 from build_character import character
 
@@ -75,10 +75,12 @@ class balloon2d(Env):
         done = self.cost(in_bounds)
 
         # write in log file
-        df = pd.DataFrame([[self.epi, self.size_x, self.size_z, self.character.position[0], self.character.position[1], self.character.target[0], self.character.target[1], self.reward_step, self.reward_epi]])
-        df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', mode='a', header=False, index=False)
-        if done:
+        if not done:
+            df = pd.DataFrame([[self.epi, self.size_x, self.size_z, self.character.position[0], self.character.position[1], self.character.target[0], self.character.target[1], self.reward_step, np.nan]])
+        else:
+            df = pd.DataFrame([[self.epi, self.size_x, self.size_z, self.character.position[0], self.character.position[1], self.character.target[0], self.character.target[1], self.reward_step, self.reward_epi]])
             self.epi += 1
+        df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', mode='a', header=False, index=False)
 
         # set placeholder for info
         info = {}
