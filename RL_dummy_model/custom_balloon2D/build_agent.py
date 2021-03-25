@@ -51,6 +51,8 @@ class Agent:
         elif yaml_p['explorer_type'] == 'AdditiveGaussian':
             explorer = pfrl.explorers.AdditiveGaussian(scale, low=0, high=2)
 
+        self.epi_update_interval = yaml_p['epi_update_interval']
+        self.epi = 0
         epi_target_update_interval = yaml_p['epi_target_update_interval']
 
         if yaml_p['agent_type'] == 'DoubleDQN':
@@ -61,10 +63,10 @@ class Agent:
                 yaml_p['gamma'], #discount factor
                 explorer, #how to choose next action
                 clip_delta=True,
-                max_grad_norm=1,
+                max_grad_norm=yaml_p['max_grad_norm'],
                 replay_start_size=yaml_p['replay_start_size'], #number of experiences in replay buffer when training begins
                 update_interval=yaml_p['T'], #in later parts of the code I set the timer to this, so it updates every episode
-                target_update_interval=yaml_p['T']*epi_target_update_interval,
+                target_update_interval=yaml_p['T'],
                 phi=lambda x: x.astype(np.float32, copy=False), #feature extractor applied to observations
                 gpu=-1, #actual GPU used for computation
             )
@@ -98,7 +100,9 @@ class Agent:
                 self.env.render(mode=True)
 
             if done:
-                self.agent.replay_updater.update_if_necessary(yaml_p['T'])
+                if self.epi%self.epi_update_interval==0:
+                    self.agent.replay_updater.update_if_necessary(yaml_p['T'])
+                self.epi += 1
                 break
 
         return sum_r

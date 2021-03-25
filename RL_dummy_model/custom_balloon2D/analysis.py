@@ -26,18 +26,18 @@ def plot_reward():
     rew_epi = np.array(df.iloc[:,8].dropna())
 
     # plot reward
-    N_epi = min(int(len(rew_epi)/10),10)
+    N_epi = min(int(len(rew_epi)/10),100)
     cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
     mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
 
-    N_step = min(int(len(rew_step)/10),1000)
+    N_step = min(int(len(rew_step)/10),10000)
     cumsum_step = np.cumsum(np.insert(rew_step, 0, 0))
     mean_reward_step = (cumsum_step[N_step:] - cumsum_step[:-N_step]) / float(N_step)
 
     fig, axs = plt.subplots(2,1)
-    axs[0].plot(rew_epi, alpha=0.9)
+    axs[0].plot(rew_epi, alpha=0.1)
     axs[0].plot(mean_reward_epi)
-    axs[1].plot(rew_step, alpha=0.9)
+    axs[1].plot(rew_step, alpha=0.1)
     axs[1].plot(mean_reward_step)
 
     axs[0].set_title('max mean: ' + str(np.round(max(mean_reward_epi),5)))

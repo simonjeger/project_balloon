@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, replay_start_size, update_interval, target_update_interval, min_distance):
+def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, min_distance):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -42,11 +42,14 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'epsi_high: 0.9' + '\n'
     text = text + 'epsi_low: ' + str(epsi_low) + '\n'
     text = text + 'decay: ' + str(decay) + '\n'
+    text = text + 'scale: 1' + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: ' + str(buffer_size) + '\n'
     text = text + 'lr: ' + str(lr) + '\n'
+    text = text + 'max_grad_norm: ' + str(max_grad_norm) + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
-    text = text + 'epi_target_update_interval: ' + str(target_update_interval) + '\n'
+    text = text + 'epi_update_interval: ' + str(epi_update_interval) + '\n'
+    text = text + 'epi_target_update_interval: ' + str(epi_target_update_interval) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 300' + '\n'
@@ -69,16 +72,17 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.close()
 
 process_nr = 480
-for num_epochs in [5000]:
+for num_epochs in [8000]:
     for buffer_size in [1000000]:
-        for lr in [0.001, 0.0005, 0.0001]:
+        for lr in [0.0005, 0.0001]:
             for explorer_type in ['LinearDecayEpsilonGreedy']:
-                for epsi_low in [0.2, 0.05, 0.01]:
-                    for decay in [50000, 100000, 200000]:
-                        for replay_start_size in [1000]:
-                            for update_interval in [1]:
-                                for target_update_interval in [100]:
-                                    for min_distance in [0.9]:
-                                        for repeat in range(2):
-                                            write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, replay_start_size, update_interval, target_update_interval, min_distance)
-                                            process_nr += 1
+                for epsi_low in [0.1, 0.01]:
+                    for decay in [32000]:
+                        for max_grad_norm in [1, 0.1, 0.01]:
+                            for replay_start_size in [1000]:
+                                for epi_update_interval in [1,10,100]:
+                                    for epi_target_update_interval in [1]:
+                                        for min_distance in [0.9]:
+                                            for repeat in range(2):
+                                                write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, min_distance)
+                                                process_nr += 1
