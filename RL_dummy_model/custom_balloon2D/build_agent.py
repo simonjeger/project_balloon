@@ -112,7 +112,7 @@ class Agent:
             m.weight.data.normal_(0.0, 0.0001)
 
     def stash_weights(self):
-        self.stash_agent = copy.deepcopy(self.agent)
+        self.stash_agent = copy.copy(self.agent)
 
     def save_weights(self, path):
         self.stash_agent.save(path + 'weights_agent')

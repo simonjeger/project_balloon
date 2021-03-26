@@ -53,7 +53,7 @@ def plot_reward():
     axs[0].legend(['reward', 'running mean over ' + str(N_epi) + ' episodes'], loc='upper left')
     axs[1].legend(['reward', 'running mean over ' + str(N_step) + ' steps'], loc='upper left')
 
-    fig.suptitle('learning rate over ' + str(len(rew_epi)) + ' episodes')
+    #fig.suptitle('learning rate over ' + str(len(rew_epi)) + ' episodes')
     fig.tight_layout()
     plt.savefig('process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
 
