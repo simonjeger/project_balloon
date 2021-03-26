@@ -1,4 +1,4 @@
-from analysis import plot_reward, plot_path, plot_qmap, clear
+from analysis import plot_reward, plot_path, plot_qmap, disp_overview, clear
 
 import numpy as np
 import gym
@@ -30,4 +30,4 @@ ratio = np.floor(num_epochs/n_f)
 plot_reward()
 plot_path()
 plot_qmap()
-#clear() #only clears out log files if yaml parameter is set
+disp_overview()

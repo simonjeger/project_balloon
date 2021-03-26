@@ -204,6 +204,50 @@ def plot_qmap():
     # Delete temp folder
     shutil.rmtree(path)
 
+def write_overview():
+    df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
+    maximum = max(df_env['rew_epi'])
+
+    df = pd.DataFrame.from_dict(yaml_p)
+    df = df.drop(index=0) # for some reason it imports the yaml_p file twice
+    df.insert(len(df.columns),'rew_epi', maximum, True)
+    dirpath = Path('overview.csv')
+    if dirpath.exists() and dirpath.is_file():
+        df.to_csv(dirpath, mode='a', header=False, index=False)
+    else:
+        df.to_csv(dirpath, mode='a', header=True, index=False)
+
+def disp_overview():
+    df = pd.read_csv('overview.csv')
+    n = len(df.columns)-1
+    m = int(np.ceil(np.sqrt(n)))
+    n = int(np.floor(n/m))
+
+    fig, axs = plt.subplots(n,m)
+    x = 0
+    for i in range(n):
+        for j in range(m):
+            if isinstance(df.iloc[0,x], str):
+                check = all(elem == df.iloc[0,x] for elem in df.iloc[:,x])
+                if check:
+                    color='grey'
+                else:
+                    color='blue'
+            else:
+                if np.std(df.iloc[:,x])<1e-10:
+                    color='grey'
+                else:
+                    color='blue'
+
+            axs[i,j].scatter(df.iloc[:,x],df['rew_epi'], color=color)
+            axs[i,j].set_title(df.columns[x])
+            x += 1
+
+    #fig.tight_layout()
+    plt.subplots_adjust(wspace=0.5, hspace=1)
+    plt.show()
+    plt.close()
+
 def clear():
     dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/temp')
     if dirpath.exists() and dirpath.is_dir():

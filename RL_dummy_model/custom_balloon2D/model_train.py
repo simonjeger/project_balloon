@@ -1,6 +1,6 @@
 from build_environment import balloon2d
 from build_agent import Agent
-from analysis import plot_reward, plot_path, plot_qmap, clear
+from analysis import plot_reward, plot_path, plot_qmap, write_overview, clear
 
 import numpy as np
 import gym
@@ -57,9 +57,12 @@ for i in range(num_epochs):
         torch.save(Q_vis, 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
 
 # analyse
-plot_reward()
-plot_path()
-plot_qmap()
+#plot_reward()
+#plot_path()
+#plot_qmap()
+
+if yaml_p['overview']:
+    write_overview()
 
 # Delete log files
 if yaml_p['clear']:

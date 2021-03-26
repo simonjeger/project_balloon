@@ -66,18 +66,19 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + '\n' + '# logger' + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 20' + '\n'
+    text = text + 'overview: True' + '\n'
     text = text + 'clear: True' + '\n'
 
     file.write(text)
     file.close()
 
-process_nr = 560
+process_nr = 630
 for num_epochs in [8000]:
     for buffer_size in [1000000]:
         for lr in [0.0005, 0.0001]:
             for explorer_type in ['LinearDecayEpsilonGreedy']:
                 for epsi_low in [0.05]:
-                    for decay in [150000]:
+                    for decay in [32000]:
                         for max_grad_norm in [1, 0.1]:
                             for replay_start_size in [1000]:
                                 for epi_update_interval in [1,3,8]:
