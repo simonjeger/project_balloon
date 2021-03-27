@@ -26,7 +26,7 @@ def plot_reward():
     rew_epi = np.array(df.iloc[:,8].dropna())
 
     # plot reward
-    N_epi = min(int(len(rew_epi)/10),100)
+    N_epi = yaml_p['phase']
     cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
     mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
 
@@ -206,10 +206,16 @@ def plot_qmap():
 
 def write_overview():
     df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
-    maximum = max(df_env['rew_epi'])
+    rew_epi = np.array(df_env.iloc[:,8].dropna())
+
+    N_epi = yaml_p['phase']
+    cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
+    mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
+
+    maximum = max(mean_reward_epi)
 
     df = pd.DataFrame.from_dict(yaml_p)
-    df = df.drop(index=0) # for some reason it imports the yaml_p file twice
+    df = df.drop([0]) # for some reason it imports the yaml_p file twice
     df.insert(len(df.columns),'rew_epi', maximum, True)
     dirpath = Path('overview.csv')
     if dirpath.exists() and dirpath.is_file():

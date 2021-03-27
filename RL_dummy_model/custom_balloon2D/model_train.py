@@ -57,9 +57,9 @@ for i in range(num_epochs):
         torch.save(Q_vis, 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
 
 # analyse
-#plot_reward()
-#plot_path()
-#plot_qmap()
+plot_reward()
+plot_path()
+plot_qmap()
 
 if yaml_p['overview']:
     write_overview()
