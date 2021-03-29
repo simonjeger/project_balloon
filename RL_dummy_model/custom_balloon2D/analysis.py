@@ -45,12 +45,12 @@ def plot_reward():
     axs[1].plot(rew_step, alpha=0.1)
     axs[1].plot(mean_reward_step)
 
-    axs[0].set_title('max mean: ' + str(np.round(max(mean_reward_epi),5)))
+    axs[0].set_title('max. mean: ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward: ' + str(np.round(np.mean(rew_epi),5)))
     axs[0].set_xlabel('episode')
     axs[0].set_ylabel('reward')
     axs[0].tick_params(axis='y')
 
-    axs[1].set_title('max mean: ' + str(np.round(max(mean_reward_step),5)))
+    axs[1].set_title('max. mean: ' + str(np.round(max(mean_reward_step),5)) + '   avg. reward: ' + str(np.round(np.mean(rew_step),5)))
     axs[1].set_xlabel('step')
     axs[1].set_ylabel('reward')
     axs[1].tick_params(axis='y')
