@@ -54,11 +54,11 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 300' + '\n'
     text = text + 'start: [2,0]' + '\n'
-    text = text + 'target: "random"' + '\n'
+    text = text + 'target: [25,7]' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: -0.001' + '\n'
-    text = text + 'action: -0.001' + '\n'
+    text = text + 'action: -0.01' + '\n'
     text = text + 'overtime: 0' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
@@ -72,16 +72,16 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 830
-for num_epochs in [20000]:
+process_nr = 960
+for num_epochs in [50000]:
     for buffer_size in [1000000]:
         for lr in [0.0001]:
             for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                for epsi_low in [0.1,0.01]:
-                    for decay in [50000, 80000, 100000]:
+                for epsi_low in [0.05,0.01]:
+                    for decay in [100000, 50000, 150000]:
                         for max_grad_norm in [1]:
                             for replay_start_size in [1000]:
-                                for epi_update_interval in [8,20]:
+                                for epi_update_interval in [8]:
                                     for epi_target_update_interval in [1]:
                                         for min_distance in [0.9]:
                                             for repeat in range(5):

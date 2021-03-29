@@ -30,6 +30,10 @@ def plot_reward():
     cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
     mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
 
+    N_epi_big = int(len(rew_epi)/10)
+    cumsum_epi_big = np.cumsum(np.insert(rew_epi, 0, 0))
+    mean_reward_epi_big = (cumsum_epi[N_epi_big:] - cumsum_epi_big[:-N_epi_big]) / float(N_epi_big)
+
     N_step = min(int(len(rew_step)/10),10000)
     cumsum_step = np.cumsum(np.insert(rew_step, 0, 0))
     mean_reward_step = (cumsum_step[N_step:] - cumsum_step[:-N_step]) / float(N_step)
@@ -37,6 +41,7 @@ def plot_reward():
     fig, axs = plt.subplots(2,1)
     axs[0].plot(rew_epi, alpha=0.1)
     axs[0].plot(mean_reward_epi)
+    axs[0].plot(mean_reward_epi_big)
     axs[1].plot(rew_step, alpha=0.1)
     axs[1].plot(mean_reward_step)
 
@@ -50,10 +55,9 @@ def plot_reward():
     axs[1].set_ylabel('reward')
     axs[1].tick_params(axis='y')
 
-    axs[0].legend(['reward', 'running mean over ' + str(N_epi) + ' episodes'], loc='upper left')
+    axs[0].legend(['reward', 'running mean over ' + str(N_epi) + ' episodes', 'running mean over ' + str(N_epi_big) + ' episodes'],loc='upper left')
     axs[1].legend(['reward', 'running mean over ' + str(N_step) + ' steps'], loc='upper left')
 
-    #fig.suptitle('learning rate over ' + str(len(rew_epi)) + ' episodes')
     fig.tight_layout()
     plt.savefig('process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
 
@@ -213,10 +217,12 @@ def write_overview():
     mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
 
     maximum = max(mean_reward_epi)
+    mean = np.mean(mean_reward_epi)
 
     df = pd.DataFrame.from_dict(yaml_p)
     df = df.drop([0]) # for some reason it imports the yaml_p file twice
-    df.insert(len(df.columns),'rew_epi', maximum, True)
+    df.insert(len(df.columns),'rew_epi_max', maximum, True)
+    df.insert(len(df.columns),'rew_epi_mean', mean, True)
     dirpath = Path('overview.csv')
     if dirpath.exists() and dirpath.is_file():
         df.to_csv(dirpath, mode='a', header=False, index=False)
@@ -236,16 +242,21 @@ def disp_overview():
             if isinstance(df.iloc[0,x], str):
                 check = all(elem == df.iloc[0,x] for elem in df.iloc[:,x])
                 if check:
-                    color='grey'
+                    color_max='grey'
+                    color_mean='grey'
                 else:
-                    color='blue'
+                    color_max='red'
+                    color_mean='blue'
             else:
                 if np.std(df.iloc[:,x])<1e-10:
-                    color='grey'
+                    color_max='grey'
+                    color_mean='grey'
                 else:
-                    color='blue'
+                    color_max='red'
+                    color_mean='blue'
 
-            axs[i,j].scatter(df.iloc[:,x],df['rew_epi'], s=20, facecolors='none', edgecolors=color)
+            axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=20, facecolors='none', edgecolors=color_max)
+            axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=20, facecolors='none', edgecolors=color_mean)
             axs[i,j].set_title(df.columns[x])
             x += 1
 
