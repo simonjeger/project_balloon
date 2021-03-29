@@ -27,7 +27,7 @@ n_f = duration*fps
 ratio = np.floor(num_epochs/n_f)
 
 # analyse
-plot_reward()
-plot_path()
-plot_qmap()
+#plot_reward()
+#plot_path()
+#plot_qmap()
 disp_overview()

@@ -72,18 +72,18 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 770
+process_nr = 830
 for num_epochs in [20000]:
     for buffer_size in [1000000]:
         for lr in [0.0001]:
-            for explorer_type in ['LinearDecayEpsilonGreedy']:
-                for epsi_low in [0.1,0.05,0.01]:
-                    for decay in [10000,32000,50000]:
+            for explorer_type in ['"LinearDecayEpsilonGreedy"']:
+                for epsi_low in [0.1,0.01]:
+                    for decay in [50000, 80000, 100000]:
                         for max_grad_norm in [1]:
                             for replay_start_size in [1000]:
-                                for epi_update_interval in [8]:
+                                for epi_update_interval in [8,20]:
                                     for epi_target_update_interval in [1]:
                                         for min_distance in [0.9]:
                                             for repeat in range(5):
-                                                write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_no$
+                                                write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, min_distance)
                                                 process_nr += 1

@@ -34,6 +34,8 @@ class QFunction(torch.nn.Module):
 class Agent:
     def __init__(self, env):
         self.env = env
+        self.stash = [0]*yaml_p['phase']
+
         acts = env.action_space
         obs = env.observation_space
         self.qfunction = QFunction(obs.shape[0],acts.n)
@@ -112,13 +114,17 @@ class Agent:
             m.weight.data.normal_(0.0, 0.0001)
 
     def stash_weights(self):
-        self.stash_agent = copy.copy(self.agent)
+        self.stash.pop(0)
+        self.stash.append(copy.deepcopy(self.agent))
 
-    def save_weights(self, path):
-        self.stash_agent.save(path + 'weights_agent')
+    def save_weights(self, phase, path):
+        i = np.argmax(phase)
+        self.stash[i].save(path + 'weights_agent')
+        print('weights saved')
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
+        print('weights loaded')
 
     def visualize_q_map(self):
         res = 1

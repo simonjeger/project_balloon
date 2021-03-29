@@ -245,7 +245,7 @@ def disp_overview():
                 else:
                     color='blue'
 
-            axs[i,j].scatter(df.iloc[:,x],df['rew_epi'], color=color)
+            axs[i,j].scatter(df.iloc[:,x],df['rew_epi'], s=20, facecolors='none', edgecolors=color)
             axs[i,j].set_title(df.columns[x])
             x += 1
 

@@ -39,16 +39,16 @@ current_phase = [-np.inf]*phase
 best_phase = current_phase[:]
 
 for i in range(num_epochs):
+    ag.stash_weights()
     log = ag.run_epoch(False)
+
     current_phase.pop(0)
     current_phase.append(log)
     print('epoch: ' + str(i) + ' reward: ' + str(log))
 
     if sum(current_phase) > sum(best_phase):
-        ag.save_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/')
-        print('weights saved')
+        ag.save_weights(current_phase, 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
         best_phase = current_phase[:]
-    ag.stash_weights()
 
     # write in log file
     if np.floor(i%ratio) == 0:

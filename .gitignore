@@ -5,6 +5,10 @@
 __pycache__
 yaml/
 process*/
-data/
+data*/
 render/
 intel_wind/
+vae/
+
+# Files
+overview.csv
