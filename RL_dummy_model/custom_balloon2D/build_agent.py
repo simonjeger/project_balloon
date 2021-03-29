@@ -5,6 +5,9 @@ import os
 import pandas as pd
 import pfrl
 import copy
+from pathlib import Path
+import shutil
+from distutils.dir_util import copy_tree
 
 import yaml
 import argparse
@@ -114,12 +117,22 @@ class Agent:
             m.weight.data.normal_(0.0, 0.0001)
 
     def stash_weights(self):
-        self.stash.pop(0)
-        self.stash.append(copy.deepcopy(self.agent))
+        path_temp = 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        Path(path_temp).mkdir(parents=True, exist_ok=True)
+        self.agent.save(path_temp + 'temp_agent_' + str(self.epi%yaml_p['phase']))
+
+    def clear_stash(self):
+        dirpath = Path('process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/')
+        if dirpath.exists() and dirpath.is_dir():
+            shutil.rmtree(dirpath)
 
     def save_weights(self, phase, path):
+        path_temp= 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        name_list = os.listdir(path_temp)
+        name_list.sort()
+
         i = np.argmax(phase)
-        self.stash[i].save(path + 'weights_agent')
+        copy_tree(path_temp + name_list[i], path + 'weights_agent')
         print('weights saved')
 
     def load_weights(self, path):

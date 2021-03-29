@@ -7,7 +7,6 @@ import gym
 import matplotlib.pyplot as plt
 import torch
 from pathlib import Path
-import shutil
 
 import yaml
 import argparse
@@ -41,11 +40,10 @@ best_phase = current_phase[:]
 for i in range(num_epochs):
     ag.stash_weights()
     log = ag.run_epoch(False)
-
-    current_phase.pop(0)
-    current_phase.append(log)
+    current_phase[i%phase] = log
     print('epoch: ' + str(i) + ' reward: ' + str(log))
 
+    # save weights if improved
     if sum(current_phase) > sum(best_phase):
         ag.save_weights(current_phase, 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
         best_phase = current_phase[:]
@@ -55,6 +53,8 @@ for i in range(num_epochs):
         Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/').mkdir(parents=True, exist_ok=True)
         Q_vis = ag.visualize_q_map()
         torch.save(Q_vis, 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
+
+ag.clear_stash()
 
 # analyse
 plot_reward()
