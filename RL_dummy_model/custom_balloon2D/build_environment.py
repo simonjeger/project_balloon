@@ -162,7 +162,7 @@ class balloon2d(Env):
         window = np.array([window])
         wind_compressed = self.ae.compress(window)
         character_v = character(self.size_x, self.size_z, position, self.character.target, self.T, wind_compressed)
-        velocity = self.wind_map[position[0], position[1]] #approximate current velocity as velocity of wind_map
-        character_v.state[2,3] = velocity
+        velocity = self.wind_map[position[0], position[1]][0:2] #approximate current velocity as velocity of wind_map
+        character_v.state[2:4] = velocity
 
         return character_v.state
