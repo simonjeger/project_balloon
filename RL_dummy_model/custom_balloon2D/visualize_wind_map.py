@@ -8,7 +8,7 @@ import cv2
 def visualize_wind_map(train_or_test, tensor = 'empty'):
 
     if type(tensor) is not str:
-        tensor_list = tensor
+        tensor_list = [tensor]
 
     else:
         name_list = os.listdir('data/' + train_or_test + '/tensor/')
@@ -32,6 +32,7 @@ def visualize_wind_map(train_or_test, tensor = 'empty'):
 
         # generate quiver
         q = ax.quiver(x,z,mean_x,mean_z,sig_xz)
+        qk = ax.quiverkey(q, 0.5, 0.5, 1, r'$1 \frac{m}{s}$', labelpos='N', coordinates='figure', labelcolor='red', color='red')
 
         if type(tensor) is not str:
             plt.show()

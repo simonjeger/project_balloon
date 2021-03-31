@@ -19,13 +19,13 @@ class character():
 
         self.position = copy.copy(self.start)
         self.residual = self.target - self.position
+        self.velocity = np.array([0,0])
         self.min_x = self.position[0] - 0
         self.max_x = self.size_x - self.position[0]
         self.min_z = self.position[1] - 0
         self.max_z = self.size_z - self.position[1]
 
-        #self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z, self.t], wind_compressed.flatten()), axis=0)
-        self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], wind_compressed.flatten()), axis=0)
+        self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], wind_compressed.flatten()), axis=0)
         self.path = [self.position.copy(), self.position.copy()]
         self.min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2)
 
@@ -40,8 +40,7 @@ class character():
         self.max_x = self.size_x - self.position[0]
         self.min_z = self.position[1] - 0
         self.max_z = self.size_z - self.position[1]
-        #self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z, self.t], wind_compressed.flatten()), axis=0)
-        self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], wind_compressed.flatten()), axis=0)
+        self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], wind_compressed.flatten()), axis=0)
 
         min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2)
         if min_distance < self.min_distance:
@@ -80,4 +79,8 @@ class character():
 
                 # write down path in history
                 self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
+
+                # set velocity for state
+                self.velocity = np.array([v_x, v_z])
+
         return in_bounds

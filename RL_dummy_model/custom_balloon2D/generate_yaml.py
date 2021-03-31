@@ -34,7 +34,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
 
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'num_epochs: ' + str(num_epochs) + '\n'
-    text = text + 'phase: 5' + '\n'
+    text = text + 'phase: ' + str(epi_update_interval) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'explorer_type: ' + str(explorer_type) + '\n'
@@ -45,7 +45,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'scale: 1' + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: ' + str(buffer_size) + '\n'
-    text = text + 'lr: ' + str(lr) + '\n'
+    text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'max_grad_norm: ' + str(max_grad_norm) + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'epi_update_interval: ' + str(epi_update_interval) + '\n'
@@ -72,16 +72,16 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 960
+process_nr = 1040
 for num_epochs in [50000]:
     for buffer_size in [1000000]:
-        for lr in [0.0001]:
+        for lr in [0.001, 0.0005, 0.0001]:
             for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                for epsi_low in [0.05,0.01]:
-                    for decay in [100000, 50000, 150000]:
+                for epsi_low in [0.2, 0.1, 0.01]:
+                    for decay in [100000, 200000, 400000]:
                         for max_grad_norm in [1]:
                             for replay_start_size in [1000]:
-                                for epi_update_interval in [8]:
+                                for epi_update_interval in [5, 10, 20]:
                                     for epi_target_update_interval in [1]:
                                         for min_distance in [0.9]:
                                             for repeat in range(5):

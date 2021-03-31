@@ -9,6 +9,7 @@ data*/
 render/
 intel_wind/
 vae/
+results/
 
 # Files
 overview.csv

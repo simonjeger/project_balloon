@@ -3,7 +3,6 @@ matplotlib.use('Agg') # this needs to be called at the very beginning on cluster
 
 from generate_wind_map import generate_wind_map
 from visualize_wind_map import visualize_wind_map
-#from autoencoder_train import autoencoder_train
 
 from pathlib import Path
 import shutil
@@ -36,12 +35,13 @@ shutil.copy(args.yaml_file, 'process' + str(yaml_p['process_nr']).zfill(5))
 size_x = yaml_p['size_x']
 size_z = yaml_p['size_z']
 
-#generate_wind_map(size_x, size_z, 1, 'train')
+#generate_wind_map(size_x, size_z, 1000, 'train')
 #generate_wind_map(size_x, size_z, 100, 'test')
+
+#import autoencoder_train
+#import autoencoder_test
 
 #visualize_wind_map('train')
 #visualize_wind_map('test')
 
-#autoencoder_train()
-
-import model_train
+import agent_train

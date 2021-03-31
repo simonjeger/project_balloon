@@ -232,7 +232,7 @@ def write_overview():
 def disp_overview():
     df = pd.read_csv('overview.csv')
     n = len(df.columns)-1
-    m = int(np.ceil(np.sqrt(n)))
+    m = int(np.floor(np.sqrt(n)))
     n = int(np.floor(n/m))
 
     fig, axs = plt.subplots(n,m)
@@ -255,8 +255,8 @@ def disp_overview():
                     color_max='red'
                     color_mean='blue'
 
-            axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=20, facecolors='none', edgecolors=color_max)
-            axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=20, facecolors='none', edgecolors=color_mean)
+            axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=0.1, facecolors='none', edgecolors=color_max)
+            axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=0.1, facecolors='none', edgecolors=color_mean)
             axs[i,j].set_title(df.columns[x])
             x += 1
 
