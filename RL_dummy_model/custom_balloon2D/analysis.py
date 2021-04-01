@@ -20,7 +20,7 @@ with open(args.yaml_file, 'rt') as fh:
 
 def plot_reward():
     # extract data
-    df = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', header=None)
+    df = pd.read_csv(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', header=None)
     epi = np.array(df.iloc[:,0])
     rew_step = np.array(df.iloc[:,7])
     rew_epi = np.array(df.iloc[:,8].dropna())
@@ -59,13 +59,13 @@ def plot_reward():
     axs[1].legend(['reward', 'running mean over ' + str(N_step) + ' steps'], loc='upper left')
 
     fig.tight_layout()
-    plt.savefig('process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
+    plt.savefig(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
 
 
 def plot_path():
     # import from log files
-    df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
-    df_ag = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', names=['eps'])
+    df_env = pd.read_csv(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
+    df_ag = pd.read_csv(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', names=['eps'])
 
     # set up parameters to generate gif
     duration = yaml_p['duration']
@@ -114,14 +114,14 @@ def plot_path():
         axs[1].set_ylim(0,1)
 
         # Build folder structure if it doesn't exist yet
-        path = 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
+        path = yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
         plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50)
         plt.close()
         print('saving frames: ' + str(int(i/n_f*100)) + ' %')
 
     # Build GIF
-    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/path.gif', mode='I', fps=fps) as writer:
+    with imageio.get_writer(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/path.gif', mode='I', fps=fps) as writer:
         name_list = os.listdir(path)
         name_list.sort()
         n = 0
@@ -136,13 +136,13 @@ def plot_path():
 
 def plot_qmap():
     # import from log files
-    df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
+    df_env = pd.read_csv(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
 
-    name_list = os.listdir('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
+    name_list = os.listdir(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
     name_list.sort()
     tensor_list = []
     for name in name_list:
-        tensor_list.append(torch.load('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/' + name))
+        tensor_list.append(torch.load(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/' + name))
 
     for i in range(len(name_list)):
         fig, axs = plt.subplots(4,2)
@@ -184,7 +184,7 @@ def plot_qmap():
         fig.suptitle(str(int(i/len(tensor_list)*100)) + ' %')
 
         # Build folder structure if it doesn't exist yet
-        path = 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
+        path = yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
         plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50, bbox_inches='tight')
         plt.close()
@@ -195,7 +195,7 @@ def plot_qmap():
     fps = min(int(len(name_list)/duration),yaml_p['fps'])
 
     # Build GIF
-    with imageio.get_writer('process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=fps) as writer:
+    with imageio.get_writer(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=fps) as writer:
         name_list = os.listdir(path)
         name_list.sort()
         n = 0
@@ -209,7 +209,7 @@ def plot_qmap():
     shutil.rmtree(path)
 
 def write_overview():
-    df_env = pd.read_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
+    df_env = pd.read_csv(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', names=['epi', 'size_x', 'size_z', 'pos_x', 'pos_z', 'tar_x', 'tar_z', 'rew_step', 'rew_epi'])
     rew_epi = np.array(df_env.iloc[:,8].dropna())
 
     N_epi = yaml_p['phase']
@@ -266,18 +266,18 @@ def disp_overview():
     plt.close()
 
 def clear():
-    dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/temp')
+    dirpath = Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp')
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
 
-    dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
+    dirpath = Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
 
-    dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
+    dirpath = Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
     if dirpath.exists() and dirpath.is_file():
         os.remove(dirpath)
 
-    dirpath = Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv')
+    dirpath = Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv')
     if dirpath.exists() and dirpath.is_file():
         os.remove(dirpath)

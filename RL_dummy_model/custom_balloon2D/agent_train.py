@@ -45,14 +45,14 @@ for i in range(num_epochs):
 
     # save weights if improved
     if sum(current_phase) > sum(best_phase):
-        ag.save_weights(current_phase, 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
+        ag.save_weights(current_phase, yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
         best_phase = current_phase[:]
 
     # write in log file
     if np.floor(i%ratio) == 0:
-        Path('process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/').mkdir(parents=True, exist_ok=True)
+        Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/').mkdir(parents=True, exist_ok=True)
         Q_vis = ag.visualize_q_map()
-        torch.save(Q_vis, 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
+        torch.save(Q_vis, yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
 
 ag.clear_stash()
 

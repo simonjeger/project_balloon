@@ -32,7 +32,7 @@ class balloon2d(Env):
 
         # initialize autoencoder object
         #self.ae = Autoencoder()
-        #self.ae.autoencoder_model.load_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder/ae_weights.h5f')
+        #self.ae.autoencoder_model.load_weights(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder/ae_weights.h5f')
         self.ae = fake_Autoencoder()
 
         # load new world to get size_x, size_z
@@ -55,8 +55,8 @@ class balloon2d(Env):
         self.reset()
 
         # delete old log-file if it exists
-        if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv'):
-            os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
+        if os.path.isfile(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv'):
+            os.remove(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv')
         self.epi = 0
 
     def step(self, action):
@@ -78,7 +78,7 @@ class balloon2d(Env):
         else:
             df = pd.DataFrame([[self.epi, self.size_x, self.size_z, self.character.position[0], self.character.position[1], self.character.target[0], self.character.target[1], self.reward_step, self.reward_epi]])
             self.epi += 1
-        df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', mode='a', header=False, index=False)
+        df.to_csv(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_environment.csv', mode='a', header=False, index=False)
 
         # set placeholder for info
         info = {}

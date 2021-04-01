@@ -80,8 +80,8 @@ class Agent:
             print('please choose one of the available agents')
 
         # initialize log file
-        if os.path.isfile('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv'):
-            os.remove('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv')
+        if os.path.isfile(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv'):
+            os.remove(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv')
 
     def run_epoch(self, render):
         obs = self.env.reset()
@@ -99,7 +99,7 @@ class Agent:
             else:
                 df = pd.DataFrame([[0]])
 
-            df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
+            df.to_csv(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
 
             if render:
                 self.env.render(mode=True)
@@ -117,17 +117,17 @@ class Agent:
             m.weight.data.normal_(0.0, 0.0001)
 
     def stash_weights(self):
-        path_temp = 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        path_temp = yaml_p['path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
         Path(path_temp).mkdir(parents=True, exist_ok=True)
         self.agent.save(path_temp + 'temp_agent_' + str(self.epi%yaml_p['phase']))
 
     def clear_stash(self):
-        dirpath = Path('process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/')
+        dirpath = Path(yaml_p['path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/')
         if dirpath.exists() and dirpath.is_dir():
             shutil.rmtree(dirpath)
 
     def save_weights(self, phase, path):
-        path_temp= 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        path_temp= yaml_p['path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
         name_list = os.listdir(path_temp)
         name_list.sort()
 
@@ -217,7 +217,7 @@ class Agent:
 
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
             df = pd.DataFrame([[self.agent.explorer.epsilon]])
-            df.to_csv('process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
+            df.to_csv(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_agent.csv', mode='a', header=False, index=False)
 
             if render:
                 self.env.render(mode=True)

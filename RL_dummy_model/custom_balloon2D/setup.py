@@ -18,19 +18,19 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 # Build folder structure if it doesn't exist yet
-Path('process' + str(yaml_p['process_nr']).zfill(5)).mkdir(parents=True, exist_ok=True)
-Path('process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder').mkdir(parents=True, exist_ok=True)
-Path('process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_agent').mkdir(parents=True, exist_ok=True)
-Path('data').mkdir(parents=True, exist_ok=True)
-Path('data/test').mkdir(parents=True, exist_ok=True)
-Path('data/test/image').mkdir(parents=True, exist_ok=True)
-Path('data/test/tensor').mkdir(parents=True, exist_ok=True)
-Path('data/test/tensor_comp').mkdir(parents=True, exist_ok=True)
-Path('data/train').mkdir(parents=True, exist_ok=True)
-Path('data/train/image').mkdir(parents=True, exist_ok=True)
-Path('data/train/tensor').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5)).mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_agent').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'data').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'data/test').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'data/test/image').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'data/test/tensor').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'data/test/tensor_comp').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'data/train').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'data/train/image').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['path'] + 'data/train/tensor').mkdir(parents=True, exist_ok=True)
 
-shutil.copy(args.yaml_file, 'process' + str(yaml_p['process_nr']).zfill(5))
+shutil.copy(args.yaml_file, yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5))
 
 size_x = yaml_p['size_x']
 size_z = yaml_p['size_z']

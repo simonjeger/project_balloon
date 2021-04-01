@@ -19,7 +19,7 @@ with open(args.yaml_file, 'rt') as fh:
 
 env = balloon2d('train')
 ag = Agent(env)
-ag.load_weights('process' + str(yaml_p['process_nr']).zfill(5) + '/')
+ag.load_weights(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
 with ag.agent.eval_mode():
     for i in range(15):

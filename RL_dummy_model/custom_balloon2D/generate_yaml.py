@@ -64,6 +64,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'bounds: -1' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
+    text = text + ""'/cluster/work/riner/users/sjeger/'"" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 20' + '\n'
     text = text + 'overview: True' + '\n'
