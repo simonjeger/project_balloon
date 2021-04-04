@@ -4,6 +4,7 @@
 # Folder
 __pycache__
 yaml/
+runs/
 process*/
 data*/
 render/
