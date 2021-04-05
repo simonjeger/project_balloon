@@ -1,6 +1,5 @@
 from build_environment import balloon2d
 from build_agent import Agent
-from analysis import plot_reward, plot_path
 
 import numpy as np
 import gym

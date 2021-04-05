@@ -34,6 +34,7 @@ class wind_data(Dataset):
         self.data = []
         for name in name_list:
             tensor = torch.load(path + name)
+            tensor = tensor[:,:,:1:] # don't autoencode terrain
             tensor = np.array(tensor).transpose(-1, 0, 1)
             self.data.append(torch.tensor(tensor).float())
 

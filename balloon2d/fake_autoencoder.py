@@ -19,9 +19,9 @@ class fake_Autoencoder():
         self.bottleneck = int(self.size_z/self.box_size)*2
 
     def compress(self, data):
-        mean_x = data[0][:,:,0]
-        mean_z = data[0][:,:,1]
-        sig_xz = data[0][:,:,2]
+        mean_x = data[0][:,:,1] #0 is terrain
+        mean_z = data[0][:,:,2]
+        sig_xz = data[0][:,:,3]
         idx = np.arange(0,self.size_z, int(self.box_size))
         pred = np.zeros((len(idx)*2)) # only consider 2 channels at the moment
         for i in range(len(idx)):

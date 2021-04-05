@@ -53,13 +53,13 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 300' + '\n'
-    text = text + 'start: [2,0]' + '\n'
+    text = text + 'start: [5,0]' + '\n'
     text = text + 'target: [25,7]' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: -0.001' + '\n'
     text = text + 'action: -0.01' + '\n'
-    text = text + 'overtime: 0' + '\n'
+    text = text + 'overtime: -1' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
 
@@ -73,18 +73,18 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 1040
+process_nr = 1450
 for num_epochs in [50000]:
     for buffer_size in [1000000]:
-        for lr in [0.001, 0.0005, 0.0001]:
+        for lr in [0.005, 0.001, 0.005]:
             for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                for epsi_low in [0.2, 0.1, 0.01]:
-                    for decay in [100000, 200000, 400000]:
+                for epsi_low in [0.01]:
+                    for decay in [200000, 400000, 600000]:
                         for max_grad_norm in [1]:
                             for replay_start_size in [1000]:
-                                for epi_update_interval in [5, 10, 20]:
+                                for epi_update_interval in [1, 5, 10]:
                                     for epi_target_update_interval in [1]:
-                                        for min_distance in [0.9]:
+                                        for min_distance in [1]:
                                             for repeat in range(5):
                                                 write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, min_distance)
                                                 process_nr += 1

@@ -35,7 +35,7 @@ class QFunction(torch.nn.Module):
         return pfrl.action_value.DiscreteActionValue(h)
 
 class Agent:
-    def __init__(self, env, writer):
+    def __init__(self, env, writer='no_logger'):
         self.env = env
         self.stash = [0]*yaml_p['phase']
         self.writer = writer
@@ -103,7 +103,8 @@ class Agent:
                 break
 
         # logger
-        self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n)
+        if type(self.writer) is not str:
+            self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n)
         self.epi_n += 1
 
         return sum_r

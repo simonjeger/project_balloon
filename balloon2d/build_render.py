@@ -65,13 +65,13 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     residual = myfont.render('residual: ' + str(np.round(character.state[0:2],4)), False, pygame.Color('LightGray'))
     velocity = myfont.render('velocity: ' + str(np.round(character.state[2:4],4)), False, pygame.Color('LightGray'))
     border = myfont.render('border: ' + str(np.round(character.state[4:8],4)), False, pygame.Color('LightGray'))
-    wind_compressed = myfont.render('wind_compressed: ' + str(np.round(character.state[8:],2)), False, pygame.Color('LightGray'))
+    wind_compressed = myfont.render('wind_compressed: ' + str(np.round(character.state[8:],4)), False, pygame.Color('LightGray'))
 
     screen.blit(reward_step,(10,10))
     screen.blit(reward_epi,(10,25))
-    screen.blit(residual,(10,40))
-    screen.blit(velocity,(10,55))
-    screen.blit(border,(10,70))
+    screen.blit(residual,(10,55))
+    screen.blit(velocity,(10,70))
+    screen.blit(border,(10,85))
     screen.blit(wind_compressed,(10,100))
 
     # updating the window
