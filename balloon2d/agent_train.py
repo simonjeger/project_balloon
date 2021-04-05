@@ -1,4 +1,4 @@
-from analysis import plot_path, plot_qmap, write_overview, clear
+from analysis import plot_reward, plot_path, plot_qmap, write_overview, clear
 # clear out any previously created log files and data
 clear()
 
@@ -62,6 +62,7 @@ for i in range(num_epochs):
 ag.clear_stash()
 
 # analyse
+plot_reward()
 plot_path()
 plot_qmap()
 

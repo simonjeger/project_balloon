@@ -35,7 +35,9 @@ def generate_terrain(size_x):
         terrain = gaussian_filter(terrain, sigma = 5)
 
     # for homogeneous field
+    """
     terrain *= 0
+    """
     return terrain
 
 def generate_wind(size_x, size_z, terrain):
@@ -47,8 +49,8 @@ def generate_wind(size_x, size_z, terrain):
     m = 2
     seed_x = np.random.choice([-1, 1])
     for i in range(m):
-        rand_x = int(size_x - size_x/m*i - 1)
-        rand_z = int(size_z - size_z/m*i - 1)
+        rand_x = int(size_x/(2*m) + size_x/m*i)
+        rand_z = int(size_z/(2*m) + size_z/m*i)
         mean_x[:, rand_z] = gauss(2*seed_x*(-1)**i,1)
         mean_z[rand_x, :] = gauss(0,1)
         sig_xz[rand_x, rand_z] = abs(gauss(0.2,1))
@@ -74,9 +76,11 @@ def generate_wind(size_x, size_z, terrain):
     sig_xz = gaussian_filter(sig_xz, sigma = 5)
 
     # for homogeneous field
+    """
     mean_x *= 0
     mean_x += 0.33
     mean_z *= 0
     sig_xz *= 0
+    """
 
     return np.dstack((mean_x, mean_z, sig_xz))

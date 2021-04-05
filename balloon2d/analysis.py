@@ -7,6 +7,7 @@ import shutil
 import imageio
 import os
 import torch
+from sklearn.linear_model import LinearRegression
 
 import yaml
 import argparse
@@ -18,6 +19,59 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
+def plot_reward():
+    # read in logger file as pandas
+    from load_tf import tflog2pandas, many_logs2pandas
+    path_logger = yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    rew_epi = np.array(df['reward_epi'].dropna())
+    rew_step = np.array(df['reward_step'])
+
+    # plot mean reward
+    N_epi = yaml_p['phase']
+    cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
+    mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
+
+    # plot big mean
+    N_epi_big = int(len(rew_epi)/10)
+    cumsum_epi_big = np.cumsum(np.insert(rew_epi, 0, 0))
+    mean_reward_epi_big = (cumsum_epi[N_epi_big:] - cumsum_epi_big[:-N_epi_big]) / float(N_epi_big)
+
+    # linear regression
+    Y = rew_epi
+    X = np.linspace(0,len(rew_epi)-1,len(rew_epi)).reshape((-1, 1))
+
+    linear_regressor = LinearRegression()  # create object for the class
+    linear_regressor.fit(X, Y)  # perform linear regression
+    Y_pred = linear_regressor.predict(X)  # make predictions
+
+    slope = linear_regressor.coef_[0]
+    score = linear_regressor.score(X,Y)
+
+    # plot
+    fig, ax = plt.subplots(1,1)
+    ax.plot(rew_epi, alpha=0.1)
+    ax.plot(mean_reward_epi)
+    ax.plot(mean_reward_epi_big)
+    ax.plot(Y_pred)
+
+    #ax.set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
+    ax.set_xlabel('episode')
+    ax.set_ylabel('reward')
+    ax.tick_params(axis='y')
+
+    ax.legend(
+        ['reward',
+        'running mean over ' + str(N_epi) + ' episodes, max: ' + str(np.round(max(mean_reward_epi),5)) + ', avg: ' + str(np.round(np.mean(rew_epi),5)),
+        'running mean over ' + str(N_epi_big) + ' episodes', 'linear regression, slope: ' + str(np.round(slope,5)) + ', score: ' + str(np.round(score,5))],
+        )
+
+    fig.tight_layout()
+    plt.savefig(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
 
 def plot_path():
     # read in logger file as pandas
@@ -178,6 +232,7 @@ def write_overview():
 
     rew_epi = np.array(df['reward_epi'].dropna())
 
+    # maximum and mean
     N_epi = yaml_p['phase']
     cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
     mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
@@ -185,10 +240,24 @@ def write_overview():
     maximum = max(mean_reward_epi)
     mean = np.mean(mean_reward_epi)
 
+    # linear regression
+    Y = rew_epi
+    X = np.linspace(0,len(rew_epi)-1,len(rew_epi)).reshape((-1, 1))
+
+    linear_regressor = LinearRegression()  # create object for the class
+    linear_regressor.fit(X, Y)  # perform linear regression
+    Y_pred = linear_regressor.predict(X)  # make predictions
+
+    slope = linear_regressor.coef_[0]
+    score = linear_regressor.score(X,Y)
+
+    # write down
     df_reward = pd.DataFrame.from_dict(yaml_p)
     df_reward = df_reward.drop([0]) # for some reason it imports the yaml_p file twice
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)
+    df_reward.insert(len(df_reward.columns),'linreg_slope', slope, True)
+    df_reward.insert(len(df_reward.columns),'linreg_score', score, True)
     dirpath = Path('overview.csv')
     if dirpath.exists() and dirpath.is_file():
         df_reward.to_csv(dirpath, mode='a', header=False, index=False)
