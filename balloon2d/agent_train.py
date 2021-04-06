@@ -62,12 +62,12 @@ for i in range(num_epochs):
 ag.clear_stash()
 
 # analyse
+if yaml_p['overview']:
+    write_overview()
+    
 plot_reward()
 plot_path()
 plot_qmap()
-
-if yaml_p['overview']:
-    write_overview()
 
 # Delete log files
 if yaml_p['clear']:

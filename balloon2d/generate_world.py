@@ -53,7 +53,7 @@ def generate_wind(size_x, size_z, terrain):
         rand_z = int(size_z/(2*m) + size_z/m*i)
         mean_x[:, rand_z] = gauss(2*seed_x*(-1)**i,1)
         mean_z[rand_x, :] = gauss(0,1)
-        sig_xz[rand_x, rand_z] = abs(gauss(0.2,1))
+        sig_xz[rand_x, rand_z] = abs(gauss(0.2,1 ))
 
     mean_x = gaussian_filter(mean_x, sigma = 2)
     mean_z = gaussian_filter(mean_z, sigma = 2)

@@ -6,6 +6,7 @@ __pycache__
 yaml/
 runs/
 process*/
+autoencoder/
 data*/
 render/
 intel_wind/

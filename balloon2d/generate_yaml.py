@@ -9,7 +9,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('bsub -W 24:00 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -W 24:00 -R "rusage[mem=200000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -52,13 +52,13 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'epi_target_update_interval: ' + str(epi_target_update_interval) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
-    text = text + 'T: 300' + '\n'
+    text = text + 'T: 500' + '\n'
     text = text + 'start: [5,0]' + '\n'
     text = text + 'target: [25,7]' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: -0.001' + '\n'
-    text = text + 'action: -0.01' + '\n'
+    text = text + 'action: -0.002' + '\n'
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
@@ -73,16 +73,16 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 1590
-for num_epochs in [50000]:
+process_nr = 1690
+for num_epochs in [100000]:
     for buffer_size in [1000000]:
         for lr in [0.005, 0.001, 0.0005]:
             for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                for epsi_low in [0.01]:
-                    for decay in [200000, 600000]:
+                for epsi_low in [0.01, 0.05]:
+                    for decay in [400000, 1200000]:
                         for max_grad_norm in [1]:
                             for replay_start_size in [1000]:
-                                for epi_update_interval in [1, 5, 10]:
+                                for epi_update_interval in [5, 10, 30]:
                                     for epi_target_update_interval in [1]:
                                         for min_distance in [1]:
                                             for repeat in range(5):

@@ -11,7 +11,7 @@ class fake_Autoencoder():
     def __init__(self):
         # define size
         self.window_size = 3
-        self.box_size = 10
+        self.box_size = 5
         name_list = os.listdir('data/train/tensor/')
         tensor = torch.load('data/train/tensor/' + name_list[0])
         self.size_z = len(tensor[0])
