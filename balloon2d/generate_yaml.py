@@ -4,12 +4,12 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, min_distance):
+def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, minibatch_size, n_times_update, min_distance):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('bsub -W 24:00 -R "rusage[mem=200000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -W 60:00 -R "rusage[mem=200000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -50,10 +50,12 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'epi_update_interval: ' + str(epi_update_interval) + '\n'
     text = text + 'epi_target_update_interval: ' + str(epi_target_update_interval) + '\n'
+    text = text + 'minibatch_size: ' + str(minibatch_size) + '\n'
+    text = text + 'n_times_update: ' + str(n_times_update) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 500' + '\n'
-    text = text + 'start: [5,0]' + '\n'
+    text = text + 'start: [10,0]' + '\n'
     text = text + 'target: [25,7]' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
@@ -84,7 +86,9 @@ for num_epochs in [100000]:
                             for replay_start_size in [1000]:
                                 for epi_update_interval in [5, 10, 30]:
                                     for epi_target_update_interval in [1]:
-                                        for min_distance in [1]:
-                                            for repeat in range(5):
-                                                write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, min_distance)
-                                                process_nr += 1
+                                        for minibatch_size in [32, 10000]
+                                            for n_times_update in [1, 10]
+                                                for min_distance in [1]:
+                                                    for repeat in range(5):
+                                                        write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, minibatch_size, n_times_update, min_distance)
+                                                        process_nr += 1

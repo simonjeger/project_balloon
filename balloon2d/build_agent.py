@@ -32,6 +32,7 @@ class QFunction(torch.nn.Module):
         h = torch.nn.functional.relu(self.l1(h))
         h = torch.nn.functional.relu(self.l2(h))
         h = self.l3(h)
+
         return pfrl.action_value.DiscreteActionValue(h)
 
 class Agent:
@@ -74,6 +75,8 @@ class Agent:
                 replay_start_size=yaml_p['replay_start_size'], #number of experiences in replay buffer when training begins
                 update_interval=yaml_p['T'], #in later parts of the code I set the timer to this, so it updates every episode
                 target_update_interval=yaml_p['T'],
+                minibatch_size=yaml_p['minibatch_size'], #minibatch_size used for training the q-function network
+                n_times_update=yaml_p['n_times_update'], #how many times we update the NN with a new batch per update step
                 phi=lambda x: x.astype(np.float32, copy=False), #feature extractor applied to observations
                 gpu=-1, #actual GPU used for computation
             )
@@ -82,6 +85,7 @@ class Agent:
             print('please choose one of the implemented agents')
 
     def run_epoch(self, render):
+
         obs = self.env.reset()
         sum_r = 0
 

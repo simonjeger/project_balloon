@@ -44,7 +44,7 @@ best_phase = current_phase[:]
 
 for i in range(num_epochs):
     ag.stash_weights()
-    log = ag.run_epoch(False)
+    log = ag.run_epoch(True)
     current_phase[i%phase] = log
     print('epoch: ' + str(i) + ' reward: ' + str(log))
 
@@ -64,7 +64,7 @@ ag.clear_stash()
 # analyse
 if yaml_p['overview']:
     write_overview()
-    
+
 plot_reward()
 plot_path()
 plot_qmap()

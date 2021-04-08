@@ -1,4 +1,3 @@
-
 from build_render import build_render
 #from build_autoencoder import Autoencoder
 from fake_autoencoder import fake_Autoencoder
@@ -46,9 +45,11 @@ class balloon2d(Env):
         self.T = yaml_p['T']
 
         # location array in x and z
-        regular_state_space_low = np.array([0,0,-1,-1,0,0,0,0]) #residual to target, velocity, distance to border
+        regular_state_space_low = np.array([0,0,-np.inf,-np.inf,0,0,0,0]) #residual to target, velocity, distance to border
+        #regular_state_space_low = np.array([0,0,0,0,0,0]) #residual to target, distance to border
         world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
-        regular_state_space_high = np.array([self.size_x,self.size_z,1,1,0,self.size_x,0,self.size_z])
+        regular_state_space_high = np.array([self.size_x,self.size_z,np.inf,np.inf,0,self.size_x,0,self.size_z])
+        #regular_state_space_high = np.array([self.size_x,self.size_z,0,self.size_x,0,self.size_z])
         world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0)) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
 

@@ -23,8 +23,8 @@ class VAE(nn.Module):
 
         # variables
         self.bottleneck = 500
-        self.window_size = 3
-        self.batch_size = 5
+        self.window_size = 4
+        self.batch_size = 20
 
         #read in data
         if car:
@@ -51,14 +51,14 @@ class VAE(nn.Module):
         # encoder
         self.encoder = nn.Sequential(
             # input is (nc) x 28 x 28
-            nn.Conv2d(nc, ndf, 2, 2, 1, bias=False), #kernel sizes through Conv2d used to be: 4,4,3,1
+            nn.Conv2d(nc, ndf, 3, 2, 1, bias=False), #kernel sizes through Conv2d used to be: 4,4,3,1
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf) x 14 x 14
-            nn.Conv2d(ndf, ndf * 2, 2, 2, 1, bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
+            nn.Conv2d(ndf, ndf * 2, 3, 2, 1, bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
             nn.BatchNorm2d(ndf * 2),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*2) x 7 x 7
-            nn.Conv2d(ndf * 2, ndf * 4, 2, 2, 1, bias=False),
+            nn.Conv2d(ndf * 2, ndf * 4, 1, 2, 1, bias=False),
             nn.BatchNorm2d(ndf * 4),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*4) x 4 x 4
@@ -71,16 +71,14 @@ class VAE(nn.Module):
 
         self.decoder = nn.Sequential(
             # input is Z, going into a convolution
-            nn.ConvTranspose2d(1024, ngf * 8, 4, 1, 0, bias=False),
+            nn.ConvTranspose2d(1024, ngf * 8, 2, 1, 0, bias=False),
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
             # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(ngf * 8, ngf * 4, 3, 2, 1, bias=False),
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
             nn.BatchNorm2d(ngf * 4),
             nn.ReLU(True),
-
-            nn.Upsample([int(self.size_x/4), int(self.size_z/4)]),
-
+            nn.Upsample([int(2*self.window_size/4), int(self.size_z/4)]),
             # state size. (ngf*4) x 8 x 8
             nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
             nn.BatchNorm2d(ngf * 2),
@@ -92,6 +90,7 @@ class VAE(nn.Module):
             # state size. (ngf) x 32 x 32
             # nn.ConvTranspose2d(    ngf,      nc, 4, 2, 1, bias=False),
             # nn.Tanh()
+            nn.Upsample([2*self.window_size, self.size_z]),
             nn.Sigmoid()
             # state size. (nc) x 64 x 64
         )
@@ -176,10 +175,11 @@ class VAE(nn.Module):
             data = data.type(torch.FloatTensor) #numpy uses doubles, so just to be save
 
             if not car:
-                data_window = [0]*self.batch_size
+                data_window = torch.zeros([self.batch_size, self.size_c, 2*self.window_size, self.size_z])
                 for i in range(self.batch_size): #number of samples we take from the same world
                     center = np.random.randint(0,self.size_x)
-                    data_window[i] = (self.window(data[0], center))
+                    data_window[i,:,:,:] = self.window(data[0], center)
+                data = data_window #to keep naming convention
 
             data = Variable(data)
             self.optimizer.zero_grad()
@@ -196,7 +196,7 @@ class VAE(nn.Module):
             log_interval = 10
             if batch_idx % log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, batch_idx * len(data), len(self.train_loader.dataset),
+                    epoch, batch_idx * len(data), len(self.train_loader.dataset)*self.batch_size, #because I do the batches manually
                     100. * batch_idx / len(self.train_loader),
                     loss.data.item() / len(data)))
 
@@ -222,6 +222,15 @@ class VAE(nn.Module):
 
         # each data is of self.batch_size (default 128) samples
         for i, data in enumerate(self.test_loader):
+            data = data.type(torch.FloatTensor) #numpy uses doubles, so just to be save
+
+            if not car:
+                data_window = torch.zeros([self.batch_size, self.size_c, 2*self.window_size, self.size_z])
+                for i in range(self.batch_size): #number of samples we take from the same world
+                    center = np.random.randint(0,self.size_x)
+                    data_window[i,:,:,:] = self.window(data[0], center)
+                data = data_window #to keep naming convention
+
             # we're only going to infer, so no autograd at all required: volatile=True
             data = Variable(data, volatile=True)
             recon_batch, mu, logvar = self(data)
@@ -283,4 +292,6 @@ class VAE(nn.Module):
         else:
             #print('no touch')
             window = fill_in
+
+        window = torch.tensor(window)
         return window

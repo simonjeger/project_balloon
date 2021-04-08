@@ -67,7 +67,7 @@ def plot_reward():
     ax.legend(
         ['reward',
         'running mean over ' + str(N_epi) + ' episodes, max: ' + str(np.round(max(mean_reward_epi),5)) + ', avg: ' + str(np.round(np.mean(rew_epi),5)),
-        'linear regression, norm. slope: ' + str(np.round(slope/N_epi,3)) + ', score: ' + str(np.round(score,5)),
+        r'linear regression, slope $\times$ N_epi: ' + str(np.round(slope*N_epi,5)) + ', score: ' + str(np.round(score,5)),
         'running mean over ' + str(N_epi_big) + ' episodes']
         )
 
@@ -92,8 +92,10 @@ def plot_path():
     idx = np.linspace(0,N-N/n_f,n_f)
     idx = [int(i) for i in idx]
 
-    vmin = min(df['reward_epi'])
-    vmax = max(df['reward_epi'])
+    vmin = np.min(df['reward_epi'])
+    vmax = np.max(df['reward_epi'])
+
+
     vn = 100
     spectrum = np.linspace(vmin, vmax, vn)
     colors = pl.cm.jet(np.linspace(0,1,vn))
@@ -267,73 +269,77 @@ def write_overview():
 
 def disp_overview():
     df = pd.read_csv('overview.csv')
-    n = len(df.columns)-1
-    m = int(np.floor(np.sqrt(n)))
-    n = int(np.floor(n/m))
+
+    # determening the number of different subplots needed
+    to_delete = []
+    for i in range(len(df.columns)):
+        if isinstance(df.iloc[0,i], str):
+            check = all(elem == df.iloc[0,i] for elem in df.iloc[:,i])
+            if check:
+                to_delete.append(i)
+        else:
+            if np.std(df.iloc[:,i])<1e-10:
+                to_delete.append(i)
+
+    df.drop(df.columns[to_delete],axis=1,inplace=True)
+
+    N = len(df.columns)
+    n = int(np.ceil(np.sqrt(N)))
+    m = int(np.ceil(N/n))
 
     fig, axs = plt.subplots(n,m)
+
     x = 0
     for i in range(n):
         for j in range(m):
-            if isinstance(df.iloc[0,x], str):
-                check = all(elem == df.iloc[0,x] for elem in df.iloc[:,x])
-                if check:
-                    color_max='grey'
-                    color_mean='grey'
-                    color_slope='grey'
-                    color_score='grey'
-                else:
-                    color_max='red'
-                    color_mean='blue'
-                    color_slope='green'
-                    color_score='orange'
+            if x < len(df.columns):
+                # colors
+                color_max='red'
+                color_mean='blue'
+                color_slope='green'
+                color_score='orange'
 
-            else:
-                if np.std(df.iloc[:,x])<1e-10:
-                    color_max='grey'
-                    color_mean='grey'
-                    color_slope='grey'
-                    color_score='grey'
-                else:
-                    color_max='red'
-                    color_mean='blue'
-                    color_slope='green'
-                    color_score='orange'
+                # scatter
+                axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=0.1, facecolors='none', edgecolors=color_max, alpha=0.2)
+                axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=0.1, facecolors='none', edgecolors=color_mean, alpha=0.2)
 
-            # scatter
-            axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=0.1, facecolors='none', edgecolors=color_max)
-            axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=0.1, facecolors='none', edgecolors=color_mean)
-            axs[i,j].scatter(df.iloc[:,x],df['linreg_slope'], s=0.1, facecolors='none', edgecolors=color_slope)
-            axs[i,j].scatter(df.iloc[:,x],df['linreg_score'], s=0.1, facecolors='none', edgecolors=color_score)
+                ax2 = axs[i,j].twinx()
+                ax2.tick_params(axis='y', colors='green')
 
-            # mean
-            df_mean_max = pd.concat([df.iloc[:,x], df['rew_epi_max']], axis=1)
+                ax2.scatter(df.iloc[:,x],df['linreg_slope'], s=0.1, facecolors='none', edgecolors=color_slope, alpha=0.2)
+                """
+                ax2.scatter(df.iloc[:,x],df['linreg_score'], s=0.1, facecolors='none', edgecolors=color_score, alpha=0.2)
+                """
 
-            if df_mean_max.columns[0] != df_mean_max.columns[1]:
-                mean_rew_max = df_mean_max.groupby(df_mean_max.columns[0]).mean().reset_index()
-                axs[i,j].scatter(mean_rew_max.iloc[:,0], mean_rew_max.iloc[:,1], s=0.1, facecolors=color_max, edgecolors='black')
-            df_mean_mean = pd.concat([df.iloc[:,x], df['rew_epi_mean']], axis=1)
-            if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
-                mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
-                axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, facecolors=color_mean, edgecolors='black')
-            df_mean_slope = pd.concat([df.iloc[:,x], df['linreg_slope']], axis=1)
-            if df_mean_slope.columns[0] != df_mean_slope.columns[1]:
-                mean_linreg_slope = df_mean_slope.groupby(df_mean_slope.columns[0]).mean().reset_index()
-                axs[i,j].scatter(mean_linreg_slope.iloc[:,0], mean_linreg_slope.iloc[:,1], s=0.1, facecolors=color_slope, edgecolors='black')
-            df_mean_score = pd.concat([df.iloc[:,x], df['linreg_score']], axis=1)
-            if df_mean_score.columns[0] != df_mean_score.columns[1]:
-                mean_linreg_score = df_mean_score.groupby(df_mean_score.columns[0]).mean().reset_index()
-                axs[i,j].scatter(mean_linreg_score.iloc[:,0], mean_linreg_score.iloc[:,1], s=0.1, facecolors=color_score, edgecolors='black')
+                # mean
+                df_mean_max = pd.concat([df.iloc[:,x], df['rew_epi_max']], axis=1)
 
-            #axs[i,j].plot(df.iloc[:,x],df['rew_epi_mean'].mean(), s=0.1, facecolors='none', edgecolors=color_mean)
-            #axs[i,j].plot(df.iloc[:,x],df['linreg_slope'].mean(), s=0.1, facecolors='none', edgecolors=color_slope)
-            #axs[i,j].plot(df.iloc[:,x],df['linreg_score'].mean(), s=0.1, facecolors='none', edgecolors=color_score)
+                if df_mean_max.columns[0] != df_mean_max.columns[1]:
+                    mean_rew_max = df_mean_max.groupby(df_mean_max.columns[0]).mean().reset_index()
+                    axs[i,j].scatter(mean_rew_max.iloc[:,0], mean_rew_max.iloc[:,1], s=0.1, color=color_max)
+                df_mean_mean = pd.concat([df.iloc[:,x], df['rew_epi_mean']], axis=1)
+                if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
+                    mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
+                    axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, color=color_mean)
+                df_mean_slope = pd.concat([df.iloc[:,x], df['linreg_slope']], axis=1)
+                if df_mean_slope.columns[0] != df_mean_slope.columns[1]:
+                    mean_linreg_slope = df_mean_slope.groupby(df_mean_slope.columns[0]).mean().reset_index()
+                    ax2.scatter(mean_linreg_slope.iloc[:,0], mean_linreg_slope.iloc[:,1], s=0.1, color=color_slope)
+                """
+                df_mean_score = pd.concat([df.iloc[:,x], df['linreg_score']], axis=1)
+                if df_mean_score.columns[0] != df_mean_score.columns[1]:
+                    mean_linreg_score = df_mean_score.groupby(df_mean_score.columns[0]).mean().reset_index()
+                    ax2.scatter(mean_linreg_score.iloc[:,0], mean_linreg_score.iloc[:,1], s=0.1, color=color_score)
+                """
 
-            axs[i,j].set_title(df.columns[x])
-            x += 1
+                axs[i,j].set_title(df.columns[x])
+                x += 1
 
     #fig.tight_layout()
+    """
     fig.suptitle('max reward: red     mean reward: blue     linreg slope: green     linreg score: orange')
+    """
+    fig.suptitle('max reward: red     mean reward: blue     linreg slope: green')
     plt.subplots_adjust(wspace=0.5, hspace=1)
     plt.show()
     plt.close()
