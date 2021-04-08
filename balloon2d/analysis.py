@@ -115,10 +115,10 @@ def plot_path():
             # plot path
             axs[0].plot(df_loc['position_x'], df_loc['position_z'], color=colors[c])
             axs[0].scatter(df_loc['target_x'], df_loc['target_z'], s=20, facecolors='none', edgecolors='grey')
-            axs[0].set_xlim(0,df_loc['size_x'].iloc[-1])
-            axs[0].set_ylim(0,df_loc['size_z'].iloc[-1])
+            axs[0].set_xlim(0,df_loc['size_x'].dropna().iloc[-1])
+            axs[0].set_ylim(0,df_loc['size_z'].dropna().iloc[-1])
 
-            step += len(df_loc['position_x'])
+            step = df_loc['position_x'].index[0] + 1
 
         axs[0].set_aspect('equal')
         axs[0].set_title(str(int(i/n_f*100)) + ' %')
@@ -252,6 +252,7 @@ def write_overview():
     Y_pred = linear_regressor.predict(X)  # make predictions
 
     slope = linear_regressor.coef_[0]
+    intercept = linear_regressor.intercept_
     score = linear_regressor.score(X,Y)
 
     # write down
@@ -260,6 +261,7 @@ def write_overview():
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)
     df_reward.insert(len(df_reward.columns),'linreg_slope', slope, True)
+    df_reward.insert(len(df_reward.columns),'linreg_intercept', slope, True)
     df_reward.insert(len(df_reward.columns),'linreg_score', score, True)
     dirpath = Path('overview.csv')
     if dirpath.exists() and dirpath.is_file():

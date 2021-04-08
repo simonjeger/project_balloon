@@ -64,9 +64,11 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
+    text = text + 'physics: True' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "path: '/cluster/scratch/sjeger/'" + '\n'
+    text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 20' + '\n'
     text = text + 'overview: True' + '\n'
@@ -86,8 +88,8 @@ for num_epochs in [100000]:
                             for replay_start_size in [1000]:
                                 for epi_update_interval in [5, 10, 30]:
                                     for epi_target_update_interval in [1]:
-                                        for minibatch_size in [32, 10000]
-                                            for n_times_update in [1, 10]
+                                        for minibatch_size in [32, 10000]:
+                                            for n_times_update in [1, 10]:
                                                 for min_distance in [1]:
                                                     for repeat in range(5):
                                                         write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, minibatch_size, n_times_update, min_distance)

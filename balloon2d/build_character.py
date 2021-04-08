@@ -3,10 +3,22 @@ import scipy
 from random import gauss
 import copy
 
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
+
 class character():
     def __init__(self, size_x, size_z, start, target, T, world, world_compressed):
-        self.mass = 1000
-        #self.mass = 1
+        if yaml_p['physics']:
+            self.mass = 1000
+        else:
+            self.mass = 1
         self.area = 21**2/4*np.pi
         self.rho = 1.2
         self.c_w = 0.45
@@ -33,8 +45,10 @@ class character():
         self.min_z = self.hight_above_ground()
         self.max_z = self.size_z - self.position[1]
 
-        self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
-        #self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+        if yaml_p['physics']:
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+        else:
+            self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
         self.path = [self.position.copy(), self.position.copy()]
         self.min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2)
 
@@ -51,8 +65,10 @@ class character():
         self.max_x = self.size_x - self.position[0]
         self.min_z = self.hight_above_ground()
         self.max_z = self.size_z - self.position[1]
-        self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
-        #self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+        if yaml_p['physics']:
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+        else:
+            self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
 
         min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2)
         if min_distance < self.min_distance:

@@ -3,8 +3,8 @@
 
 # Folder
 __pycache__
+pfrl/
 yaml/
-runs/
 process*/
 autoencoder/
 data*/

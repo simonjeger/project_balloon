@@ -25,7 +25,7 @@ with open(args.yaml_file, 'rt') as fh:
 
 
 class balloon2d(Env):
-    def __init__(self, train_or_test, writer='no logger'):
+    def __init__(self, train_or_test, writer=None):
         # which data to use
         self.train_or_test = train_or_test
         self.writer = writer
@@ -45,11 +45,13 @@ class balloon2d(Env):
         self.T = yaml_p['T']
 
         # location array in x and z
-        regular_state_space_low = np.array([0,0,-np.inf,-np.inf,0,0,0,0]) #residual to target, velocity, distance to border
-        #regular_state_space_low = np.array([0,0,0,0,0,0]) #residual to target, distance to border
+        if yaml_p['physics']:
+            regular_state_space_low = np.array([0,0,-np.inf,-np.inf,0,0,0,0]) #residual to target, velocity, distance to border
+            regular_state_space_high = np.array([self.size_x,self.size_z,np.inf,np.inf,0,self.size_x,0,self.size_z])
+        else:
+            regular_state_space_low = np.array([0,0,0,0,0,0]) #residual to target, distance to border
+            regular_state_space_high = np.array([self.size_x,self.size_z,0,self.size_x,0,self.size_z])
         world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
-        regular_state_space_high = np.array([self.size_x,self.size_z,np.inf,np.inf,0,self.size_x,0,self.size_z])
-        #regular_state_space_high = np.array([self.size_x,self.size_z,0,self.size_x,0,self.size_z])
         world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0)) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
 
@@ -72,22 +74,28 @@ class balloon2d(Env):
         in_bounds = self.character.update(action, self.world_compressed)
         done = self.cost(in_bounds)
 
-
-        self.step_n += 1
-
         # logger
-        if type(self.writer) is not str:
-            self.writer.add_scalar('episode', self.epi_n , self.step_n)
-            self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-            self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
-            self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+        if type(self.writer) is not None:
+            if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
+                self.writer.add_scalar('episode', self.epi_n , self.step_n)
+                self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
+                self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
+                self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
             if done:
+                self.writer.add_scalar('episode', self.epi_n , self.step_n)
+                self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
+                self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
+                self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+
                 self.writer.add_scalar('size_x', self.size_x , self.step_n)
                 self.writer.add_scalar('size_z', self.size_z , self.step_n)
                 self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
                 self.writer.add_scalar('target_z', self.character.target[1], self.step_n)
                 self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
-                self.epi_n += 1
+
+        self.step_n += 1
+        if done:
+            self.epi_n += 1
 
         # set placeholder for info
         info = {}
@@ -174,6 +182,7 @@ class balloon2d(Env):
         world_compressed = self.ae.compress(window)
         character_v = character(self.size_x, self.size_z, position, self.character.target, self.T, self.world, world_compressed)
         velocity = self.world[position[0], position[1]][0:2] #approximate current velocity as velocity of world_map
-        character_v.state[2:4] = velocity
+        if yaml_p['physics']:
+            character_v.state[2:4] = velocity
 
         return character_v.state
