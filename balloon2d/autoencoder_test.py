@@ -6,6 +6,6 @@ import argparse
 model = VAE()
 model.load_weights('autoencoder')
 
-EPOCHS = 5
+EPOCHS = 1
 for epoch in range(1, EPOCHS + 1):
     model.model_test(epoch)

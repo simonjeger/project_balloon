@@ -34,10 +34,6 @@ class character():
 
         self.position = copy.copy(self.start)
 
-        # check if started "under the ground"
-        if self.hight_above_ground() < 0:
-            self.position[1] -= self.hight_above_ground()
-
         self.residual = self.target - self.position
         self.velocity = np.array([0,0])
         self.min_x = self.position[0] - 0
@@ -91,11 +87,12 @@ class character():
             in_bounds = (0 <= coord[0] < self.size_x) & (0 <= coord[1] < self.size_z) #if still within bounds
             if in_bounds:
                 # calculate velocity at time step t
-                w_x = self.world[coord[0], coord[1]][1]
-                w_z = self.world[coord[0], coord[1]][2]
+                w_x = self.world[-3][coord[0], coord[1]]
+                w_z = self.world[-2][coord[0], coord[1]]
+                sig_xz = self.world[-1][coord[0], coord[1]]
 
-                w_x += gauss(0,self.world[coord[0], coord[1]][3]/np.sqrt(n)) #is it /sqrt(n) or just /n?
-                w_z += gauss(0,self.world[coord[0], coord[1]][3]/np.sqrt(n))
+                w_x += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
+                w_z += gauss(0,sig_xz/np.sqrt(n))
 
                 v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*delta_t + p_x
                 v_z = (np.sign(w_z - p_z) * (w_z - p_z)**2 * c + b)*delta_t + p_z
@@ -114,5 +111,5 @@ class character():
         return in_bounds
 
     def hight_above_ground(self):
-        x = np.linspace(0,self.size_x,len(self.world[:,0,0]))
-        return self.position[1] - np.interp(self.position[0],x,self.world[:,0,0])
+        x = np.linspace(0,self.size_x,len(self.world[0,:,0]))
+        return self.position[1] - np.interp(self.position[0],x,self.world[0,:,0])

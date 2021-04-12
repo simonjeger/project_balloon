@@ -14,7 +14,7 @@ class custom_data(Dataset):
         self.data = []
         for name in name_list:
             img = cv2.imread(path + name)
-            img = cv2.resize(img, (100,100), interpolation = cv2.INTER_AREA) #used to be 130,150
+            img = cv2.resize(img, (50,50), interpolation = cv2.INTER_AREA) #used to be 130,150
             img = Image.fromarray(img).convert('RGB')  #img as opencv
 
             arr = np.array(img).transpose(-1, 0, 1) #because pytorch reads in images as Channel x With x Hight
@@ -34,8 +34,7 @@ class wind_data(Dataset):
         self.data = []
         for name in name_list:
             tensor = torch.load(path + name)
-            #tensor = tensor[:,:,1:] # don't autoencode terrain
-            tensor = np.array(tensor).transpose(-1, 0, 1)
+            tensor = tensor[3:,:,:] # don't autoencode terrain
             self.data.append(torch.tensor(tensor).float())
 
     def __len__(self):

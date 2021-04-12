@@ -63,9 +63,7 @@ class balloon2d(Env):
 
     def step(self, action):
         # Update compressed wind map
-        window = self.ae.window(self.world, self.character.position[0])
-        window = np.array([window])
-        self.world_compressed = self.ae.compress(window)
+        self.world_compressed = self.ae.model_test(self.world, self.character.position)
 
         coord = [int(i) for i in np.round(self.character.position)] #convert position into int so I can use it as index
         done = False
@@ -75,7 +73,7 @@ class balloon2d(Env):
         done = self.cost(in_bounds)
 
         # logger
-        if type(self.writer) is not None:
+        if self.writer is not None:
             if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
                 self.writer.add_scalar('episode', self.epi_n , self.step_n)
                 self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
@@ -138,21 +136,31 @@ class balloon2d(Env):
         self.reward_epi = 0
 
         # Set problem
-        border = 2
+        border_x = 5
+        border_z = 2
+
         if isinstance(yaml_p['start'], str):
-            start = np.array([random.randint(border, self.size_x/2 - border),0], dtype=float)
+            start = np.array([random.randint(border_x, self.size_x/2 - border_x),0], dtype=float)
         else:
             start = np.array(yaml_p['start'], dtype=float)
         if isinstance(yaml_p['target'], str):
-            #target = np.array([random.randint(border + self.size_x/2, self.size_x - border),random.randint(border, self.size_z - border)], dtype=float)
-            target = np.array([25,random.randint(border, self.size_z - border)], dtype=float)
+            #target = np.array([random.randint(start[0] + border_x, self.size_x - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+            target = np.array([random.randint(start[0] + border_x, self.size_x - border_x),0], dtype=float)
         else:
             target = np.array(yaml_p['target'], dtype=float)
 
+        # if started "under ground"
+        x = np.linspace(0,self.size_x,len(self.world[0,:,0]))
+
+        if start[1] <= np.interp(start[0],x,self.world[0,:,0]):
+            start[1] = np.interp(start[0],x,self.world[0,:,0])
+
+        if target[1] <= np.interp(target[0],x,self.world[0,:,0]) + 2:
+            target[1] = np.interp(target[0],x,self.world[0,:,0]) + 2
+
+
         # Initial compressed wind map
-        window = self.ae.window(self.world, start[0])
-        window = np.array([window])
-        self.world_compressed = self.ae.compress(window)
+        self.world_compressed = self.ae.model_test(self.world, start)
 
         self.character = character(self.size_x, self.size_z, start, target, self.T, self.world, self.world_compressed)
 
@@ -167,22 +175,16 @@ class balloon2d(Env):
         # read in world_map
         self.world = torch.load('data/' + self.train_or_test + '/tensor/' + self.world_name + '.pt')
 
-        self.terrain = self.world[:,:,0]
-        self.mean_x = self.world[:,:,1]
-        self.mean_z = self.world[:,:,2]
-        self.sig_xz = self.world[:,:,3]
-
         # define world size
-        self.size_x = len(self.mean_x)
-        self.size_z = len(self.mean_x[0])
+        self.size_x = len(self.world[-1,:,:])
+        self.size_z = len(self.world[-1,:,:][0])
 
     def character_v(self, position):
-        window = self.ae.window(self.world, position[0])
-        window = np.array([window])
-        world_compressed = self.ae.compress(window)
+        world_compressed = self.ae.model_test(self.world, self.character.position)
         character_v = character(self.size_x, self.size_z, position, self.character.target, self.T, self.world, world_compressed)
-        velocity = self.world[position[0], position[1]][0:2] #approximate current velocity as velocity of world_map
+        v_x = self.world[-3][position[0], position[1]] #approximate current velocity as velocity of world_map
+        v_z = self.world[-2][position[0], position[1]]
         if yaml_p['physics']:
-            character_v.state[2:4] = velocity
+            character_v.state[2:4] = [v_x, v_z]
 
         return character_v.state

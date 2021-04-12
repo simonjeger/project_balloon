@@ -1,6 +1,16 @@
 import numpy as np
 import pygame, sys
 
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
+
 def build_render(character, reward_step, reward_epi, world_name, window_size, train_or_test):
     size_x = character.size_x
     size_z = character.size_z
@@ -63,16 +73,22 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     reward_step = myfont.render('reward_step: ' + str(round(reward_step,4)), False, pygame.Color('LightGray'))
     reward_epi = myfont.render('reward_epi: ' + str(round(reward_epi,4)), False, pygame.Color('LightGray'))
     residual = myfont.render('residual: ' + str(np.round(character.state[0:2],4)), False, pygame.Color('LightGray'))
-    velocity = myfont.render('velocity: ' + str(np.round(character.state[2:4],4)), False, pygame.Color('LightGray'))
-    border = myfont.render('border: ' + str(np.round(character.state[4:8],4)), False, pygame.Color('LightGray'))
-    wind_compressed = myfont.render('wind_compressed: ' + str(np.round(character.state[8:],4)), False, pygame.Color('LightGray'))
+    if yaml_p['physics']:
+        velocity = myfont.render('velocity: ' + str(np.round(character.state[2:4],4)), False, pygame.Color('LightGray'))
+        border = myfont.render('border: ' + str(np.round(character.state[4:8],4)), False, pygame.Color('LightGray'))
+        world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[8:],4)), False, pygame.Color('LightGray'))
+    else:
+        border = myfont.render('border: ' + str(np.round(character.state[2:6],4)), False, pygame.Color('LightGray'))
+        world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[6:],4)), False, pygame.Color('LightGray'))
+
 
     screen.blit(reward_step,(10,10))
     screen.blit(reward_epi,(10,25))
     screen.blit(residual,(10,55))
-    screen.blit(velocity,(10,70))
+    if yaml_p['physics']:
+        screen.blit(velocity,(10,70))
     screen.blit(border,(10,85))
-    screen.blit(wind_compressed,(10,100))
+    screen.blit(world_compressed,(10,100))
 
     # updating the window
     pygame.display.flip()

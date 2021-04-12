@@ -7,6 +7,7 @@ from torch.autograd import Variable
 from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout, ConvTranspose2d, Sigmoid, Upsample
 from torch.nn import functional as F
 from torchvision import datasets, transforms
+import matplotlib
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
 
@@ -22,9 +23,9 @@ class VAE(nn.Module):
         self.writer = writer
 
         # variables
-        self.bottleneck = 500
-        self.window_size = 4
-        self.batch_size = 20
+        self.bottleneck = 20
+        self.window_size = 3
+        self.batch_size = 10
 
         #read in data
         if car:
@@ -40,60 +41,97 @@ class VAE(nn.Module):
 
         if car:
             self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size) # I'll build my own batches through the window function
-            self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=1)
+            self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size)
         else:
             self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=1) # I'll build my own batches through the window function
             self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=1)
 
-        ngf = 64
-        ndf = 64
+        ngf = 64 #64
+        ndf = 64 #64
         nc = self.size_c
         # encoder
-        self.encoder = nn.Sequential(
-            # input is (nc) x 28 x 28
-            nn.Conv2d(nc, ndf, 3, 2, 1, bias=False), #kernel sizes through Conv2d used to be: 4,4,3,1
+
+        self.encoder = nn.Sequential( # kernel_size = H_in - H_out - 1 #for basic case with padding=0, stride=1, dialation=1
+            nn.Conv2d(nc, ndf, 19, bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
             nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf) x 14 x 14
-            nn.Conv2d(ndf, ndf * 2, 3, 2, 1, bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
-            nn.BatchNorm2d(ndf * 2),
+
+            nn.Conv2d(ndf, ndf * 2, 17, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*2) x 7 x 7
-            nn.Conv2d(ndf * 2, ndf * 4, 1, 2, 1, bias=False),
-            nn.BatchNorm2d(ndf * 4),
+
+            nn.Conv2d(ndf * 2, ndf * 4, 13, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*4) x 4 x 4
-            nn.Conv2d(ndf * 4, 1024, 2, 1, 0, bias=False),
-            # nn.BatchNorm2d(1024),
+
+            nn.Conv2d(ndf * 4, 1024, 4, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Upsample([1, 1]) # I added that
-            # nn.Sigmoid()
+        )
+
+        self.encoder_wind = nn.Sequential( # kernel_size = H_in - H_out - 1 #for basic case with padding=0, stride=1, dialation=1
+            nn.Conv2d(nc, ndf, (5,9), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(ndf, ndf * 2, 2, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(ndf * 2, ndf * 4, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(ndf * 4, 1024, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
         )
 
         self.decoder = nn.Sequential(
-            # input is Z, going into a convolution
-            nn.ConvTranspose2d(1024, ngf * 8, 2, 1, 0, bias=False),
-            nn.BatchNorm2d(ngf * 8),
-            nn.ReLU(True),
-            # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 4),
-            nn.ReLU(True),
-            nn.Upsample([int(2*self.window_size/4), int(self.size_z/4)]),
-            # state size. (ngf*4) x 8 x 8
-            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(ngf * 2),
-            nn.ReLU(True),
-            # state size. (ngf*2) x 16 x 16
-            nn.ConvTranspose2d(ngf * 2, nc, 4, 2, 1, bias=False),
-            # nn.BatchNorm2d(ngf),
-            # nn.ReLU(True),
-            # state size. (ngf) x 32 x 32
-            # nn.ConvTranspose2d(    ngf,      nc, 4, 2, 1, bias=False),
-            # nn.Tanh()
-            nn.Upsample([2*self.window_size, self.size_z]),
+            nn.ConvTranspose2d(1024, ngf * 4, 3, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, 12, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.ConvTranspose2d(ngf * 2, ngf, 18, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.ConvTranspose2d(ngf, nc, 20, bias=False),
             nn.Sigmoid()
-            # state size. (nc) x 64 x 64
-        )
+            )
+
+
+        self.decoder_conv = nn.Sequential(
+            #nn.Conv2d(1024, ngf * 8, 1, bias=False),
+            nn.ConvTranspose2d(1024, ngf * 8, 1, bias=False),
+            nn.ReLU(True),
+            nn.Upsample([4, 4]),
+
+            #nn.Conv2d(ngf * 8, ngf * 4, 4, bias=False),
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, bias=False),
+            nn.ReLU(True),
+            nn.Upsample([8, 8]),
+
+            #nn.Conv2d(ngf * 4, ngf * 2, 4, bias=False),
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, bias=False),
+            nn.ReLU(True),
+            nn.Upsample([16, 16]),
+
+            #nn.Conv2d(ngf * 2, ngf, 4, bias=False),
+            nn.ConvTranspose2d(ngf * 2, ngf, 4, bias=False),
+            nn.ReLU(True),
+            nn.Upsample([self.size_x, self.size_z]),
+
+            #nn.Conv2d(ngf, nc, 1, bias=False),
+            nn.ConvTranspose2d(ngf, nc, 1, bias=False),
+            nn.Sigmoid()
+            )
+
+        self.decoder_wind = nn.Sequential(
+            nn.ConvTranspose2d(1024, ngf * 4, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, 2, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.ConvTranspose2d(ngf * 2, ngf, 3, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.ConvTranspose2d(ngf, nc, (3,7), bias=False),
+            )
 
         self.fc1 = nn.Linear(1024, 512)
         self.fc21 = nn.Linear(512, self.bottleneck)
@@ -108,10 +146,13 @@ class VAE(nn.Module):
         self.optimizer = optim.Adam(self.parameters(), lr=1e-4) #used to be 1e-3
 
     def encode(self, x):
-        conv = self.encoder(x);
-        # print("encode conv", conv.size())
-        h1 = self.fc1(conv.view(-1, 1024))
-        # print("encode h1", h1.size())
+        if car:
+            conv = self.encoder(x);
+        else:
+            conv = self.encoder_wind(x);
+        #print("encode conv", conv.size())
+        h1 = self.fc1(conv.view(len(conv), -1))
+        #print("encode h1", h1.size())
         return self.fc21(h1), self.fc22(h1)
 
     def reparameterize(self, mu,logvar):
@@ -130,10 +171,14 @@ class VAE(nn.Module):
     def decode(self, z):
         h3 = self.relu(self.fc3(z))
         deconv_input = self.fc4(h3)
-        # print("deconv_input", deconv_input.size())
+        #print("deconv_input", deconv_input.size())
         deconv_input = deconv_input.view(len(deconv_input),-1,1,1)
-        # print("deconv_input", deconv_input.size())
-        return self.decoder(deconv_input)
+        #print("deconv_input", deconv_input.size())
+        if car:
+            return self.decoder(deconv_input)
+        else:
+            return self.decoder_wind(deconv_input)
+        #return self.fake_decoder(deconv_input).view(len(deconv_input),3, 30, 30)
 
     def reparametrize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
@@ -157,7 +202,10 @@ class VAE(nn.Module):
 
     def loss_function(self, recon_x, x, mu, logvar):
         # how well do input x and output recon_x agree?
-        BCE = F.binary_cross_entropy(recon_x, x)
+        if car:
+            BCE = F.binary_cross_entropy(recon_x, x)
+        else:
+            BCE = nn.functional.mse_loss(recon_x, x)
         #BCE = F.binary_cross_entropy_with_logits(recon_x, x)
 
         # how close is the distribution to mean = 0, std = 1?
@@ -193,7 +241,7 @@ class VAE(nn.Module):
             loss.backward()
             train_loss += loss.data.item()
             self.optimizer.step()
-            log_interval = 10
+            log_interval = 100
             if batch_idx % log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx * len(data), len(self.train_loader.dataset)*self.batch_size, #because I do the batches manually
@@ -214,6 +262,11 @@ class VAE(nn.Module):
             save_image(sample.data.view(self.batch_size, self.size_c, self.size_x, self.size_z),
                 #           'results/sample_' + str(epoch) + '.png')
                           'autoencoder/results/sample.png')
+        else:
+            sample = Variable(torch.randn(self.batch_size, self.bottleneck))
+            sample = self.decode(sample).cpu()
+
+            self.visualize(sample, 'autoencoder/results/sample.png')
 
     def model_test(self, epoch):
         # toggle model to test / inference mode
@@ -249,20 +302,20 @@ class VAE(nn.Module):
                                 'autoencoder/results/reconstruction.png', nrow=n)
 
             else:
+                #validation
+                #real = np.array(data[b]).transpose(1, -1, 0)
+                #real = torch.tensor(real)
+                #recon = recon_batch[b].detach().numpy().transpose(1, -1, 0)
+                #recon = torch.tensor(recon)
+
+                self.visualize(data, 'autoencoder/results/real.png')
+                self.visualize(recon_batch, 'autoencoder/results/recon.png')
+
                 # save
                 for b in range(self.batch_size):
                     # compressed
                     comp = torch.cat([mu[b], logvar[b]])
                     torch.save(comp, 'data/test/tensor_comp/wind_map_comp' + str(i*self.batch_size+b).zfill(5) + '.pt')
-
-                    #validation
-                    real = np.array(data[b]).transpose(1, -1, 0)
-                    real = torch.tensor(real)
-                    recon = recon_batch[b].detach().numpy().transpose(1, -1, 0)
-                    recon = torch.tensor(recon)
-
-                    visualize_world('test', real)
-                    visualize_world('test', recon)
 
 
         test_loss /= len(self.test_loader.dataset)
@@ -282,11 +335,15 @@ class VAE(nn.Module):
         fill_in = data[:,start_x:end_x,:]
         # touching the left border
         if start_x == 0:
-            window[:,0:end_x,:] = fill_in
+            window[:,self.window_size*2-end_x::,:] = fill_in
+            for i in range(2*self.window_size-len(fill_in[0])):
+                window[:,i,:] = fill_in[:,0,:]
 
         # touching the right border
         elif end_x == self.size_x:
-            window[:,self.window_size*2-(end_x-start_x):self.window_size*2,:] = fill_in
+            window[:,0:end_x-start_x,:] = fill_in
+            for i in range(2*self.window_size-len(fill_in[0])):
+                window[:,2*self.window_size-i-1,:] = fill_in[:,-1,:]
 
         # if not touching anything¨
         else:
@@ -295,3 +352,32 @@ class VAE(nn.Module):
 
         window = torch.tensor(window)
         return window
+
+    def visualize(self, data, path):
+        for n in range(min(len(data),3)):
+            mean_x = data[n][-3,:,:].detach().numpy()
+            mean_z = data[n][-2,:,:].detach().numpy()
+            sig_xz = data[n][-1,:,:].detach().numpy()
+
+            size_x = len(mean_x)
+            size_z = len(mean_x[0])
+
+            z,x = np.meshgrid(np.arange(0, size_z, 1),np.arange(0, size_x, 1))
+            fig, ax = plt.subplots(frameon=False, figsize=(size_x,size_z))
+            ax.set_axis_off()
+            ax.set_aspect(1)
+
+            # standardise color map for sig value
+            floor = 0
+            ceil = 1
+            sig_xz = np.maximum(sig_xz, floor)
+            sig_xz = np.minimum(sig_xz, ceil)
+            sig_xz -= floor
+            sig_xz /= ceil
+            cm = matplotlib.cm.viridis
+            colors = cm(sig_xz).reshape(size_x*size_z,4)
+
+            # generate quiver
+            q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=1, scale_units='inches')
+            plt.savefig(path)
+            plt.close()

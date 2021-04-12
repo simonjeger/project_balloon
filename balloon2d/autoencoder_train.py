@@ -9,7 +9,7 @@ writer = SummaryWriter('autoencoder')
 
 model = VAE(writer)
 
-EPOCHS = 10
+EPOCHS = 50
 for epoch in range(1, EPOCHS + 1):
     model.model_train(epoch)
 model.save_weights('autoencoder')

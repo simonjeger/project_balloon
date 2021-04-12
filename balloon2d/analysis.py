@@ -299,19 +299,19 @@ def disp_overview():
                 color_max='red'
                 color_mean='blue'
                 color_slope='green'
-                color_score='orange'
+                color_intercept='orange'
+                color_score='pink'
 
                 # scatter
                 axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=0.1, facecolors='none', edgecolors=color_max, alpha=0.2)
                 axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=0.1, facecolors='none', edgecolors=color_mean, alpha=0.2)
+                axs[i,j].scatter(df.iloc[:,x],df['linreg_intercept'], s=0.1, facecolors='none', edgecolors=color_intercept, alpha=0.2)
+                axs[i,j].scatter(df.iloc[:,x],df['linreg_score'], s=0.1, facecolors='none', edgecolors=color_score, alpha=0.2)
 
                 ax2 = axs[i,j].twinx()
                 ax2.tick_params(axis='y', colors='green')
 
                 ax2.scatter(df.iloc[:,x],df['linreg_slope'], s=0.1, facecolors='none', edgecolors=color_slope, alpha=0.2)
-                """
-                ax2.scatter(df.iloc[:,x],df['linreg_score'], s=0.1, facecolors='none', edgecolors=color_score, alpha=0.2)
-                """
 
                 # mean
                 df_mean_max = pd.concat([df.iloc[:,x], df['rew_epi_max']], axis=1)
@@ -327,12 +327,14 @@ def disp_overview():
                 if df_mean_slope.columns[0] != df_mean_slope.columns[1]:
                     mean_linreg_slope = df_mean_slope.groupby(df_mean_slope.columns[0]).mean().reset_index()
                     ax2.scatter(mean_linreg_slope.iloc[:,0], mean_linreg_slope.iloc[:,1], s=0.1, color=color_slope)
-                """
+                df_mean_intercept= pd.concat([df.iloc[:,x], df['linreg_intercept']], axis=1)
+                if df_mean_intercept.columns[0] != df_mean_intercept.columns[1]:
+                    mean_linreg_intercept = df_mean_intercept.groupby(df_mean_intercept.columns[0]).mean().reset_index()
+                    ax2.scatter(mean_linreg_intercept.iloc[:,0], mean_linreg_intercept.iloc[:,1], s=0.1, color=color_intercept)
                 df_mean_score = pd.concat([df.iloc[:,x], df['linreg_score']], axis=1)
                 if df_mean_score.columns[0] != df_mean_score.columns[1]:
                     mean_linreg_score = df_mean_score.groupby(df_mean_score.columns[0]).mean().reset_index()
                     ax2.scatter(mean_linreg_score.iloc[:,0], mean_linreg_score.iloc[:,1], s=0.1, color=color_score)
-                """
 
                 axs[i,j].set_title(df.columns[x])
                 x += 1

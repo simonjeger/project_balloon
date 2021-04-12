@@ -4,12 +4,12 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, minibatch_size, n_times_update, min_distance):
+def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, epi_update_interval, epi_target_update_interval, minibatch_size, n_times_update, min_distance):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('bsub -W 60:00 -R "rusage[mem=200000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -47,7 +47,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'buffer_size: ' + str(buffer_size) + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'max_grad_norm: ' + str(max_grad_norm) + '\n'
-    text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
+    text = text + 'replay_start_size: ' + str(minibatch_size) + '\n'
     text = text + 'epi_update_interval: ' + str(epi_update_interval) + '\n'
     text = text + 'epi_target_update_interval: ' + str(epi_target_update_interval) + '\n'
     text = text + 'minibatch_size: ' + str(minibatch_size) + '\n'
@@ -55,12 +55,12 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 500' + '\n'
-    text = text + 'start: [10,0]' + '\n'
-    text = text + 'target: [25,7]' + '\n'
+    text = text + 'start: [5,0]' + '\n'
+    text = text + 'target: "random"' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: -0.001' + '\n'
-    text = text + 'action: -0.002' + '\n'
+    text = text + 'action: -0.003' + '\n'
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
@@ -77,20 +77,19 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 1690
-for num_epochs in [100000]:
+process_nr = 1910
+for num_epochs in [25000]:
     for buffer_size in [1000000]:
-        for lr in [0.005, 0.001, 0.0005]:
+        for lr in [0.001, 0.0005]:
             for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                for epsi_low in [0.01, 0.05]:
-                    for decay in [400000, 1200000]:
+                for epsi_low in [0.01]:
+                    for decay in [100000]:
                         for max_grad_norm in [1]:
-                            for replay_start_size in [1000]:
-                                for epi_update_interval in [5, 10, 30]:
-                                    for epi_target_update_interval in [1]:
-                                        for minibatch_size in [32, 10000]:
-                                            for n_times_update in [1, 10]:
-                                                for min_distance in [1]:
-                                                    for repeat in range(5):
-                                                        write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, replay_start_size, epi_update_interval, epi_target_update_interval, minibatch_size, n_times_update, min_distance)
-                                                        process_nr += 1
+                            for epi_update_interval in [1, 5, 10]:
+                                for epi_target_update_interval in [1]:
+                                    for minibatch_size in [5000, 10000, 15000]:
+                                        for n_times_update in [1, 5, 10]:
+                                            for min_distance in [1]:
+                                                for repeat in range(3):
+                                                    write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, epi_update_interval, epi_target_update_interval, minibatch_size, n_times_update, min_distance)
+                                                    process_nr += 1

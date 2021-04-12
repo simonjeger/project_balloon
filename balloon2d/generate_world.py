@@ -4,35 +4,70 @@ from random import gauss
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 import cv2
+import random
 
 def generate_world(size_x, size_z, num, train_or_test):
     for n in range(num):
-        terrain = generate_terrain(size_x)
+        terrain = generate_terrain(size_x, size_z)
         wind = generate_wind(size_x, size_z, terrain)
 
-        world = np.zeros(shape=(size_x,size_z,1+3))
+        world = np.zeros(shape=(3+3,size_x,size_z))
 
         for i in range(size_x):
-            for j in range(size_z):
-                world[i,0,0] = terrain[i]
-                if j < np.floor(terrain[i]):
-                    world[i,j,1:] = 0
-                else:
-                    world[i,j,1:] = wind[i,j,:]
+            world[0,i,0] = terrain[i]
 
-        # stack and save
+            for j in range(size_z):
+                distances = []
+                for k in range(len(terrain)):
+                    distances.append(np.sqrt((i-k)**2 + (j-terrain[k])**2))
+
+                if j >= np.floor(terrain[i]):
+                    world[1,i,j] = np.min(distances)
+                    world[2,i,j] = np.arctan2(np.argmin(distances) - i,j - terrain[np.argmin(distances)])
+                    world[-3,i,j] = wind[0][i,j]
+                    world[-2,i,j] = wind[1][i,j]
+                    world[-1,i,j] = wind[2][i,j]
+
+        """
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(terrain)
+        ax.set_aspect('equal')
+        ax.set_xlim(0,size_x)
+        ax.set_ylim(0,size_z)
+        plt.savefig('terrain.png')
+        plt.close()
+
+        plt.imshow(world[1,:,:])
+        plt.colorbar()
+        plt.savefig('distance.png')
+        plt.close()
+
+        plt.imshow(world[2,:,:])
+        plt.colorbar()
+        plt.savefig('bearing.png')
+        plt.close()
+        """
+
+        # save
         torch.save(world, 'data/' + train_or_test + '/tensor/wind_map' + str(n).zfill(5) + '.pt')
         print('generated ' + str(n+1) + ' of ' + str(num) + ' worlds')
 
-def generate_terrain(size_x):
+def generate_terrain(size_x, size_z):
     # generate mean & uncertainty
     terrain = np.ones(shape=(size_x,1))*0
 
+    min_sky = 3
     m = 3
     for i in range(m):
-        pos_x = int(size_x/(2*m) + size_x/m*i)
+        #pos_x = int(size_x/(2*m) + size_x/m*i)
+        pos_x = random.randint(0, size_x-1)
         terrain[pos_x] = abs(gauss(1,10))
-        terrain = gaussian_filter(terrain, sigma = 5)
+        terrain = gaussian_filter(terrain, sigma = 3)
+
+        for j in range(len(terrain)):
+            terrain[j] = min(terrain[j], size_z - min_sky)
 
     # for homogeneous field
     """
@@ -53,11 +88,11 @@ def generate_wind(size_x, size_z, terrain):
         rand_z = int(size_z/(2*m) + size_z/m*i)
         mean_x[:, rand_z] = gauss(2*seed_x*(-1)**i,1)
         mean_z[rand_x, :] = gauss(0,1)
-        sig_xz[rand_x, rand_z] = abs(gauss(0.2,1 ))
+        sig_xz[rand_x, rand_z] = abs(gauss(1,1))
 
     mean_x = gaussian_filter(mean_x, sigma = 2)
     mean_z = gaussian_filter(mean_z, sigma = 2)
-    sig_xz = gaussian_filter(sig_xz, sigma = 5)
+    sig_xz = gaussian_filter(sig_xz, sigma = 2)
 
     # to be more realistic at the grenzschicht
     t = size_x
@@ -70,10 +105,11 @@ def generate_wind(size_x, size_z, terrain):
         else:
             mean_x[i,j] = -1
             mean_z[i,j] = terrain[i-1] - terrain[i]
+        sig_xz[i,j] = abs(gauss(1,1))
 
     mean_x = gaussian_filter(mean_x, sigma = 2)
     mean_z = gaussian_filter(mean_z, sigma = 2)
-    sig_xz = gaussian_filter(sig_xz, sigma = 5)
+    sig_xz = gaussian_filter(sig_xz, sigma = 2)
 
     # for homogeneous field
     """
@@ -83,4 +119,4 @@ def generate_wind(size_x, size_z, terrain):
     sig_xz *= 0
     """
 
-    return np.dstack((mean_x, mean_z, sig_xz))
+    return [mean_x, mean_z, sig_xz]

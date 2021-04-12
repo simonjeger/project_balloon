@@ -106,7 +106,7 @@ class Agent:
                     self.agent.replay_updater.update_if_necessary(yaml_p['T'])
 
                 # logger
-                if type(self.writer) is not None:
+                if self.writer is not None:
                     self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
                 self.epi_n += 1
                 break
