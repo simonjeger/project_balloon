@@ -255,8 +255,13 @@ def write_overview():
     intercept = linear_regressor.intercept_
     score = linear_regressor.score(X,Y)
 
+    # to pass in pandas	df
+    dic_copy = yaml_p.copy()
+    for i in dic_copy:
+        dic_copy[i] = [dic_copy[i]]
+
     # write down
-    df_reward = pd.DataFrame.from_dict(yaml_p)
+    df_reward = pd.DataFrame(dic_copy)
     df_reward = df_reward.drop([0]) # for some reason it imports the yaml_p file twice
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)

@@ -138,13 +138,26 @@ class balloon2d(Env):
         # Set problem
         border_x = 5
         border_z = 2
+        above_ground = 2
 
-        if isinstance(yaml_p['start'], str):
+        if yaml_p['start'] == 'random':
+            start = np.array([random.randint(border_x, self.size_x - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+        elif yaml_p['start'] == 'random_low':
+            start = np.array([random.randint(border_x, self.size_x - border_x),0], dtype=float)
+        elif yaml_p['start'] == 'left':
+            start = np.array([random.randint(border_x, self.size_x/2 - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+        elif yaml_p['start'] == 'left_low':
             start = np.array([random.randint(border_x, self.size_x/2 - border_x),0], dtype=float)
         else:
             start = np.array(yaml_p['start'], dtype=float)
-        if isinstance(yaml_p['target'], str):
-            #target = np.array([random.randint(start[0] + border_x, self.size_x - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+
+        if yaml_p['target'] == 'random':
+            target = np.array([random.randint(border_x, self.size_x - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+        elif yaml_p['target'] == 'random_low':
+            target = np.array([random.randint(border_x, self.size_x - border_x),0], dtype=float)
+        elif yaml_p['target'] == 'right':
+            target = np.array([random.randint(start[0] + border_x, self.size_x - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+        elif yaml_p['target'] == 'right_low':
             target = np.array([random.randint(start[0] + border_x, self.size_x - border_x),0], dtype=float)
         else:
             target = np.array(yaml_p['target'], dtype=float)
@@ -155,8 +168,8 @@ class balloon2d(Env):
         if start[1] <= np.interp(start[0],x,self.world[0,:,0]):
             start[1] = np.interp(start[0],x,self.world[0,:,0])
 
-        if target[1] <= np.interp(target[0],x,self.world[0,:,0]) + 2:
-            target[1] = np.interp(target[0],x,self.world[0,:,0]) + 2
+        if target[1] <= np.interp(target[0],x,self.world[0,:,0]) + above_ground:
+            target[1] = np.interp(target[0],x,self.world[0,:,0]) + above_ground
 
 
         # Initial compressed wind map

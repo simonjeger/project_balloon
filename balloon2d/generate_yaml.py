@@ -55,7 +55,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'T: 500' + '\n'
-    text = text + 'start: [5,0]' + '\n'
+    text = text + 'start: [15,0]' + '\n'
     text = text + 'target: "random"' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
@@ -77,7 +77,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 1910
+process_nr = 2080
 for num_epochs in [25000]:
     for buffer_size in [1000000]:
         for lr in [0.001, 0.0005]:

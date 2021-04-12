@@ -58,13 +58,13 @@ def generate_terrain(size_x, size_z):
     # generate mean & uncertainty
     terrain = np.ones(shape=(size_x,1))*0
 
-    min_sky = 3
-    m = 3
+    min_sky = 2
+    m = 10
     for i in range(m):
         #pos_x = int(size_x/(2*m) + size_x/m*i)
         pos_x = random.randint(0, size_x-1)
-        terrain[pos_x] = abs(gauss(1,10))
-        terrain = gaussian_filter(terrain, sigma = 3)
+        terrain[pos_x] = abs(gauss(0,5))
+        terrain = gaussian_filter(terrain, sigma = 1)
 
         for j in range(len(terrain)):
             terrain[j] = min(terrain[j], size_z - min_sky)
