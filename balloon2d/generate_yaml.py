@@ -83,9 +83,9 @@ for num_epochs in [25000]:
         for lr in [0.001, 0.0005]:
             for explorer_type in ['"LinearDecayEpsilonGreedy"']:
                 for epsi_low in [0.01]:
-                    for decay in [100000]:
+                    for decay in [200000]:
                         for max_grad_norm in [1]:
-                            for epi_update_interval in [1, 5, 10]:
+                            for epi_update_interval in [1, 3, 5]:
                                 for epi_target_update_interval in [1]:
                                     for minibatch_size in [5000, 10000, 15000]:
                                         for n_times_update in [1, 5, 10]:

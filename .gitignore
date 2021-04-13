@@ -9,7 +9,7 @@ process*/
 autoencoder/
 data*/
 render/
-intel_wind/
+intel_wind-master/
 vae/
 results/
 

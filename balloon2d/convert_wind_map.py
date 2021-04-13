@@ -9,11 +9,13 @@ import shutil
 import imageio
 import datetime
 
+from extract_cosmo_data import extract_cosmo_data
+out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', 46.947225, 8.693297, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc')
+print(out)
+
 # reading the nc file and creating Dataset
 nc_terrain = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_ana_const.nc')
 nc_wind = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc')
-
-print(nc_terrain)
 
 def visualize_real_data(dimension):
     if dimension == 'z':
@@ -49,11 +51,16 @@ def visualize_real_data(dimension):
                 axs[j].text(0.95, 0.01, dir + ' at t = ' + str(time_start + datetime.timedelta(0,int(nc_wind['time'][n]))), verticalalignment='bottom', horizontalalignment='right', transform=axs[j].transAxes, color='white', fontsize=15)
                 data = nc_wind[dir][n,0,:,:]
 
-            axs[j].set_xlabel('x')
-            axs[j].set_ylabel('y')
+            axs[j].set_xlabel('lon')
+            axs[j].set_ylabel('lat')
             axs[j].set_aspect(1)
 
-            raster = [np.min(nc_wind['x_1']), np.max(nc_wind['x_1']), np.min(nc_wind['y_1']), np.max(nc_wind['y_1'])]
+            min_lon = nc_wind['lon_1'][np.min(nc_wind['y_1']), np.min(nc_wind['x_1'])]
+            max_lon = nc_wind['lon_1'][np.max(nc_wind['y_1']), np.max(nc_wind['x_1'])]
+            min_lat = nc_wind['lat_1'][np.min(nc_wind['y_1']), np.min(nc_wind['x_1'])]
+            max_lat = nc_wind['lat_1'][np.max(nc_wind['y_1']), np.max(nc_wind['x_1'])]
+
+            raster = [max_lon, min_lon, max_lat, min_lat] #somehow it's reversed
             images.append(axs[j].imshow(data, cmap=cmap, extent=raster))
 
         # Find the min and max of all colors for use in setting the color scale.
@@ -68,12 +75,18 @@ def visualize_real_data(dimension):
 
         #terrain data
         data = nc_terrain['HSURF'][:,:]
-        raster = [np.min(nc_terrain['x_1']), np.max(nc_terrain['x_1']), np.min(nc_terrain['y_1']), np.max(nc_terrain['y_1'])]
+
+        min_lon = nc_terrain['lon_1'][np.min(nc_terrain['y_1']), np.min(nc_terrain['x_1'])]
+        max_lon = nc_terrain['lon_1'][np.max(nc_terrain['y_1']), np.max(nc_terrain['x_1'])]
+        min_lat = nc_terrain['lat_1'][np.min(nc_terrain['y_1']), np.min(nc_terrain['x_1'])]
+        max_lat = nc_terrain['lat_1'][np.max(nc_terrain['y_1']), np.max(nc_terrain['x_1'])]
+
+        raster = [max_lon, min_lon, max_lat, min_lat] #somehow it's reversed
         image = axs[-1].imshow(data, cmap=cmap, extent=raster)
 
         axs[-1].text(0.95, 0.01, 'HSURF', verticalalignment='bottom', horizontalalignment='right', transform=axs[-1].transAxes, color='white', fontsize=15)
-        axs[-1].set_xlabel('x')
-        axs[-1].set_ylabel('y')
+        axs[-1].set_xlabel('lon')
+        axs[-1].set_ylabel('lat')
         axs[-1].set_aspect(1)
         fig.colorbar(image, ax=axs[3], orientation='vertical', fraction=.1)
 

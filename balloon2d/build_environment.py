@@ -1,6 +1,6 @@
 from build_render import build_render
-#from build_autoencoder import Autoencoder
-from fake_autoencoder import fake_Autoencoder
+from human_autoencoder import HAE
+from build_autoencoder import VAE
 from build_character import character
 
 import pandas as pd
@@ -33,7 +33,7 @@ class balloon2d(Env):
         # initialize autoencoder object
         #self.ae = Autoencoder()
         #self.ae.autoencoder_model.load_weights(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder/ae_weights.h5f')
-        self.ae = fake_Autoencoder()
+        self.ae = VAE()
 
         # load new world to get size_x, size_z
         self.load_new_world()
@@ -63,7 +63,7 @@ class balloon2d(Env):
 
     def step(self, action):
         # Update compressed wind map
-        self.world_compressed = self.ae.model_test(self.world, self.character.position)
+        self.world_compressed = self.ae.compress(self.world, self.character.position)
 
         coord = [int(i) for i in np.round(self.character.position)] #convert position into int so I can use it as index
         done = False
@@ -173,7 +173,7 @@ class balloon2d(Env):
 
 
         # Initial compressed wind map
-        self.world_compressed = self.ae.model_test(self.world, start)
+        self.world_compressed = self.ae.compress(self.world, start)
 
         self.character = character(self.size_x, self.size_z, start, target, self.T, self.world, self.world_compressed)
 
@@ -193,7 +193,7 @@ class balloon2d(Env):
         self.size_z = len(self.world[-1,:,:][0])
 
     def character_v(self, position):
-        world_compressed = self.ae.model_test(self.world, self.character.position)
+        world_compressed = self.ae.compress(self.world, self.character.position)
         character_v = character(self.size_x, self.size_z, position, self.character.target, self.T, self.world, world_compressed)
         v_x = self.world[-3][position[0], position[1]] #approximate current velocity as velocity of world_map
         v_z = self.world[-2][position[0], position[1]]

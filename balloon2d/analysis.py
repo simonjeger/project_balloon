@@ -262,7 +262,6 @@ def write_overview():
 
     # write down
     df_reward = pd.DataFrame(dic_copy)
-    df_reward = df_reward.drop([0]) # for some reason it imports the yaml_p file twice
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)
     df_reward.insert(len(df_reward.columns),'linreg_slope', slope, True)

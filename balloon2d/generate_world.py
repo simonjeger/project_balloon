@@ -11,7 +11,7 @@ def generate_world(size_x, size_z, num, train_or_test):
         terrain = generate_terrain(size_x, size_z)
         wind = generate_wind(size_x, size_z, terrain)
 
-        world = np.zeros(shape=(3+3,size_x,size_z))
+        world = np.zeros(shape=(1+3,size_x,size_z))
 
         for i in range(size_x):
             world[0,i,0] = terrain[i]
@@ -22,8 +22,8 @@ def generate_world(size_x, size_z, num, train_or_test):
                     distances.append(np.sqrt((i-k)**2 + (j-terrain[k])**2))
 
                 if j >= np.floor(terrain[i]):
-                    world[1,i,j] = np.min(distances)
-                    world[2,i,j] = np.arctan2(np.argmin(distances) - i,j - terrain[np.argmin(distances)])
+                    #world[1,i,j] = np.min(distances)
+                    #world[2,i,j] = np.arctan2(np.argmin(distances) - i,j - terrain[np.argmin(distances)])
                     world[-3,i,j] = wind[0][i,j]
                     world[-2,i,j] = wind[1][i,j]
                     world[-1,i,j] = wind[2][i,j]

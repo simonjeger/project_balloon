@@ -27,10 +27,13 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     pygame.display.set_caption('balloon2d')
 
     # game rectangles (orgin is always on the top left, so increase y to go down)
-    size_obs_x = window_size*2*res
+    start = int(max(character.position[0] - window_size, 0))
+    end = int(min(character.position[0] + window_size + 1, size_x))
+    size_obs_x = (end - start)*res
     size_obs_y = size_z*2*res
-    pos_obs = [character.position[0]*res, size_z/2*res]
-    rec_obs = pygame.Rect(pos_obs[0] - size_obs_x/2, pos_obs[1] - size_obs_y/2, size_obs_x, size_obs_y)
+
+    pos_obs = [int(max(character.position[0] - window_size, 0))*res, 0]
+    rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
     path = []
     for i in character.path:
@@ -50,6 +53,11 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
             pygame.quit()
             sys.exit()
 
+    # visualize ground detection
+    distance = character.state[8]
+    bearing = character.state[9]
+    ground_detection = [(pos_balloon[0], pos_balloon[1]), (pos_balloon[0] + distance*np.sin(bearing)*res, pos_balloon[1] + distance*np.cos(bearing)*res)]
+
     # generate background
     screen.fill(pygame.Color('grey12'))
     pygame.draw.rect(screen, pygame.Color('DimGrey'), rec_obs) #draw window
@@ -58,6 +66,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     screen.blit(bg, (0, 0))
 
     # visuals
+    pygame.draw.lines(screen, pygame.Color('Black'), False, ground_detection, 1)
     if len(character.path) > 1:
         pygame.draw.lines(screen, pygame.Color('LightGray'), False, path, 1)
     if character.action == 2:
@@ -92,4 +101,5 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
 
     # updating the window
     pygame.display.flip()
-    clock.tick(10) #cycles per second
+    #clock.tick(10) #cycles per second
+    clock.tick(10)
