@@ -22,7 +22,7 @@ with open(args.yaml_file, 'rt') as fh:
 def plot_reward():
     # read in logger file as pandas
     from load_tf import tflog2pandas, many_logs2pandas
-    path_logger = yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
@@ -72,12 +72,12 @@ def plot_reward():
         )
 
     fig.tight_layout()
-    plt.savefig(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
+    plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
 
 def plot_path():
     # read in logger file as pandas
     from load_tf import tflog2pandas, many_logs2pandas
-    path_logger = yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
@@ -132,14 +132,14 @@ def plot_path():
         axs[1].set_ylim(0,1)
 
         # Build folder structure if it doesn't exist yet
-        path = yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
+        path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
         plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50)
         plt.close()
         print('saving frames: ' + str(int(i/n_f*100)) + ' %')
 
     # Build GIF
-    with imageio.get_writer(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/path.gif', mode='I', fps=fps) as writer:
+    with imageio.get_writer(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/path.gif', mode='I', fps=fps) as writer:
         name_list = os.listdir(path)
         name_list.sort()
         n = 0
@@ -154,11 +154,11 @@ def plot_path():
 
 def plot_qmap():
     # import from log files
-    name_list = os.listdir(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
+    name_list = os.listdir(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
     name_list.sort()
     tensor_list = []
     for name in name_list:
-        tensor_list.append(torch.load(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/' + name))
+        tensor_list.append(torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/' + name))
 
     for i in range(len(name_list)):
         fig, axs = plt.subplots(4,2)
@@ -200,7 +200,7 @@ def plot_qmap():
         fig.suptitle(str(int(i/len(tensor_list)*100)) + ' %')
 
         # Build folder structure if it doesn't exist yet
-        path = yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
+        path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
         plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50, bbox_inches='tight')
         plt.close()
@@ -211,7 +211,7 @@ def plot_qmap():
     fps = min(int(len(name_list)/duration),yaml_p['fps'])
 
     # Build GIF
-    with imageio.get_writer(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=fps) as writer:
+    with imageio.get_writer(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/qmap.gif', mode='I', fps=fps) as writer:
         name_list = os.listdir(path)
         name_list.sort()
         n = 0
@@ -227,7 +227,7 @@ def plot_qmap():
 def write_overview():
     # read in logger file as pandas
     from load_tf import tflog2pandas, many_logs2pandas
-    path_logger = yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
@@ -334,11 +334,11 @@ def disp_overview():
                 df_mean_intercept= pd.concat([df.iloc[:,x], df['linreg_intercept']], axis=1)
                 if df_mean_intercept.columns[0] != df_mean_intercept.columns[1]:
                     mean_linreg_intercept = df_mean_intercept.groupby(df_mean_intercept.columns[0]).mean().reset_index()
-                    ax2.scatter(mean_linreg_intercept.iloc[:,0], mean_linreg_intercept.iloc[:,1], s=0.1, color=color_intercept)
+                    axs[i,j].scatter(mean_linreg_intercept.iloc[:,0], mean_linreg_intercept.iloc[:,1], s=0.1, color=color_intercept)
                 df_mean_score = pd.concat([df.iloc[:,x], df['linreg_score']], axis=1)
                 if df_mean_score.columns[0] != df_mean_score.columns[1]:
                     mean_linreg_score = df_mean_score.groupby(df_mean_score.columns[0]).mean().reset_index()
-                    ax2.scatter(mean_linreg_score.iloc[:,0], mean_linreg_score.iloc[:,1], s=0.1, color=color_score)
+                    axs[i,j].scatter(mean_linreg_score.iloc[:,0], mean_linreg_score.iloc[:,1], s=0.1, color=color_score)
 
                 axs[i,j].set_title(df.columns[x])
                 x += 1
@@ -353,14 +353,14 @@ def disp_overview():
     plt.close()
 
 def clear():
-    dirpath = Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger')
+    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger')
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)
 
-    dirpath = Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp')
+    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp')
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)
 
-    dirpath = Path(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
+    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)

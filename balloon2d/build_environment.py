@@ -31,9 +31,10 @@ class balloon2d(Env):
         self.writer = writer
 
         # initialize autoencoder object
-        #self.ae = Autoencoder()
-        #self.ae.autoencoder_model.load_weights(yaml_p['path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder/ae_weights.h5f')
-        self.ae = VAE()
+        if yaml_p['autoencoder'] == 'HAE':
+            self.ae = HAE()
+        if yaml_p['autoencoder'] == 'VAE':
+            self.ae = VAE()
 
         # load new world to get size_x, size_z
         self.load_new_world()
@@ -136,8 +137,8 @@ class balloon2d(Env):
         self.reward_epi = 0
 
         # Set problem
-        border_x = 5
-        border_z = 2
+        border_x = 0
+        border_z = 0
         above_ground = 2
 
         if yaml_p['start'] == 'random':
@@ -181,12 +182,12 @@ class balloon2d(Env):
 
     def load_new_world(self):
         # choose random world_map
-        self.world_name = random.choice(os.listdir('data/' + self.train_or_test + '/tensor'))
+        self.world_name = random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
         # remove suffix
         length = len(self.world_name)
         self.world_name = self.world_name[:length - 3]
         # read in world_map
-        self.world = torch.load('data/' + self.train_or_test + '/tensor/' + self.world_name + '.pt')
+        self.world = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '.pt')
 
         # define world size
         self.size_x = len(self.world[-1,:,:])

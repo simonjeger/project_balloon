@@ -53,20 +53,20 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
             pygame.quit()
             sys.exit()
 
-    # visualize ground detection
-    distance = character.state[8]
-    bearing = character.state[9]
-    ground_detection = [(pos_balloon[0], pos_balloon[1]), (pos_balloon[0] + distance*np.sin(bearing)*res, pos_balloon[1] + distance*np.cos(bearing)*res)]
+    # visualize ground detection #remove if not needed anymore
+    #distance = character.state[8]
+    #bearing = character.state[9]
+    #ground_detection = [(pos_balloon[0], pos_balloon[1]), (pos_balloon[0] + distance*np.sin(bearing)*res, pos_balloon[1] + distance*np.cos(bearing)*res)]
 
     # generate background
     screen.fill(pygame.Color('grey12'))
     pygame.draw.rect(screen, pygame.Color('DimGrey'), rec_obs) #draw window
-    bg = pygame.image.load('data/' + train_or_test + '/image/' + world_name + '.png')
+    bg = pygame.image.load(yaml_p['data_path'] + train_or_test + '/image/' + world_name + '.png')
     bg = pygame.transform.scale(bg, (screen_width, screen_height))
     screen.blit(bg, (0, 0))
 
     # visuals
-    pygame.draw.lines(screen, pygame.Color('Black'), False, ground_detection, 1)
+    #pygame.draw.lines(screen, pygame.Color('Black'), False, ground_detection, 1) #remove if not needed anymore
     if len(character.path) > 1:
         pygame.draw.lines(screen, pygame.Color('LightGray'), False, path, 1)
     if character.action == 2:

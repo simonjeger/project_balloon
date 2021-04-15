@@ -6,6 +6,16 @@ import matplotlib.pyplot as plt
 import cv2
 import random
 
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
+
 def generate_world(size_x, size_z, num, train_or_test):
     for n in range(num):
         terrain = generate_terrain(size_x, size_z)
@@ -51,7 +61,7 @@ def generate_world(size_x, size_z, num, train_or_test):
         """
 
         # save
-        torch.save(world, 'data/' + train_or_test + '/tensor/wind_map' + str(n).zfill(5) + '.pt')
+        torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(n).zfill(5) + '.pt')
         print('generated ' + str(n+1) + ' of ' + str(num) + ' worlds')
 
 def generate_terrain(size_x, size_z):
@@ -63,8 +73,8 @@ def generate_terrain(size_x, size_z):
     for i in range(m):
         #pos_x = int(size_x/(2*m) + size_x/m*i)
         pos_x = random.randint(0, size_x-1)
-        terrain[pos_x] = abs(gauss(0,5))
-        terrain = gaussian_filter(terrain, sigma = 1)
+        terrain[pos_x] = abs(gauss(0,2))
+        terrain = gaussian_filter(terrain, sigma = 3)
 
         for j in range(len(terrain)):
             terrain[j] = min(terrain[j], size_z - min_sky)
@@ -117,6 +127,7 @@ def generate_wind(size_x, size_z, terrain):
     mean_x += 0.33
     mean_z *= 0
     sig_xz *= 0
+    sig_xz += 0.5
     """
 
     return [mean_x, mean_z, sig_xz]

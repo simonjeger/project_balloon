@@ -7,12 +7,22 @@ import matplotlib.patches as patches
 import os
 import cv2
 
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
+
 def visualize_world(train_or_test):
-    name_list = os.listdir('data/' + train_or_test + '/tensor/')
+    name_list = os.listdir(yaml_p['data_path'] + train_or_test + '/tensor/')
     name_list.sort()
     tensor_list = []
     for name in name_list:
-        tensor_list.append(torch.load('data/' + train_or_test + '/tensor/' + name))
+        tensor_list.append(torch.load(yaml_p['data_path'] + train_or_test + '/tensor/' + name))
 
     num = len(tensor_list)
     for n in range(num):
@@ -48,17 +58,17 @@ def visualize_world(train_or_test):
         ax.add_patch(rect)
 
         # save figure
-        plt.savefig('data/' + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', dpi = 50, bbox_inches='tight', pad_inches=0)
+        plt.savefig(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', dpi = 50, bbox_inches='tight', pad_inches=0)
         plt.close()
 
         # read in image with cv to then crop it
-        img = cv2.imread('data/' + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', cv2.IMREAD_UNCHANGED)
+        img = cv2.imread(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', cv2.IMREAD_UNCHANGED)
         border_left = int(1.79*size_x) #1.79
         border_right = int(1.73*size_x) #1.73
         border_top = int(1.89*size_z) #1.89
         border_bottom = int(1.69*size_z) #1.69
         img = img[border_top:len(img)-border_bottom,border_left:len(img[0])-border_right]
 
-        cv2.imwrite('data/' + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', img)
+        cv2.imwrite(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', img)
 
         print('visualized ' + str(n+1) + ' of ' + str(num) + ' windmaps')

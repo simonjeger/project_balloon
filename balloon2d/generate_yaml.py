@@ -54,20 +54,22 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'n_times_update: ' + str(n_times_update) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
+    text = text + 'data_path: "data/"' + '\n'
+    text = text + 'autoencoder: "VAE"' + '\n'
     text = text + 'T: 500' + '\n'
     text = text + 'start: [15,0]' + '\n'
     text = text + 'target: "random"' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: -0.001' + '\n'
-    text = text + 'action: -0.003' + '\n'
+    text = text + 'action: -0.01' + '\n'
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
     text = text + 'physics: True' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
-    text = text + "path: '/cluster/scratch/sjeger/'" + '\n'
+    text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 20' + '\n'
@@ -77,18 +79,18 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 2080
-for num_epochs in [25000]:
+process_nr = 2250
+for num_epochs in [5000]:
     for buffer_size in [1000000]:
-        for lr in [0.001, 0.0005]:
+        for lr in [0.0005, 0.0001, 0.00005]:
             for explorer_type in ['"LinearDecayEpsilonGreedy"']:
                 for epsi_low in [0.01]:
-                    for decay in [200000]:
+                    for decay in [40000]:
                         for max_grad_norm in [1]:
-                            for epi_update_interval in [1, 3, 5]:
+                            for epi_update_interval in [1]:
                                 for epi_target_update_interval in [1]:
-                                    for minibatch_size in [5000, 10000, 15000]:
-                                        for n_times_update in [1, 5, 10]:
+                                    for minibatch_size in [32, 100, 1000]:
+                                        for n_times_update in [100, 1000, 10000]:
                                             for min_distance in [1]:
                                                 for repeat in range(3):
                                                     write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, epi_update_interval, epi_target_update_interval, minibatch_size, n_times_update, min_distance)

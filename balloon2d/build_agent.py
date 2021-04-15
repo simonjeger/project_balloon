@@ -118,17 +118,17 @@ class Agent:
             m.weight.data.normal_(0.0, 0.0001)
 
     def stash_weights(self):
-        path_temp = yaml_p['path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        path_temp = yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
         Path(path_temp).mkdir(parents=True, exist_ok=True)
         self.agent.save(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
 
     def clear_stash(self):
-        dirpath = Path(yaml_p['path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/')
+        dirpath = Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/')
         if dirpath.exists() and dirpath.is_dir():
             shutil.rmtree(dirpath)
 
     def save_weights(self, phase, path):
-        path_temp= yaml_p['path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        path_temp= yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
         name_list = os.listdir(path_temp)
         name_list.sort()
 
