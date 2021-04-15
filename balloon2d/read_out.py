@@ -1,4 +1,4 @@
-from analysis import plot_path, plot_qmap, disp_overview, clear
+from analysis import plot_reward, plot_path, plot_qmap, write_overview, disp_overview, clear
 
 import numpy as np
 import gym
@@ -27,6 +27,7 @@ n_f = duration*fps
 ratio = np.floor(num_epochs/n_f)
 
 # analyse
+#plot_reward()
 #plot_path()
 #plot_qmap()
 disp_overview()

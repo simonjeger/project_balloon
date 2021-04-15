@@ -142,24 +142,24 @@ class balloon2d(Env):
         above_ground = 2
 
         if yaml_p['start'] == 'random':
-            start = np.array([random.randint(border_x, self.size_x - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+            start = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_p['start'] == 'random_low':
-            start = np.array([random.randint(border_x, self.size_x - border_x),0], dtype=float)
+            start = np.array([border_x + random.random()*(self.size_x - 2*border_x),0], dtype=float)
         elif yaml_p['start'] == 'left':
-            start = np.array([random.randint(border_x, self.size_x/2 - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+            start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_p['start'] == 'left_low':
-            start = np.array([random.randint(border_x, self.size_x/2 - border_x),0], dtype=float)
+            start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),0], dtype=float)
         else:
             start = np.array(yaml_p['start'], dtype=float)
 
         if yaml_p['target'] == 'random':
-            target = np.array([random.randint(border_x, self.size_x - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+            target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_p['target'] == 'random_low':
-            target = np.array([random.randint(border_x, self.size_x - border_x),0], dtype=float)
+            target = np.array([border_x + random.random()*(self.size_x - 2*border_x),0], dtype=float)
         elif yaml_p['target'] == 'right':
-            target = np.array([random.randint(start[0] + border_x, self.size_x - border_x),random.randint(border_z, self.size_z - border_z)], dtype=float)
+            target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_p['target'] == 'right_low':
-            target = np.array([random.randint(start[0] + border_x, self.size_x - border_x),0], dtype=float)
+            target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),0], dtype=float)
         else:
             target = np.array(yaml_p['target'], dtype=float)
 
@@ -196,8 +196,8 @@ class balloon2d(Env):
     def character_v(self, position):
         world_compressed = self.ae.compress(self.world, self.character.position)
         character_v = character(self.size_x, self.size_z, position, self.character.target, self.T, self.world, world_compressed)
-        v_x = self.world[-3][position[0], position[1]] #approximate current velocity as velocity of world_map
-        v_z = self.world[-2][position[0], position[1]]
+        v_x = self.world[-3][int(position[0]), int(position[1])] #approximate current velocity as velocity of world_map
+        v_z = self.world[-2][int(position[0]), int(position[1])]
         if yaml_p['physics']:
             character_v.state[2:4] = [v_x, v_z]
 

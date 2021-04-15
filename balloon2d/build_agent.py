@@ -58,10 +58,8 @@ class Agent:
         elif yaml_p['explorer_type'] == 'AdditiveGaussian':
             explorer = pfrl.explorers.AdditiveGaussian(scale, low=0, high=2)
 
-        self.epi_n_update_interval = yaml_p['epi_update_interval']
         self.epi_n = 0
         self.step_n = 0
-        epi_target_update_interval = yaml_p['epi_target_update_interval']
 
         if yaml_p['agent_type'] == 'DoubleDQN':
             self.agent = pfrl.agents.DoubleDQN(
@@ -73,8 +71,8 @@ class Agent:
                 clip_delta=True,
                 max_grad_norm=yaml_p['max_grad_norm'],
                 replay_start_size=yaml_p['replay_start_size'], #number of experiences in replay buffer when training begins
-                update_interval=yaml_p['T'], #in later parts of the code I set the timer to this, so it updates every episode
-                target_update_interval=yaml_p['T'],
+                update_interval=yaml_p['update_interval'], #in later parts of the code I set the timer to this, so it updates every episode
+                target_update_interval=yaml_p['target_update_interval'],
                 minibatch_size=yaml_p['minibatch_size'], #minibatch_size used for training the q-function network
                 n_times_update=yaml_p['n_times_update'], #how many times we update the NN with a new batch per update step
                 phi=lambda x: x.astype(np.float32, copy=False), #feature extractor applied to observations
@@ -102,12 +100,11 @@ class Agent:
                 self.env.render(mode=True)
 
             if done:
-                if self.epi_n%self.epi_n_update_interval==0:
-                    self.agent.replay_updater.update_if_necessary(yaml_p['T'])
-
                 # logger
                 if self.writer is not None:
                     self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
+                    if len(self.agent.loss_record) != 0:
+                        self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
                 self.epi_n += 1
                 break
 
@@ -146,7 +143,7 @@ class Agent:
         Q_vis = np.zeros((self.env.size_x*res, self.env.size_z*res,8))
         for i in range(self.env.size_x*res):
             for j in range(self.env.size_z*res):
-                position = np.array([int(i/res),int(j/res)])
+                position = np.array([(i+0.5)/res,(j+0.5)/res])
                 obs = self.env.character_v(position)
                 state = torch.Tensor(obs).unsqueeze(0)
                 Q = self.agent.model.forward(state)
@@ -158,10 +155,12 @@ class Agent:
                 Q_vis[i,j,2] = Q.q_values[0][2]
                 Q_vis[i,j,3] = Q.greedy_actions
 
+                """
                 # target model
                 Q_vis[i,j,4] = Q_tar.q_values[0][0]
                 Q_vis[i,j,5] = Q_tar.q_values[0][1]
                 Q_vis[i,j,6] = Q_tar.q_values[0][2]
                 Q_vis[i,j,7] = Q_tar.greedy_actions
+                """
 
         return Q_vis

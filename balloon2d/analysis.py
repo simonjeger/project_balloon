@@ -29,17 +29,21 @@ def plot_reward():
     df = many_logs2pandas(name_list)
 
     rew_epi = np.array(df['reward_epi'].dropna())
-    rew_step = np.array(df['reward_step'])
+    qloss = np.array(df['loss_qfunction'].dropna())
+    #rew_step = np.array(df['reward_step'])
 
     # plot mean reward
     N_epi = yaml_p['phase']
-    cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
-    mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
+    cumsum_rew = np.cumsum(np.insert(rew_epi, 0, 0))
+    mean_reward_epi = (cumsum_rew[N_epi:] - cumsum_rew[:-N_epi]) / float(N_epi)
 
     # plot big mean
     N_epi_big = int(len(rew_epi)/10)
-    cumsum_epi_big = np.cumsum(np.insert(rew_epi, 0, 0))
-    mean_reward_epi_big = (cumsum_epi[N_epi_big:] - cumsum_epi_big[:-N_epi_big]) / float(N_epi_big)
+    cumsum_rew_big = np.cumsum(np.insert(rew_epi, 0, 0))
+    mean_reward_epi_big = (cumsum_rew_big[N_epi_big:] - cumsum_rew_big[:-N_epi_big]) / float(N_epi_big)
+
+    cumsum_qloss_big = np.cumsum(np.insert(qloss, 0, 0))
+    mean_qloss_big = (cumsum_qloss_big[N_epi_big:] - cumsum_qloss_big[:-N_epi_big]) / float(N_epi_big)
 
     # linear regression
     Y = rew_epi
@@ -53,21 +57,32 @@ def plot_reward():
     score = linear_regressor.score(X,Y)
 
     # plot
-    fig, ax = plt.subplots(1,1)
-    ax.plot(rew_epi, alpha=0.1)
-    ax.plot(mean_reward_epi)
-    ax.plot(Y_pred)
-    ax.plot(mean_reward_epi_big)
+    fig, axs = plt.subplots(2,1)
+    axs[0].plot(rew_epi, alpha=0.1)
+    axs[0].plot(mean_reward_epi)
+    axs[0].plot(Y_pred)
+    axs[0].plot(mean_reward_epi_big)
 
-    #ax.set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
-    ax.set_xlabel('episode')
-    ax.set_ylabel('reward')
-    ax.tick_params(axis='y')
+    #axs[0].set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
+    axs[0].set_xlabel('episode')
+    axs[0].set_ylabel('reward')
+    axs[0].tick_params(axis='y')
 
-    ax.legend(
+    axs[0].legend(
         ['reward',
         'running mean over ' + str(N_epi) + ' episodes, max: ' + str(np.round(max(mean_reward_epi),5)) + ', avg: ' + str(np.round(np.mean(rew_epi),5)),
         r'linear regression, slope $\times$ N_epi: ' + str(np.round(slope*N_epi,5)) + ', score: ' + str(np.round(score,5)),
+        'running mean over ' + str(N_epi_big) + ' episodes']
+        )
+
+    axs[1].plot(qloss)
+    axs[1].plot(mean_qloss_big)
+    axs[1].set_xlabel('episode')
+    axs[1].set_ylabel('loss qfunction')
+    axs[1].tick_params(axis='y')
+
+    axs[1].legend(
+        ['loss qfunction',
         'running mean over ' + str(N_epi_big) + ' episodes']
         )
 
@@ -237,8 +252,8 @@ def write_overview():
 
     # maximum and mean
     N_epi = yaml_p['phase']
-    cumsum_epi = np.cumsum(np.insert(rew_epi, 0, 0))
-    mean_reward_epi = (cumsum_epi[N_epi:] - cumsum_epi[:-N_epi]) / float(N_epi)
+    cumsum_rew = np.cumsum(np.insert(rew_epi, 0, 0))
+    mean_reward_epi = (cumsum_rew[N_epi:] - cumsum_rew[:-N_epi]) / float(N_epi)
 
     maximum = max(mean_reward_epi)
     mean = np.mean(mean_reward_epi)

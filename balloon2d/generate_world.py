@@ -125,6 +125,7 @@ def generate_wind(size_x, size_z, terrain):
     """
     mean_x *= 0
     mean_x += 0.33
+    #mean_x[:,5] += 0.33
     mean_z *= 0
     sig_xz *= 0
     sig_xz += 0.5
