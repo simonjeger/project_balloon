@@ -42,9 +42,6 @@ def plot_reward():
     cumsum_rew_big = np.cumsum(np.insert(rew_epi, 0, 0))
     mean_reward_epi_big = (cumsum_rew_big[N_epi_big:] - cumsum_rew_big[:-N_epi_big]) / float(N_epi_big)
 
-    cumsum_qloss_big = np.cumsum(np.insert(qloss, 0, 0))
-    mean_qloss_big = (cumsum_qloss_big[N_epi_big:] - cumsum_qloss_big[:-N_epi_big]) / float(N_epi_big)
-
     # linear regression
     Y = rew_epi
     X = np.linspace(0,len(rew_epi)-1,len(rew_epi)).reshape((-1, 1))
@@ -76,14 +73,12 @@ def plot_reward():
         )
 
     axs[1].plot(qloss)
-    axs[1].plot(mean_qloss_big)
     axs[1].set_xlabel('episode')
     axs[1].set_ylabel('loss qfunction')
     axs[1].tick_params(axis='y')
 
     axs[1].legend(
-        ['loss qfunction',
-        'running mean over ' + str(N_epi_big) + ' episodes']
+        ['loss qfunction',]
         )
 
     fig.tight_layout()

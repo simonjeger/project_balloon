@@ -79,9 +79,9 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 2250
-for data_path in ['"data/"', '"data_jetstream/"']
-    for num_epochs in [5000]:
+process_nr = 2380
+for data_path in ['"data/"', '"data_jetstream/"']:
+    for num_epochs in [10000]:
         for buffer_size in [1000000]:
             for lr in [0.001, 0.0005, 0.0001, 0.00005]:
                 for explorer_type in ['"LinearDecayEpsilonGreedy"']:
@@ -90,10 +90,9 @@ for data_path in ['"data/"', '"data_jetstream/"']
                             for max_grad_norm in [1]:
                                 for update_interval in [300]:
                                     for update_target_interval in [300]:
-                                        for minibatch_size in [32, 100, 1000]:
-                                            for n_times_update in [1, 100, 1000, 10000]:
-                                                if minibatch_size*n_times_update <= 100000:
-                                                    for min_distance in [1]:
-                                                        for repeat in range(2):
-                                                            write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance)
-                                                            process_nr += 1
+                                        for minibatch_size in [100, 500, 1000]:
+                                            for n_times_update in [1000, 5000, 10000]:
+                                                for min_distance in [1]:
+                                                    for repeat in range(2):
+                                                        write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance)
+                                                        process_nr += 1
