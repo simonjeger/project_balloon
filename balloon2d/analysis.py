@@ -76,6 +76,7 @@ def plot_reward():
     axs[1].set_xlabel('episode')
     axs[1].set_ylabel('loss qfunction')
     axs[1].tick_params(axis='y')
+    axs[1].set_yscale('log')
 
     axs[1].legend(
         ['loss qfunction',]
@@ -124,7 +125,7 @@ def plot_path():
 
             # plot path
             axs[0].plot(df_loc['position_x'], df_loc['position_z'], color=colors[c])
-            axs[0].scatter(df_loc['target_x'], df_loc['target_z'], s=20, facecolors='none', edgecolors='grey')
+            axs[0].scatter(df_loc['target_x'].dropna().iloc[-1], df_loc['target_z'].dropna().iloc[-1], s=20, facecolors='none', edgecolors='grey')
             axs[0].set_xlim(0,df_loc['size_x'].dropna().iloc[-1])
             axs[0].set_ylim(0,df_loc['size_z'].dropna().iloc[-1])
 
@@ -144,7 +145,7 @@ def plot_path():
         # Build folder structure if it doesn't exist yet
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
-        plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50)
+        plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=150)
         plt.close()
         print('saving frames: ' + str(int(i/n_f*100)) + ' %')
 
@@ -212,7 +213,7 @@ def plot_qmap():
         # Build folder structure if it doesn't exist yet
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
-        plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=50, bbox_inches='tight')
+        plt.savefig(path + '/gif_' + str(i).zfill(5) + '.png', dpi=150, bbox_inches='tight')
         plt.close()
         print('saving frames: ' + str(int(i/len(name_list)*100)) + ' %')
 
@@ -317,15 +318,19 @@ def disp_overview():
                 color_score='pink'
 
                 # scatter
+                """
                 axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=0.1, facecolors='none', edgecolors=color_max, alpha=0.2)
                 axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=0.1, facecolors='none', edgecolors=color_mean, alpha=0.2)
                 axs[i,j].scatter(df.iloc[:,x],df['linreg_intercept'], s=0.1, facecolors='none', edgecolors=color_intercept, alpha=0.2)
                 axs[i,j].scatter(df.iloc[:,x],df['linreg_score'], s=0.1, facecolors='none', edgecolors=color_score, alpha=0.2)
+                """
 
                 ax2 = axs[i,j].twinx()
                 ax2.tick_params(axis='y', colors='green')
 
+                """
                 ax2.scatter(df.iloc[:,x],df['linreg_slope'], s=0.1, facecolors='none', edgecolors=color_slope, alpha=0.2)
+                """
 
                 # mean
                 df_mean_max = pd.concat([df.iloc[:,x], df['rew_epi_max']], axis=1)
@@ -337,6 +342,7 @@ def disp_overview():
                 if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
                     mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, color=color_mean)
+                """
                 df_mean_slope = pd.concat([df.iloc[:,x], df['linreg_slope']], axis=1)
                 if df_mean_slope.columns[0] != df_mean_slope.columns[1]:
                     mean_linreg_slope = df_mean_slope.groupby(df_mean_slope.columns[0]).mean().reset_index()
@@ -349,15 +355,13 @@ def disp_overview():
                 if df_mean_score.columns[0] != df_mean_score.columns[1]:
                     mean_linreg_score = df_mean_score.groupby(df_mean_score.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_linreg_score.iloc[:,0], mean_linreg_score.iloc[:,1], s=0.1, color=color_score)
+                """
 
                 axs[i,j].set_title(df.columns[x])
                 x += 1
 
     #fig.tight_layout()
-    """
-    fig.suptitle('max reward: red     mean reward: blue     linreg slope: green     linreg score: orange')
-    """
-    fig.suptitle('max reward: red     mean reward: blue     linreg slope: green')
+    fig.suptitle('max reward: red     mean reward: blue     linreg slope: green     linreg intercept: orange     linreg scoret: pink')
     plt.subplots_adjust(wspace=0.5, hspace=1)
     plt.show()
     plt.close()

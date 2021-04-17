@@ -25,6 +25,7 @@ def visualize_world(train_or_test):
         tensor_list.append(torch.load(yaml_p['data_path'] + train_or_test + '/tensor/' + name))
 
     num = len(tensor_list)
+
     for n in range(num):
         terrain = tensor_list[n][0,:,0]
         mean_x = tensor_list[n][-3,:,:]
@@ -49,7 +50,8 @@ def visualize_world(train_or_test):
         colors = cm(sig_xz).reshape(size_x*size_z,4)
 
         # generate quiver
-        q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=1, scale_units='inches')
+        #q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=1, scale_units='inches')
+        q = ax.quiver(x, z, mean_x, mean_z, color=colors)
         #qk = ax.quiverkey(q, 0.5, 0.5, 1, r'$1 \frac{m}{s}$', labelpos='N', coordinates='figure', labelcolor='red', color='red')
         t = ax.fill_between(np.linspace(0,size_x,len(terrain)),terrain, color='DarkSlateGray')
 

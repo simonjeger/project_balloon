@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance):
+def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -29,7 +29,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'size_z: 10' + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'
-    text = text + 'autoencoder: "HAE"' + '\n'
+    text = text + 'autoencoder: ' + autoencoder + '\n'
     text = text + 'window_size: 3' + '\n'
     text = text + 'bottleneck: 2' + '\n'
 
@@ -56,9 +56,9 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
-    text = text + 'T: 500' + '\n'
-    text = text + 'start: "random"' + '\n'
-    text = text + 'target: [25,5]' + '\n'
+    text = text + 'T: 400' + '\n'
+    text = text + 'start: [15,0]' + '\n'
+    text = text + 'target: "random"' + '\n'
     text = text + 'radius: 1' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: -0.01' + '\n'
@@ -66,7 +66,7 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
-    text = text + 'physics: False' + '\n'
+    text = text + 'physics: True' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
@@ -79,20 +79,21 @@ def write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, deca
     file.write(text)
     file.close()
 
-process_nr = 2380
-for data_path in ['"data/"', '"data_jetstream/"']:
-    for num_epochs in [10000]:
-        for buffer_size in [1000000]:
-            for lr in [0.001, 0.0005, 0.0001, 0.00005]:
-                for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                    for epsi_low in [0.1]:
-                        for decay in [50000]:
-                            for max_grad_norm in [1]:
-                                for update_interval in [300]:
-                                    for update_target_interval in [300]:
-                                        for minibatch_size in [100, 500, 1000]:
-                                            for n_times_update in [1000, 5000, 10000]:
-                                                for min_distance in [1]:
-                                                    for repeat in range(2):
-                                                        write(process_nr, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance)
-                                                        process_nr += 1
+process_nr = 2680
+for data_path in ['"data/"']:
+    for autoencoder in ['"HAE"','"VAE"']:
+        for num_epochs in [50000]:
+            for buffer_size in [1000000]:
+                for lr in [0.0005]:
+                    for explorer_type in ['"LinearDecayEpsilonGreedy"']:
+                        for epsi_low in [0.1]:
+                            for decay in [250000, 400000]:
+                                for max_grad_norm in [1]:
+                                    for update_interval in [300]:
+                                        for update_target_interval in [300]:
+                                            for minibatch_size in [100, 500]:
+                                                for n_times_update in [1000, 5000]:
+                                                    for min_distance in [0,1]:
+                                                        for repeat in range(3):
+                                                            write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance)
+                                                            process_nr += 1

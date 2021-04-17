@@ -2,6 +2,7 @@ from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import torch
 import netCDF4
 from pathlib import Path
 import os
@@ -10,8 +11,65 @@ import imageio
 import datetime
 
 from extract_cosmo_data import extract_cosmo_data
-out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', 46.947225, 8.693297, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc')
-print(out)
+
+size_x = 3000
+size_z = 1000
+
+world = np.zeros(shape=(1+3,size_x,size_z))
+
+start_lat = 47.3769
+start_lon = 8.5417
+end_lat = 46.9480
+end_lon = 7.4474
+
+step_lat = (end_lat - start_lat)/size_x
+step_lon = (end_lon - start_lon)/size_x
+
+# finding lowest point in terrain
+lowest = np.inf
+highest = -np.inf
+
+for i in range(size_x):
+    out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + i*step_lat, start_lon + i*step_lon, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
+    q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
+    q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
+
+    if out['hsurf'][q_lat,q_lon] < lowest:
+        lowest = out['hsurf'][q_lat,q_lon]
+    if out['hsurf'][q_lat,q_lon] > highest:
+        highest = out['hsurf'][q_lat,q_lon]
+
+    print('looked in ' + str(np.round(i/size_x*100,1)) + '% of the terrain for the lowest and highest point')
+print('------- lowest point at ' + str(lowest) + ' m, highest point at ' + str(highest) + ' m -------')
+
+#lowest = 392.345703125
+#highest = 780.470703125
+
+step_z = (3300 + highest - lowest)/size_z
+
+for i in range(size_x):
+    out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + i*step_lat, start_lon + i*step_lon, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
+    for j in range(size_z):
+
+        # finding closest quadrant
+        q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
+        q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
+
+        # write terrain
+        world[0,i,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (3300 + highest - lowest) * size_z
+        if step_z*j >= out['z'][-1,q_lat,q_lon] - lowest:
+            idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*j))
+            world[-3,i,j] = np.mean(out['wind_x'][idx,q_lat,q_lon])
+            world[-2,i,j] = np.mean(out['wind_z'][idx,q_lat,q_lon])
+            #world[-1,i,j] = np.mean(out['wind_z'][j,q_lat,q_lon])
+
+    print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
+print('------- converted to tensor -------')
+
+# save
+#torch.save(world, 'data_cosmo/tensor/wind_map' + str(n).zfill(5) + '.pt')
+torch.save(world, 'data_cosmo/tensor/wind_map_0.pt')
+
 
 # reading the nc file and creating Dataset
 nc_terrain = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_ana_const.nc')

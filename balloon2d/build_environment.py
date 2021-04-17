@@ -137,8 +137,8 @@ class balloon2d(Env):
         self.reward_epi = 0
 
         # Set problem
-        border_x = 0
-        border_z = 0
+        border_x = 3
+        border_z = 1
         above_ground = 2
 
         if yaml_p['start'] == 'random':

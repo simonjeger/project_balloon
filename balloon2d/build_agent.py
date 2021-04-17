@@ -155,12 +155,10 @@ class Agent:
                 Q_vis[i,j,2] = Q.q_values[0][2]
                 Q_vis[i,j,3] = Q.greedy_actions
 
-                """
                 # target model
                 Q_vis[i,j,4] = Q_tar.q_values[0][0]
                 Q_vis[i,j,5] = Q_tar.q_values[0][1]
                 Q_vis[i,j,6] = Q_tar.q_values[0][2]
                 Q_vis[i,j,7] = Q_tar.greedy_actions
-                """
 
         return Q_vis
