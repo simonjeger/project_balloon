@@ -172,7 +172,6 @@ class balloon2d(Env):
         if target[1] <= np.interp(target[0],x,self.world[0,:,0]) + above_ground:
             target[1] = np.interp(target[0],x,self.world[0,:,0]) + above_ground
 
-
         # Initial compressed wind map
         self.world_compressed = self.ae.compress(self.world, start)
 

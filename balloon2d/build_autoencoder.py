@@ -312,26 +312,18 @@ class VAE(nn.Module):
         self.eval()
 
     def window(self, data, center):
-        start_x = int(max(center - self.window_size, 0))
-        end_x = int(min(center + self.window_size + 1, self.size_x))
         window = np.zeros((len(data),self.window_size_total,self.size_z))
-        fill_in = data[:,start_x:end_x,:]
-        # touching the left border
-        if start_x == 0:
-            window[:,self.window_size_total-end_x::,:] = fill_in
-            for i in range(self.window_size_total-len(fill_in[0])):
-                window[:,i,:] = fill_in[:,0,:]
+        data_padded = np.zeros((len(data),self.size_x+2*self.window_size,self.size_z))
+        data_padded[:,self.window_size:-self.window_size,:] = data
 
-        # touching the right border
-        elif end_x == self.size_x:
-            window[:,0:end_x-start_x,:] = fill_in
-            for i in range(self.window_size_total-len(fill_in[0])):
-                window[:,self.window_size_total-i-1,:] = fill_in[:,-1,:]
+        for i in range(self.window_size):
+            data_padded[:,i,:] = data_padded[:,self.window_size,:]
+            data_padded[:,-(i+1),:] = data_padded[:,-(self.window_size+1),:]
 
-        # if not touching anything¨
-        else:
-            #print('no touch')
-            window = fill_in
+        start_x = int(center)
+        end_x = int(center + self.window_size_total)
+
+        window = data_padded[:,start_x:end_x,:]
         window = torch.tensor(window)
         return window
 

@@ -4,6 +4,7 @@ from random import gauss
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import seaborn as sns
 import os
 import cv2
 
@@ -40,23 +41,59 @@ def visualize_world(train_or_test):
         ax.set_aspect(1)
 
         # standardise color map for sig value
+        """
         floor = 0
-        ceil = 1
+        ceil = 0.5
         sig_xz = np.maximum(sig_xz, floor)
         sig_xz = np.minimum(sig_xz, ceil)
         sig_xz -= floor
         sig_xz /= ceil
-        cm = matplotlib.cm.viridis
-        colors = cm(sig_xz).reshape(size_x*size_z,4)
+        #colors = cm(sig_xz).reshape(size_x*size_z,4)
+        """
+
+        ceil = 10
+        color_quiver = mean_x.copy()
+        color_quiver = np.maximum(color_quiver, -ceil)
+        color_quiver = np.minimum(color_quiver, ceil)
+        color_quiver /= 2*ceil
+        color_quiver += 0.5
+
+        cm = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+        #cm = sns.color_palette("icefire", as_cmap=True)
+        colors = cm(color_quiver).reshape(size_x*size_z,4)
 
         # generate quiver
-        #q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=1, scale_units='inches')
-        q = ax.quiver(x, z, mean_x, mean_z, color=colors)
-        #qk = ax.quiverkey(q, 0.5, 0.5, 1, r'$1 \frac{m}{s}$', labelpos='N', coordinates='figure', labelcolor='red', color='red')
-        t = ax.fill_between(np.linspace(0,size_x,len(terrain)),terrain, color='DarkSlateGray')
+        q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=50*yaml_p['unit'], headwidth=3, width=0.0015)
+        #q = ax.quiver(x, z, mean_x, mean_z, color=colors, headwidth=3, width=0.0015)
+
+        """
+        cm = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+        cm = sns.color_palette("icefire", as_cmap=True)
+        ax.imshow(mean_x.T, origin='lower', cmap=cm, vmin=-10, vmax=10, extent=[0, size_x, 0, size_z])
+        """
+
+        c_terrain = (169/255,163/255,144/255) #because plt uses values between 0 and 1
+        c_ticks = (242/255,242/255,242/255)
+
+        t = ax.fill_between(np.linspace(0,size_x,len(terrain)),terrain, color=c_terrain)
+
+        # draw coordinate system
+        ratio = size_z/5
+        tick_length = size_z/30
+        for i in range(int(size_x/ratio)):
+            i+=0.5
+            x, y = [i*ratio, i*ratio], [0, tick_length]
+            ax.plot(x, y, color=c_ticks, linewidth=size_z/10)
+            ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit'])), color=c_ticks, horizontalalignment='center', fontsize=size_z)
+
+        for j in range(int(size_z/ratio)):
+            j+=0.5
+            x, y = [0, tick_length], [j*ratio, j*ratio]
+            ax.plot(x, y, color=c_ticks, linewidth=size_z/10)
+            ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit'])), color=c_ticks, verticalalignment='center', fontsize=size_z)
 
         # Create a Rectangle patch
-        rect = patches.Rectangle((0, 0), size_x, size_z, linewidth=1, edgecolor='black', facecolor='none')
+        rect = patches.Rectangle((0, 0), size_x, size_z, linewidth=size_z/10, edgecolor=c_ticks, facecolor='none')
         ax.add_patch(rect)
 
         # save figure
@@ -65,10 +102,10 @@ def visualize_world(train_or_test):
 
         # read in image with cv to then crop it
         img = cv2.imread(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', cv2.IMREAD_UNCHANGED)
-        border_left = int(1.79*size_x) #1.79
-        border_right = int(1.73*size_x) #1.73
-        border_top = int(1.89*size_z) #1.89
-        border_bottom = int(1.69*size_z) #1.69
+        border_left = int(np.round(1.74*size_x,0)) #1.79
+        border_right = int(np.round(1.73*size_x,0)) #1.73
+        border_top = int(np.round(1.7*size_z,0)) #1.89
+        border_bottom = int(np.round(1.69*size_z,0)) #1.69
         img = img[border_top:len(img)-border_bottom,border_left:len(img[0])-border_right]
 
         cv2.imwrite(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', img)

@@ -28,7 +28,7 @@ step_lon = (end_lon - start_lon)/size_x
 # finding lowest point in terrain
 lowest = np.inf
 highest = -np.inf
-
+"""
 for i in range(size_x):
     out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + i*step_lat, start_lon + i*step_lon, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
     q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
@@ -69,6 +69,7 @@ print('------- converted to tensor -------')
 # save
 #torch.save(world, 'data_cosmo/tensor/wind_map' + str(n).zfill(5) + '.pt')
 torch.save(world, 'data_cosmo/tensor/wind_map_0.pt')
+"""
 
 
 # reading the nc file and creating Dataset

@@ -35,8 +35,8 @@ shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['pro
 size_x = yaml_p['size_x']
 size_z = yaml_p['size_z']
 
-#generate_world(size_x, size_z, 1000, 'train')
-#generate_world(size_x, size_z, 5, 'test')
+#generate_world(size_x, size_z, 100, 'train')
+#generate_world(size_x, size_z, 15, 'test')
 
 #import autoencoder_train
 #import autoencoder_test

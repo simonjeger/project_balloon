@@ -83,7 +83,6 @@ class Agent:
             print('please choose one of the implemented agents')
 
     def run_epoch(self, render):
-
         obs = self.env.reset()
         sum_r = 0
 
@@ -138,11 +137,11 @@ class Agent:
         print('weights loaded')
 
     def visualize_q_map(self):
-        res = 1
+        res = 10/self.env.size_z
 
-        Q_vis = np.zeros((self.env.size_x*res, self.env.size_z*res,8))
-        for i in range(self.env.size_x*res):
-            for j in range(self.env.size_z*res):
+        Q_vis = np.zeros((int(self.env.size_x*res), int(self.env.size_z*res),8))
+        for i in range(int(self.env.size_x*res)):
+            for j in range(int(self.env.size_z*res)):
                 position = np.array([(i+0.5)/res,(j+0.5)/res])
                 obs = self.env.character_v(position)
                 state = torch.Tensor(obs).unsqueeze(0)
@@ -155,10 +154,12 @@ class Agent:
                 Q_vis[i,j,2] = Q.q_values[0][2]
                 Q_vis[i,j,3] = Q.greedy_actions
 
+                """
                 # target model
                 Q_vis[i,j,4] = Q_tar.q_values[0][0]
                 Q_vis[i,j,5] = Q_tar.q_values[0][1]
                 Q_vis[i,j,6] = Q_tar.q_values[0][2]
                 Q_vis[i,j,7] = Q_tar.greedy_actions
+                """
 
         return Q_vis

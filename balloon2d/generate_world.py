@@ -68,13 +68,13 @@ def generate_terrain(size_x, size_z):
     # generate mean & uncertainty
     terrain = np.ones(shape=(size_x,1))*0
 
-    min_sky = 2
-    m = 10
+    min_sky = size_z/10*2
+    m = int(size_x)
     for i in range(m):
         #pos_x = int(size_x/(2*m) + size_x/m*i)
         pos_x = random.randint(0, size_x-1)
-        terrain[pos_x] = abs(gauss(0,2))
-        terrain = gaussian_filter(terrain, sigma = 3)
+        terrain[pos_x] = gauss(size_z/7,size_z/5) #0,2
+        terrain = gaussian_filter(terrain, sigma = 2)
 
         for j in range(len(terrain)):
             terrain[j] = min(terrain[j], size_z - min_sky)
@@ -89,21 +89,39 @@ def generate_wind(size_x, size_z, terrain):
     # generate mean & uncertainty
     mean_x = np.ones(shape=(size_x,size_z))*0
     mean_z = np.ones(shape=(size_x,size_z))*0
-    sig_xz = np.ones(shape=(size_x,size_z))*0.01
+    sig_xz = np.ones(shape=(size_x,size_z))*0.1
 
-    m = 2
+    """
+    m = int(size_z/2)
     seed_x = np.random.choice([-1, 1])
+    magnitude = 10 #used to be 2
     for i in range(m):
         rand_x = int(size_x/(2*m) + size_x/m*i)
         rand_z = int(size_z/(2*m) + size_z/m*i)
-        mean_x[:, rand_z] = gauss(2*seed_x*(-1)**i,1)
-        mean_z[rand_x, :] = gauss(0,1)
+        mean_x[:, rand_z] = gauss(magnitude*seed_x*(-1)**int(i/(0.5*m)),5)
+        mean_z[rand_x, :] = gauss(0,5)
         sig_xz[rand_x, rand_z] = abs(gauss(1,1))
+    """
 
-    mean_x = gaussian_filter(mean_x, sigma = 2)
-    mean_z = gaussian_filter(mean_z, sigma = 2)
-    sig_xz = gaussian_filter(sig_xz, sigma = 2)
+    magnitude = 30 #used to be 2
+    smear = int(size_x/10)
+    m = int(size_z)
+    for i in range(m):
+        pos_x = random.randint(0,size_x-1)
+        pos_z = random.randint(0,size_z-1)
+        if random.uniform(0, 1) < pos_z/size_z:
+            seed_x = 1
+        else:
+            seed_x = -1
+        mean_x[pos_x-smear:pos_x+smear, pos_z] = gauss(magnitude*seed_x,5)
+        mean_z[pos_x, pos_z-smear:pos_z+smear] = gauss(0,5)
+        sig_xz[pos_x, pos_z] = abs(gauss(1,1))
 
+    mean_x = gaussian_filter(mean_x, sigma = 10) #used to be 2 everywhere
+    mean_z = gaussian_filter(mean_z, sigma = 10)
+    sig_xz = gaussian_filter(sig_xz, sigma = 10)
+
+    """
     # to be more realistic at the grenzschicht
     t = size_x
     for i in range(t):
@@ -117,9 +135,10 @@ def generate_wind(size_x, size_z, terrain):
             mean_z[i,j] = terrain[i-1] - terrain[i]
         sig_xz[i,j] = abs(gauss(1,1))
 
-    mean_x = gaussian_filter(mean_x, sigma = 2)
-    mean_z = gaussian_filter(mean_z, sigma = 2)
-    sig_xz = gaussian_filter(sig_xz, sigma = 2)
+    mean_x = gaussian_filter(mean_x, sigma = 10)
+    mean_z = gaussian_filter(mean_z, sigma = 10)
+    sig_xz = gaussian_filter(sig_xz, sigma = 5)
+    """
 
     # for homogeneous field
     """
