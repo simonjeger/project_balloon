@@ -10,42 +10,56 @@ import shutil
 import imageio
 import datetime
 
-from extract_cosmo_data import extract_cosmo_data
+from utils.extract_cosmo_data import extract_cosmo_data
 
-size_x = 3000
-size_z = 1000
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
+
+size_x = yaml_p['size_x']
+size_z = yaml_p['size_z']
+
+def dist(lat_1, lon_1, lat_2, lon_2):
+    R = 6371*1000 #radius of earth in meters
+    phi = lat_2 - lat_1
+    lam = lon_2 - lon_1
+    a = np.sin(phi/2)**2 + np.cos(lat_1) * np.cos(lat_2) * sin(lam/2)**2
+    c = 2*np.arctan2(np.sqrt(a), np.sqrt(1-a))
+    d = R * c
+    return d
+
+def step(lat, lon, step_x, step_y):
+    R = 6371*1000 #radius of earth in meters
+    lat = lat + (step_y/R) * (180/np.pi)
+    lon = lon + (step_x/R) * (180/np.pi) / np.cos(lat*np.pi/180)
+    return lat, lon
 
 world = np.zeros(shape=(1+3,size_x,size_z))
 
-start_lat = 47.3769
-start_lon = 8.5417
-end_lat = 46.9480
-end_lon = 7.4474
+center_lat = 46.9480
+center_lon = 7.4474
+step_x = size_x/2*yaml_p['unit']
+step_y = 0
+
+start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
+end_lat, end_lon = step(center_lat, center_lon, step_x, step_y)
+
+print('------- start at ' + str(np.round(start_lat,3)) + ', '+ str(np.round(start_lon,3)) + ' -------')
+print('------- end at ' + str(np.round(end_lat,3)) + ', '+ str(np.round(end_lon,3)) + ' -------')
+print('------- spanning over ' + str(np.round(np.sqrt((2*step_x)**2 + (2*step_y)**2),1)) + ' m -------')
 
 step_lat = (end_lat - start_lat)/size_x
 step_lon = (end_lon - start_lon)/size_x
 
-# finding lowest point in terrain
-lowest = np.inf
-highest = -np.inf
-"""
-for i in range(size_x):
-    out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + i*step_lat, start_lon + i*step_lon, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
-    q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
-    q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
-
-    if out['hsurf'][q_lat,q_lon] < lowest:
-        lowest = out['hsurf'][q_lat,q_lon]
-    if out['hsurf'][q_lat,q_lon] > highest:
-        highest = out['hsurf'][q_lat,q_lon]
-
-    print('looked in ' + str(np.round(i/size_x*100,1)) + '% of the terrain for the lowest and highest point')
-print('------- lowest point at ' + str(lowest) + ' m, highest point at ' + str(highest) + ' m -------')
-
-#lowest = 392.345703125
-#highest = 780.470703125
-
-step_z = (3300 + highest - lowest)/size_z
+lowest = 0
+highest = size_z*yaml_p['unit']
+step_z = (highest - lowest)/size_z
 
 for i in range(size_x):
     out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + i*step_lat, start_lon + i*step_lon, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
@@ -69,9 +83,8 @@ print('------- converted to tensor -------')
 # save
 #torch.save(world, 'data_cosmo/tensor/wind_map' + str(n).zfill(5) + '.pt')
 torch.save(world, 'data_cosmo/tensor/wind_map_0.pt')
+
 """
-
-
 # reading the nc file and creating Dataset
 nc_terrain = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_ana_const.nc')
 nc_wind = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc')
@@ -183,3 +196,4 @@ def visualize_real_data(dimension):
 
 visualize_real_data('z')
 visualize_real_data('time')
+"""

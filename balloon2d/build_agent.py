@@ -104,6 +104,10 @@ class Agent:
                     self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
                     if len(self.agent.loss_record) != 0:
                         self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
+                        """
+                        for i in range(len(self.agent.loss_record)):
+                            self.writer.add_scalar('local_loss_qfunction', self.agent.loss_record[i], self.step_n-1 + i/len(self.agent.loss_record))
+                        """
                 self.epi_n += 1
                 break
 

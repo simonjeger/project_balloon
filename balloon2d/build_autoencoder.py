@@ -11,7 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
 
-from import_data import custom_data, wind_data
+from utils.import_data import custom_data, wind_data
 from  visualize_world import visualize_world
 
 car = False

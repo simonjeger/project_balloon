@@ -9,6 +9,8 @@ import os
 import torch
 from sklearn.linear_model import LinearRegression
 
+from utils.load_tf import tflog2pandas, many_logs2pandas
+
 import yaml
 import argparse
 
@@ -21,7 +23,6 @@ with open(args.yaml_file, 'rt') as fh:
 
 def plot_reward():
     # read in logger file as pandas
-    from load_tf import tflog2pandas, many_logs2pandas
     path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
@@ -87,7 +88,6 @@ def plot_reward():
 
 def plot_path():
     # read in logger file as pandas
-    from load_tf import tflog2pandas, many_logs2pandas
     path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
@@ -237,7 +237,6 @@ def plot_qmap():
 
 def write_overview():
     # read in logger file as pandas
-    from load_tf import tflog2pandas, many_logs2pandas
     path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
