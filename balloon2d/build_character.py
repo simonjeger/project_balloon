@@ -127,5 +127,5 @@ class character():
         self.ceiling = [max]*self.size_x
 
     def dist_to_ceiling(self):
-        x = np.linspace(0,self.size_x,len(self.world[0,:,0]))
+        x = np.linspace(0,self.size_x,len(self.ceiling))
         return np.interp(self.position[0],x,self.ceiling) - self.position[1]

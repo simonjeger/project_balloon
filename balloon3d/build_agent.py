@@ -1,43 +1,169 @@
-from rl.agents import DQNAgent #deep Q-network (DQN) algorithm is a model-free, online, off-policy reinforcement learning method
-from rl.policy import LinearAnnealedPolicy, SoftmaxPolicy, EpsGreedyQPolicy, GreedyQPolicy, BoltzmannQPolicy, MaxBoltzmannQPolicy, BoltzmannGumbelQPolicy
-from rl.memory import SequentialMemory
+import torch
+import numpy as np
+from collections import deque
+import os
+import pandas as pd
+import pfrl
+import copy
+from pathlib import Path
+import shutil
+from distutils.dir_util import copy_tree
 
-def build_agent(model, actions, train_or_test):
-    if train_or_test == 'train':
-        policy = EpsGreedyQPolicy()
-    elif train_or_test == 'test':
-        policy = EpsGreedyQPolicy()
-    else:
-        print('do you want to train or test?')
-    memory = SequentialMemory(limit=50000, window_length=1) #we store #window_length of windows for #limit of episodes
-    dqn = DQNAgent(model=model, memory=memory, policy=policy, nb_actions=actions, nb_steps_warmup=10, target_model_update=1e-2) #nb_steps_warmup where agent collects information before training (doesn't learn in the first #nb_steps_warmup)
-    return dqn
+import yaml
+import argparse
 
-"""
-LinearAnnealedPolicy()
-Linear Annealing Policy computes a current threshold value and
-    transfers it to an inner policy which chooses the action. The threshold
-    value is following a linear function decreasing over time.
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
 
-SoftmaxPolicy()
-Implement softmax policy for multinimial distribution. Simple Policy that takes action according to the pobability distribution
+class QFunction(torch.nn.Module):
 
-EpsGreedyQPolicy()
-Eps Greedy policy either:
-    - takes a random action with probability epsilon
-    - takes current best action with prob (1 - epsilon)
+    def __init__(self, obs_size, n_actions):
+        super().__init__()
+        self.l1 = torch.nn.Linear(obs_size, 50)
+        self.l2 = torch.nn.Linear(50, 50)
+        self.l3 = torch.nn.Linear(50, n_actions)
 
-GreedyQPolicy()
-Implement the greedy policy. Greedy policy returns the current best action according to q_values
+    def forward(self, x):
+        h = x
+        h = torch.nn.functional.relu(self.l1(h))
+        h = torch.nn.functional.relu(self.l2(h))
+        h = self.l3(h)
 
-BoltzmannQPolicy()
-Policy Boltzmann Q Policy builds a probability law on q values and returns an action selected randomly according to this law.
+        return pfrl.action_value.DiscreteActionValue(h)
 
-MaxBoltzmannQPolicy()
-A combination of the eps-greedy and Boltzman q-policy. Wiering, M.: Explorations in Efficient Reinforcement Learning. PhD thesis, University of Amsterdam, Amsterdam (1999) https://pure.uva.nl/ws/files/3153478/8461_UBA003000033.pdf
+class Agent:
+    def __init__(self, env, writer=None):
+        self.env = env
+        self.stash = [0]*yaml_p['phase']
+        self.writer = writer
 
-BoltzmannGumbelQPolicy()
-Implements Boltzmann-Gumbel exploration (BGE) adapted for Q learning based on the paper Boltzmann Exploration Done Right (https://arxiv.org/pdf/1705.10257.pdf).
-BGE is invariant with respect to the mean of the rewards but not their variance. The parameter C, which defaults to 1, can be used to correct for this, and should be set to the least upper bound on the standard deviation of the rewards.
-BGE is only available for training, not testing. For testing purposes, you can achieve approximately the same result as BGE after training for N steps on K actions with parameter C by using the BoltzmannQPolicy and setting tau = C/sqrt(N/K).
-"""
+        acts = env.action_space
+        obs = env.observation_space
+        self.qfunction = QFunction(obs.shape[0],acts.n)
+        #self.qfunction.apply(self.weights_init) # delibratly initialize weights of NN as defined in function below
+
+        epsi_high = yaml_p['epsi_high']
+        epsi_low = yaml_p['epsi_low']
+        decay = yaml_p['decay']
+        scale = yaml_p['scale']
+
+        if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
+            explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps=decay, random_action_func=env.action_space.sample)
+        elif yaml_p['explorer_type'] == 'Boltzmann':
+            explorer = pfrl.explorers.Boltzmann()
+        elif yaml_p['explorer_type'] == 'AdditiveGaussian':
+            explorer = pfrl.explorers.AdditiveGaussian(scale, low=0, high=2)
+
+        self.epi_n = 0
+        self.step_n = 0
+
+        if yaml_p['agent_type'] == 'DoubleDQN':
+            self.agent = pfrl.agents.DoubleDQN(
+                self.qfunction,
+                torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']), #in my case ADAMS
+                pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size']), #number of experiences I train my NN with
+                yaml_p['gamma'], #discount factor
+                explorer, #how to choose next action
+                clip_delta=True,
+                max_grad_norm=yaml_p['max_grad_norm'],
+                replay_start_size=yaml_p['replay_start_size'], #number of experiences in replay buffer when training begins
+                update_interval=yaml_p['update_interval'], #in later parts of the code I set the timer to this, so it updates every episode
+                target_update_interval=yaml_p['target_update_interval'],
+                minibatch_size=yaml_p['minibatch_size'], #minibatch_size used for training the q-function network
+                n_times_update=yaml_p['n_times_update'], #how many times we update the NN with a new batch per update step
+                phi=lambda x: x.astype(np.float32, copy=False), #feature extractor applied to observations
+                gpu=-1, #actual GPU used for computation
+            )
+
+        else:
+            print('please choose one of the implemented agents')
+
+    def run_epoch(self, render):
+        obs = self.env.reset()
+        sum_r = 0
+
+        while True:
+            action = self.agent.act(obs) #uses self.agent.model to decide next step
+            obs, reward, done, _ = self.env.step(action)
+
+            sum_r = sum_r + reward
+            self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
+
+            self.step_n += 1
+
+            if render:
+                self.env.render(mode=True)
+
+            if done:
+                # logger
+                if self.writer is not None:
+                    self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
+                    if len(self.agent.loss_record) != 0:
+                        self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
+                        """
+                        for i in range(len(self.agent.loss_record)):
+                            self.writer.add_scalar('local_loss_qfunction', self.agent.loss_record[i], self.step_n-1 + i/len(self.agent.loss_record))
+                        """
+                self.epi_n += 1
+                break
+
+        return sum_r
+
+    def weights_init(self, m):
+        if isinstance(m, torch.nn.Linear):
+            m.weight.data.normal_(0.0, 0.0001)
+
+    def stash_weights(self):
+        path_temp = yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        Path(path_temp).mkdir(parents=True, exist_ok=True)
+        self.agent.save(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
+
+    def clear_stash(self):
+        dirpath = Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/')
+        if dirpath.exists() and dirpath.is_dir():
+            shutil.rmtree(dirpath)
+
+    def save_weights(self, phase, path):
+        path_temp= yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        name_list = os.listdir(path_temp)
+        name_list.sort()
+
+        i = np.argmax(phase)
+        copy_tree(path_temp + name_list[i], path + 'weights_agent')
+        print('weights saved')
+
+    def load_weights(self, path):
+        self.agent.load(path + 'weights_agent')
+        print('weights loaded')
+
+    def visualize_q_map(self):
+        res = 10/self.env.size_z
+
+        Q_vis = np.zeros((int(self.env.size_x*res), int(self.env.size_z*res),8))
+        for i in range(int(self.env.size_x*res)):
+            for j in range(int(self.env.size_z*res)):
+                position = np.array([(i+0.5)/res,(j+0.5)/res])
+                obs = self.env.character_v(position)
+                state = torch.Tensor(obs).unsqueeze(0)
+                Q = self.agent.model.forward(state)
+                Q_tar = self.agent.target_model.forward(state)
+
+                # model
+                Q_vis[i,j,0] = Q.q_values[0][0]
+                Q_vis[i,j,1] = Q.q_values[0][1]
+                Q_vis[i,j,2] = Q.q_values[0][2]
+                Q_vis[i,j,3] = Q.greedy_actions
+
+                """
+                # target model
+                Q_vis[i,j,4] = Q_tar.q_values[0][0]
+                Q_vis[i,j,5] = Q_tar.q_values[0][1]
+                Q_vis[i,j,6] = Q_tar.q_values[0][2]
+                Q_vis[i,j,7] = Q_tar.greedy_actions
+                """
+
+        return Q_vis

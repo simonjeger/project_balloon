@@ -40,17 +40,7 @@ def visualize_world(train_or_test):
         ax.set_axis_off()
         ax.set_aspect(1)
 
-        # standardise color map for sig value
-        """
-        floor = 0
-        ceil = 0.5
-        sig_xz = np.maximum(sig_xz, floor)
-        sig_xz = np.minimum(sig_xz, ceil)
-        sig_xz -= floor
-        sig_xz /= ceil
-        #colors = cm(sig_xz).reshape(size_x*size_z,4)
-        """
-
+        # standardise color map
         ceil = 10
         color_quiver = mean_x.copy()
         color_quiver = np.maximum(color_quiver, -ceil)
@@ -64,18 +54,12 @@ def visualize_world(train_or_test):
 
         # generate quiver
         q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=50*yaml_p['unit'], headwidth=3, width=0.0015)
-        #q = ax.quiver(x, z, mean_x, mean_z, color=colors, headwidth=3, width=0.0015)
-
-        """
-        cm = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        cm = sns.color_palette("icefire", as_cmap=True)
-        ax.imshow(mean_x.T, origin='lower', cmap=cm, vmin=-10, vmax=10, extent=[0, size_x, 0, size_z])
-        """
 
         c_terrain = (169/255,163/255,144/255) #because plt uses values between 0 and 1
         c_ticks = (242/255,242/255,242/255)
 
-        t = ax.fill_between(np.linspace(0,size_x,len(terrain)),terrain, color=c_terrain)
+        # plot terrain
+        ax.fill_between(np.linspace(0,size_x,len(terrain)),terrain, color=c_terrain)
 
         # draw coordinate system
         ratio = size_z/5

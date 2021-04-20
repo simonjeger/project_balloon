@@ -1,41 +1,68 @@
 import numpy as np
 import scipy
+import random
 from random import gauss
+import copy
+
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
 
 class character():
-    def __init__(self, size_x, size_y, size_z, start, target, T, wind_map, wind_compressed):
-        self.mass = 1000
+    def __init__(self, size_x, size_y, size_z, start, target, T, world, world_compressed):
+        if yaml_p['physics']:
+            self.mass = 3400 #kg
+        else:
+            self.mass = 1
         self.area = 21**2/4*np.pi
         self.rho = 1.2
         self.c_w = 0.45
+        self.force = 80 #N
 
         self.size_x = size_x
         self.size_y = size_y
         self.size_z = size_z
-        self.start = start
-        self.target = target
+        self.start = start.astype(float)
+        self.target = target.astype(float)
         self.t = T
         self.action = 2
 
-        self.wind_map = wind_map
+        self.world = world
 
-        self.position = self.start
+        self.position = copy.copy(self.start)
+
+        self.set_ceiling()
+
         self.residual = self.target - self.position
+        self.velocity = np.array([0,0,0])
         self.min_x = self.position[0] - 0
         self.max_x = self.size_x - self.position[0]
         self.min_y = self.position[1] - 0
         self.max_y = self.size_y - self.position[1]
         self.min_z = self.position[2] - 0
-        self.max_z = self.size_z - self.position[2]
+        self.max_z = self.dist_to_ceiling()
 
-        self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], wind_compressed.flatten()), axis=0)
+        if yaml_p['physics']:
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+        else:
+            self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
         self.path = [self.position.copy(), self.position.copy()]
+        self.min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2 + self.residual[2]**2)
 
-    def update(self, action, wind_map, wind_compressed):
+    def update(self, action, world_compressed):
         self.action = action
-        self.wind_map = wind_map
 
         in_bounds = self.move_particle(100)
+        if self.hight_above_ground() < 0: # check if crashed into terrain
+            in_bounds = False
+        if self.dist_to_ceiling() < 0: # check if crashed into terrain
+            in_bounds = False
 
         # update state
         self.residual = self.target - self.position
@@ -43,9 +70,16 @@ class character():
         self.max_x = self.size_x - self.position[0]
         self.min_y = self.position[1] - 0
         self.max_y = self.size_y - self.position[1]
-        self.min_z = self.position[2] - 0
-        self.max_z = self.size_z - self.position[2]
-        self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], wind_compressed.flatten()), axis=0)
+        self.min_z = self.position[1] - 0
+        self.max_z = self.dist_to_ceiling()
+        if yaml_p['physics']:
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+        else:
+            self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+
+        min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2 + self.residual[2]**2)
+        if min_distance < self.min_distance:
+            self.min_distance = min_distance
 
         # reduce flight length by 1 second
         self.t -= 1
@@ -54,35 +88,59 @@ class character():
 
     def move_particle(self, n):
         c = self.area*self.rho*self.c_w/(2*self.mass)
-        b = (self.action - 1)*30 / self.mass #random number so it looks reasonable
-        delta_t = 1/n
+        b = (self.action - 1)*self.force/yaml_p['unit']/self.mass
+        delta_t = yaml_p['time']/n
 
-        u_prev = (self.path[-1][0] - self.path[-2][0])/delta_t
-        v_prev = (self.path[-1][1] - self.path[-2][1])/delta_t
-        w_prev = (self.path[-1][2] - self.path[-2][2])/delta_t
+        p_x = (self.path[-1][0] - self.path[-2][0])/delta_t
+        p_y = (self.path[-1][1] - self.path[-2][1])/delta_t
+        p_z = (self.path[-1][2] - self.path[-2][2])/delta_t
+
         for _ in range(n):
             coord = [int(i) for i in np.floor(self.position)]
             in_bounds = (0 <= coord[0] < self.size_x) & (0 <= coord[1] < self.size_y) & (0 <= coord[2] < self.size_z) #if still within bounds
             if in_bounds:
                 # calculate velocity at time step t
-                u_pos = self.wind_map[coord[0], coord[1], coord[2]][0]
-                v_pos = self.wind_map[coord[0], coord[1], coord[2]][1]
-                w_pos = self.wind_map[coord[0], coord[1], coord[2]][2]
+                w_x = self.world[-4][coord[0], coord[1], coord[2]]/yaml_p['unit'] #wind field should be in [block] and not in [m]
+                w_y = self.world[-3][coord[0], coord[1], coord[2]]/yaml_p['unit']
+                w_z = self.world[-2][coord[0], coord[1], coord[2]]/yaml_p['unit']
+                sig_xz = self.world[-1][coord[0], coord[1], coord[2]]
 
-                u_pos += gauss(0,self.wind_map[coord[0], coord[1], coord[2]][3]/np.sqrt(n)) #is it /sqrt(n) or just /n?
-                v_pos += gauss(0,self.wind_map[coord[0], coord[1], coord[2]][3]/np.sqrt(n))
-                w_pos += gauss(0,self.wind_map[coord[0], coord[1], coord[2]][3]/np.sqrt(n))
+                w_x += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
+                w_y += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
+                w_z += gauss(0,sig_xz/np.sqrt(n))
 
-                u_pres = (np.sign(u_pos - u_prev) * (u_pos - u_prev)**2 * c + 0)*delta_t + u_prev
-                v_pres = (np.sign(v_pos - v_prev) * (v_pos - v_prev)**2 * c + 0)*delta_t + v_prev
-                w_pres = (np.sign(w_pos - w_prev) * (w_pos - w_prev)**2 * c + b)*delta_t + w_prev
+                v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*delta_t + p_x
+                v_y = (np.sign(w_y - p_y) * (w_y - p_y)**2 * c + 0)*delta_t + p_y
+                v_z = (np.sign(w_z - p_z) * (w_z - p_z)**2 * c + b)*delta_t + p_z
 
                 # update
-                self.position += [u_pres*delta_t, v_pres*delta_t, w_pres*delta_t]
-                u_prev = u_pres
-                v_prev = v_pres
-                w_prev = w_pres
+                self.position += [v_x*delta_t, v_y*delta_t, v_z*delta_t]
+                p_x = v_x
+                p_y = v_y
+                p_z = v_z
 
                 # write down path in history
                 self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
+
+                # set velocity for state
+                self.velocity = np.array([v_x, v_y, v_z])
+
         return in_bounds
+
+    def hight_above_ground(self):
+        x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
+        y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
+        f = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
+
+        return self.position[2] - f(self.position[0], self.position[1])
+
+    def set_ceiling(self):
+        max = random.uniform(0.9, 1) * self.size_z
+        self.ceiling = np.ones((self.size_x, self.size_y))*max
+
+    def dist_to_ceiling(self):
+        x = np.linspace(0,self.size_x,len(self.ceiling))
+        y = np.linspace(0,self.size_y,len(self.ceiling[0]))
+        f = scipy.interpolate.interp2d(x,y,self.ceiling.T)
+
+        return f(self.position[0], self.position[1]) - self.position[2]

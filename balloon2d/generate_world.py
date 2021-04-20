@@ -27,38 +27,10 @@ def generate_world(size_x, size_z, num, train_or_test):
             world[0,i,0] = terrain[i]
 
             for j in range(size_z):
-                distances = []
-                for k in range(len(terrain)):
-                    distances.append(np.sqrt((i-k)**2 + (j-terrain[k])**2))
-
                 if j >= np.floor(terrain[i]):
-                    #world[1,i,j] = np.min(distances)
-                    #world[2,i,j] = np.arctan2(np.argmin(distances) - i,j - terrain[np.argmin(distances)])
                     world[-3,i,j] = wind[0][i,j]
                     world[-2,i,j] = wind[1][i,j]
                     world[-1,i,j] = wind[2][i,j]
-
-        """
-        import matplotlib.pyplot as plt
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(terrain)
-        ax.set_aspect('equal')
-        ax.set_xlim(0,size_x)
-        ax.set_ylim(0,size_z)
-        plt.savefig('terrain.png')
-        plt.close()
-
-        plt.imshow(world[1,:,:])
-        plt.colorbar()
-        plt.savefig('distance.png')
-        plt.close()
-
-        plt.imshow(world[2,:,:])
-        plt.colorbar()
-        plt.savefig('bearing.png')
-        plt.close()
-        """
 
         # save
         torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(n).zfill(5) + '.pt')
@@ -66,7 +38,7 @@ def generate_world(size_x, size_z, num, train_or_test):
 
 def generate_terrain(size_x, size_z):
     # generate mean & uncertainty
-    terrain = np.ones(shape=(size_x,1))*0
+    terrain = np.zeros(shape=(size_x,1))
 
     min_sky = size_z/10*2
     m = int(size_x)
@@ -74,10 +46,12 @@ def generate_terrain(size_x, size_z):
         #pos_x = int(size_x/(2*m) + size_x/m*i)
         pos_x = random.randint(0, size_x-1)
         terrain[pos_x] = gauss(size_z/7,size_z/5) #0,2
-        terrain = gaussian_filter(terrain, sigma = 2)
 
-        for j in range(len(terrain)):
-            terrain[j] = min(terrain[j], size_z - min_sky)
+    terrain = gaussian_filter(terrain, sigma = 10)
+
+    for i in range(len(terrain)):
+        terrain[i] = min(terrain[i], size_z - min_sky)
+        terrain[i] = max(terrain[i], 0)
 
     # for homogeneous field
     """
