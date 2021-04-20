@@ -4,12 +4,12 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance):
+def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance, qfunction):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('bsub -W 119:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -72,9 +72,10 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
+    text = text + "qfunction: " + str(qfunction) + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
-    text = text + 'fps: 20' + '\n'
+    text = text + 'fps: 15' + '\n'
     text = text + 'overview: True' + '\n'
     text = text + 'clear: True' + '\n'
 
@@ -83,19 +84,20 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
 
 process_nr = 2970
 for data_path in ['"data/"']:
-    for autoencoder in ['"HAE"']:
-        for num_epochs in [25000]:
-            for buffer_size in [1000000]:
-                for lr in [0.0005]:
-                    for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                        for epsi_low in [0.1]:
-                            for decay in [200000, 400000]:
-                                for max_grad_norm in [1]:
-                                    for update_interval in [300]:
-                                        for update_target_interval in [300]:
-                                            for minibatch_size in [100, 200]:
-                                                for n_times_update in [10, 100, 500, 1000]:
-                                                    for min_distance in [0,1]:
-                                                        for repeat in range(3):
-                                                            write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance)
-                                                            process_nr += 1
+    for qfunction in [False]:
+        for autoencoder in ['"HAE"']:
+            for num_epochs in [9000]:
+                for buffer_size in [1000000]:
+                    for lr in [0.0005]:
+                        for explorer_type in ['"LinearDecayEpsilonGreedy"']:
+                            for epsi_low in [0.1]:
+                                for decay in [80000, 160000]:
+                                    for max_grad_norm in [1]:
+                                        for update_interval in [300]:
+                                            for update_target_interval in [300]:
+                                                for minibatch_size in [200]:
+                                                    for n_times_update in [100, 500, 1000]:
+                                                        for min_distance in [0,1]:
+                                                            for repeat in range(2):
+                                                                write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance, qfunction)
+                                                                process_nr += 1

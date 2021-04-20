@@ -137,9 +137,9 @@ class balloon2d(Env):
         self.reward_epi = 0
 
         # Set problem
-        border_x = 3
-        border_z = 1
-        above_ground = 2
+        border_x = self.size_x/10
+        border_z = self.size_z/10
+        above_ground = self.size_z/5
 
         if yaml_p['start'] == 'random':
             start = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)

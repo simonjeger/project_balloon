@@ -106,6 +106,7 @@ def generate_wind(size_x, size_z, terrain):
     magnitude = 30 #used to be 2
     smear = int(size_x/10)
     m = int(size_z)
+    sign = random.choice([-1,1])
     for i in range(m):
         pos_x = random.randint(0,size_x-1)
         pos_z = random.randint(0,size_z-1)
@@ -113,6 +114,7 @@ def generate_wind(size_x, size_z, terrain):
             seed_x = 1
         else:
             seed_x = -1
+        seed_x *= sign
         mean_x[pos_x-smear:pos_x+smear, pos_z] = gauss(magnitude*seed_x,5)
         mean_z[pos_x, pos_z-smear:pos_z+smear] = gauss(0,5)
         sig_xz[pos_x, pos_z] = abs(gauss(1,1))

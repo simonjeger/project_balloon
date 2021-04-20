@@ -54,7 +54,7 @@ for i in range(num_epochs):
         best_phase = current_phase[:]
 
     # write in log file
-    if np.floor(i%ratio) == 0:
+    if (np.floor(i%ratio) == 0) & yaml_p['qfunction']:
         Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/').mkdir(parents=True, exist_ok=True)
         Q_vis = ag.visualize_q_map()
         torch.save(Q_vis, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
@@ -67,7 +67,8 @@ if yaml_p['overview']:
 
 plot_reward()
 plot_path()
-plot_qmap()
+if yaml_p['qfunction']:
+    plot_qmap()
 
 # Delete log files
 if yaml_p['clear']:
