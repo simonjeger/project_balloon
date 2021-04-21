@@ -120,25 +120,25 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
 
     # text
     myfont = pygame.font.SysFont('Arial', 15, bold = True)
-    reward_step = myfont.render('reward_step: ' + str(round(reward_step,3)), False, pygame.Color('LightGray'))
-    reward_epi = myfont.render('reward_epi: ' + str(round(reward_epi,3)), False, pygame.Color('LightGray'))
-    residual = myfont.render('residual: ' + str(np.round(character.state[0:2]*yaml_p['unit'],4)), False, pygame.Color('LightGray'))
+    t_reward_step = myfont.render('reward_step: ' + str(np.round(reward_step,3)), False, pygame.Color('LightGray'))
+    t_reward_epi = myfont.render('reward_epi: ' + str(np.round(reward_epi,3)), False, pygame.Color('LightGray'))
+    t_residual = myfont.render('residual: ' + str(np.round(character.state[0:2]*yaml_p['unit'],4)), False, pygame.Color('LightGray'))
     if yaml_p['physics']:
-        velocity = myfont.render('velocity: ' + str(np.round(character.state[2:4]*yaml_p['unit'],1)), False, pygame.Color('LightGray'))
-        border = myfont.render('border: ' + str(np.round(character.state[4:8]*yaml_p['unit'],1)), False, pygame.Color('LightGray'))
-        world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[8:],1)), False, pygame.Color('LightGray'))
+        t_velocity = myfont.render('velocity: ' + str(np.round(character.state[2:4]*yaml_p['unit'],1)), False, pygame.Color('LightGray'))
+        t_border = myfont.render('border: ' + str(np.round(character.state[4:8]*yaml_p['unit'],1)), False, pygame.Color('LightGray'))
+        t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[8:],1)), False, pygame.Color('LightGray'))
     else:
-        border = myfont.render('border: ' + str(np.round(character.state[2:6],1)), False, pygame.Color('LightGray'))
-        world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[6:],1)), False, pygame.Color('LightGray'))
+        t_border = myfont.render('border: ' + str(np.round(character.state[2:6],1)), False, pygame.Color('LightGray'))
+        t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[6:],1)), False, pygame.Color('LightGray'))
 
 
-    screen.blit(reward_step,(50,10))
-    screen.blit(reward_epi,(50,25))
-    screen.blit(residual,(50,55))
+    screen.blit(t_reward_step,(50,10))
+    screen.blit(t_reward_epi,(50,25))
+    screen.blit(t_residual,(50,55))
     if yaml_p['physics']:
-        screen.blit(velocity,(50,70))
-    screen.blit(border,(50,85))
-    screen.blit(world_compressed,(50,100))
+        screen.blit(t_velocity,(50,70))
+    screen.blit(t_border,(50,85))
+    screen.blit(t_world_compressed,(50,100))
 
     # updating the window
     pygame.display.flip()

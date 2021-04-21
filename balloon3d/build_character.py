@@ -132,7 +132,7 @@ class character():
         y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
         f = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
 
-        return self.position[2] - f(self.position[0], self.position[1])
+        return self.position[2] - f(self.position[0], self.position[1])[0]
 
     def set_ceiling(self):
         max = random.uniform(0.9, 1) * self.size_z
@@ -143,4 +143,4 @@ class character():
         y = np.linspace(0,self.size_y,len(self.ceiling[0]))
         f = scipy.interpolate.interp2d(x,y,self.ceiling.T)
 
-        return f(self.position[0], self.position[1]) - self.position[2]
+        return f(self.position[0], self.position[1])[0] - self.position[2]

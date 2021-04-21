@@ -86,12 +86,15 @@ def visualize_world(train_or_test):
 
         # read in image with cv to then crop it
         img = cv2.imread(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', cv2.IMREAD_UNCHANGED)
-        border_left = int(np.round(1.74*size_x,0)) #1.79
-        border_right = int(np.round(1.73*size_x,0)) #1.73
-        border_top = int(np.round(1.7*size_z,0)) #1.89
-        border_bottom = int(np.round(1.69*size_z,0)) #1.69
-        img = img[border_top:len(img)-border_bottom,border_left:len(img[0])-border_right]
 
-        cv2.imwrite(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', img)
+        c = [150, 150, 150, 150]
+        indices = np.where(np.all(img >= c, axis=-1))
+        border_left = indices[0][0]
+        border_right = indices[0][-1]+1
+        border_top = indices[1][0]
+        border_bottom = indices[1][-1]+1
+        img = img[border_left:border_right,border_top:border_bottom]
+
+        cv2.imwrite('render/wind_map_' + dim + '.png', img)
 
         print('visualized ' + str(n+1) + ' of ' + str(num) + ' windmaps')

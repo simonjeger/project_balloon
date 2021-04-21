@@ -171,12 +171,12 @@ class balloon2d(Env):
 
         f = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
 
-        if start[2] <= f(start[0], start[1]):
-            start[2] = f(start[0], start[1])
+        if start[2] <= f(start[0], start[1])[0]:
+            start[2] = f(start[0], start[1])[0]
 
-        if target[2] <= f(target[0], target[1]) + above_ground:
-            target[2] = f(target[0], target[1]) + above_ground
-        
+        if target[2] <= f(target[0], target[1])[0] + above_ground:
+            target[2] = f(target[0], target[1])[0] + above_ground
+
         # Initial compressed wind map
         self.world_compressed = self.ae.compress(self.world, start)
 
