@@ -167,7 +167,7 @@ class balloon2d(Env):
         x = np.linspace(0,self.size_x,len(self.world[0,:,0]))
 
         if start[1] <= np.interp(start[0],x,self.world[0,:,0]):
-            start[1] = np.interp(start[0],x,self.world[0,:,0])
+            start[1] = np.ceil(np.interp(start[0],x,self.world[0,:,0]))
 
         if target[1] <= np.interp(target[0],x,self.world[0,:,0]) + above_ground:
             target[1] = np.interp(target[0],x,self.world[0,:,0]) + above_ground

@@ -27,6 +27,8 @@ def visualize_world(train_or_test):
 
     num = len(tensor_list)
 
+    render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
+
     for n in range(num):
         terrain = tensor_list[n][0,:,0]
         mean_x = tensor_list[n][-3,:,:]
@@ -38,8 +40,9 @@ def visualize_world(train_or_test):
         z,x = np.meshgrid(np.arange(0, size_z, 1),np.arange(0, size_x, 1))
         fig, ax = plt.subplots(frameon=False, figsize=(size_x,size_z))
         ax.set_axis_off()
-        ax.set_aspect(1)
+        ax.set_aspect(1/render_ratio)
 
+        """
         # standardise color map
         ceil = 10
         color_quiver = mean_x.copy()
@@ -48,12 +51,23 @@ def visualize_world(train_or_test):
         color_quiver /= 2*ceil
         color_quiver += 0.5
 
+
         cm = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
         #cm = sns.color_palette("icefire", as_cmap=True)
         colors = cm(color_quiver).reshape(size_x*size_z,4)
 
         # generate quiver
-        q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=50*yaml_p['unit'], headwidth=3, width=0.0015)
+        q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=50*yaml_p['unit_z'], headwidth=3, width=0.0015)
+        """
+
+        #cmap = sns.diverging_palette(220, 20, as_cmap=True)
+        cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+        ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5)
+
+        #cmap = sns.diverging_palette(145, 300, s=60, as_cmap=True)
+        cmap = 'PiYG'
+        cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
+        ax.set_aspect(1/render_ratio)
 
         c_terrain = (169/255,163/255,144/255) #because plt uses values between 0 and 1
         c_ticks = (242/255,242/255,242/255)
@@ -62,28 +76,30 @@ def visualize_world(train_or_test):
         ax.fill_between(np.linspace(0,size_x,len(terrain)),terrain, color=c_terrain)
 
         # draw coordinate system
-        ratio = size_z/5
+        ratio = size_x/100
         tick_length = size_z/30
         for i in range(int(size_x/ratio)):
             i+=0.5
             x, y = [i*ratio, i*ratio], [0, tick_length]
-            ax.plot(x, y, color=c_ticks, linewidth=size_z/10)
-            ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit'])), color=c_ticks, horizontalalignment='center', fontsize=size_z)
+            ax.plot(x, y, color=c_ticks, linewidth=size_z/100)
+            ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=size_z/20)
 
+        ratio = size_z/5
+        tick_length /= render_ratio
         for j in range(int(size_z/ratio)):
             j+=0.5
             x, y = [0, tick_length], [j*ratio, j*ratio]
-            ax.plot(x, y, color=c_ticks, linewidth=size_z/10)
-            ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit'])), color=c_ticks, verticalalignment='center', fontsize=size_z)
+            ax.plot(x, y, color=c_ticks, linewidth=size_z/100)
+            ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=size_z/20)
 
         # Create a Rectangle patch
-        rect = patches.Rectangle((0, 0), size_x, size_z, linewidth=size_z/10, edgecolor=c_ticks, facecolor='none')
+        rect = patches.Rectangle((0, 0), size_x, size_z, linewidth=size_z/100, edgecolor=c_ticks, facecolor='none')
         ax.add_patch(rect)
 
         # save figure
-        plt.savefig(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', dpi = 50, bbox_inches='tight', pad_inches=0)
+        plt.savefig(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', dpi = 150, bbox_inches='tight', pad_inches=0)
         plt.close()
-
+        """
         # read in image with cv to then crop it
         img = cv2.imread(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', cv2.IMREAD_UNCHANGED)
 
@@ -95,6 +111,7 @@ def visualize_world(train_or_test):
         border_bottom = indices[1][-1]+1
         img = img[border_left:border_right,border_top:border_bottom]
 
-        cv2.imwrite('render/wind_map_' + dim + '.png', img)
+        cv2.imwrite(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', img)
+        """
 
         print('visualized ' + str(n+1) + ' of ' + str(num) + ' windmaps')

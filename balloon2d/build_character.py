@@ -85,7 +85,7 @@ class character():
 
     def move_particle(self, n):
         c = self.area*self.rho*self.c_w/(2*self.mass)
-        b = (self.action - 1)*self.force/yaml_p['unit']/self.mass
+        b = (self.action - 1)*self.force/yaml_p['unit_z']/self.mass
         delta_t = yaml_p['time']/n
 
         p_x = (self.path[-1][0] - self.path[-2][0])/delta_t
@@ -95,8 +95,8 @@ class character():
             in_bounds = (0 <= coord[0] < self.size_x) & (0 <= coord[1] < self.size_z) #if still within bounds
             if in_bounds:
                 # calculate velocity at time step t
-                w_x = self.world[-3][coord[0], coord[1]]/yaml_p['unit'] #wind field should be in [block] and not in [m]
-                w_z = self.world[-2][coord[0], coord[1]]/yaml_p['unit']
+                w_x = self.world[-3][coord[0], coord[1]]/yaml_p['unit_xy'] #wind field should be in [block] and not in [m]
+                w_z = self.world[-2][coord[0], coord[1]]/yaml_p['unit_z']
                 sig_xz = self.world[-1][coord[0], coord[1]]
 
                 w_x += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
