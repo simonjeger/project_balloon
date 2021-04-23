@@ -87,12 +87,12 @@ process_nr = 3150
 for data_path in ['"data/"']:
     for qfunction in [True]:
         for autoencoder in ['"HAE"']:
-            for num_epochs in [25000]:
+            for num_epochs in [20000]:
                 for buffer_size in [1000000]:
                     for lr in [0.001, 0.0005]:
                         for explorer_type in ['"LinearDecayEpsilonGreedy"']:
                             for epsi_low in [0.1]:
-                                for decay in [150000, 300000]:
+                                for decay in [120000, 240000]:
                                     for max_grad_norm in [1]:
                                         for update_interval in [300]:
                                             for update_target_interval in [300]:

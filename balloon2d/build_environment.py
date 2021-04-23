@@ -59,6 +59,7 @@ class balloon2d(Env):
         # initialize state and time
         self.reset()
 
+        self.sucess_n = 0
         self.step_n = 0
         self.epi_n = 0
 
@@ -106,10 +107,14 @@ class balloon2d(Env):
         init_min = np.sqrt((self.character.target[0] - self.character.start[0])**2 + (self.character.target[1] - self.character.start[1])**2)
         if in_bounds:
             # calculate reward
-            distance = np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2)
+            render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+            distance = np.sqrt((self.character.residual[0]*render_ratio)**2 + self.character.residual[1]**2)
 
             if distance <= yaml_p['radius']:
                 self.reward_step = yaml_p['hit']
+                self.sucess_n += 1
+                if self.writer is not None:
+                    self.writer.add_scalar('sucess_n', self.sucess_n , self.step_n)
                 done = True
             else:
                 self.reward_step = yaml_p['step'] + abs(self.character.action - 1)*yaml_p['action']

@@ -41,11 +41,11 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     myfont = pygame.font.SysFont('Arial', 10, bold = True)
     t_reward_step = myfont.render('reward_step: ' + str(np.round(reward_step,3)), False, pygame.Color('LightGray'))
     t_reward_epi = myfont.render('reward_epi: ' + str(np.round(reward_epi,3)), False, pygame.Color('LightGray'))
-    t_residual = myfont.render('residual: ' + str(np.round(np.multiply(character.state[0:2],unit_vector),4)), False, pygame.Color('LightGray'))
+    t_residual = myfont.render('residual: ' + str(np.round(np.multiply(character.state[0:2],[yaml_p['unit_xy'], yaml_p['unit_z']]),4)), False, pygame.Color('LightGray'))
     if yaml_p['physics']:
-        t_velocity = myfont.render('velocity: ' + str(np.round(np.multiply(character.state[2:4],unit_vector),1)), False, pygame.Color('LightGray'))
-        t_border_x = myfont.render('border_x: ' + str(np.round(np.multiply(character.state[4:6],unit_vector),1)), False, pygame.Color('LightGray'))
-        t_border_z = myfont.render('border_z: ' + str(np.round(np.multiply(character.state[6:8],unit_vector),1)), False, pygame.Color('LightGray'))
+        t_velocity = myfont.render('velocity: ' + str(np.round(np.multiply(character.state[2:4],[yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+        t_border_x = myfont.render('border_x: ' + str(np.round(np.multiply(character.state[4:6],[yaml_p['unit_xy'], yaml_p['unit_xy']]),1)), False, pygame.Color('LightGray'))
+        t_border_z = myfont.render('border_z: ' + str(np.round(np.multiply(character.state[6:8],[yaml_p['unit_z'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
         t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[8:],1)), False, pygame.Color('LightGray'))
     else:
         t_border = myfont.render('border: ' + str(np.round(character.state[2:6],1)), False, pygame.Color('LightGray'))
@@ -76,8 +76,11 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
 
     position_1 = character.position[i1]*render_ratio
     position_2 = character.position[i2]
+
     target_1 = character.target[i1]*render_ratio
     target_2 = character.target[i2]
+
+    window_size = window_size*render_ratio
 
     # colors
     c_background = (34,42,53)
@@ -156,7 +159,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         # write and display ceiling
         ceiling = []
         for i in range(len(character.ceiling)):
-            pair = (((1+1/len(character.ceiling))*(i+offset)*render_ratio*res,(size_z - character.ceiling[i])*res))
+            pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_z - character.ceiling[i])*res))
             ceiling.append(pair)
         ceiling.append((size_1*res, 0))
         ceiling.append((0, 0))
@@ -206,7 +209,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         # draw and display ceiling
         ceiling = []
         for i in range(len(character.ceiling)):
-            pair = (((1+1/len(character.ceiling))*(i+offset)*render_ratio*res,(size_z - character.ceiling[i])*res))
+            pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_z - character.ceiling[i])*res))
             ceiling.append(pair)
         ceiling.append((size_1*res, 0))
         ceiling.append((0, 0))
