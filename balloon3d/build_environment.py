@@ -58,6 +58,7 @@ class balloon2d(Env):
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0)) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
 
         # initialize state and time
+        self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
         self.reset()
 
         self.step_n = 0
@@ -104,11 +105,11 @@ class balloon2d(Env):
         return self.character.state, self.reward_step, done, info
 
     def cost(self, in_bounds):
-        init_min = np.sqrt((self.character.target[0] - self.character.start[0])**2 + (self.character.target[1] - self.character.start[1])**2)
+        init_min = np.sqrt(((self.character.target[0] - self.character.start[0])*self.render_ratio)**2 + ((self.character.target[1] - self.character.start[1])*self.render_ratio)**2 + (self.character.target[2] - self.character.start[2])**2)
+        distance = np.sqrt((self.character.residual[0]*self.render_ratio)**2 + (self.character.residual[1]*self.render_ratio)**2 + self.character.residual[2]**2)
+
         if in_bounds:
             # calculate reward
-            distance = np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2)
-
             if distance <= yaml_p['radius']:
                 self.reward_step = yaml_p['hit']
                 done = True
@@ -138,8 +139,8 @@ class balloon2d(Env):
         self.reward_epi = 0
 
         # Set problem
-        border_x = self.size_x/10
-        border_y = self.size_y/10
+        border_x = self.size_x/(10*self.render_ratio)
+        border_y = self.size_y/(10*self.render_ratio)
         border_z = self.size_z/10
         above_ground = self.size_z/5
 

@@ -141,12 +141,13 @@ class Agent:
         print('weights loaded')
 
     def visualize_q_map(self):
-        res = 10/self.env.size_z
+        res_x = max(10/self.env.size_x,0.1)
+        res_z = max(10/self.env.size_z,0.1)
 
-        Q_vis = np.zeros((int(self.env.size_x*res), int(self.env.size_z*res),8))
-        for i in range(int(self.env.size_x*res)):
-            for j in range(int(self.env.size_z*res)):
-                position = np.array([(i+0.5)/res,(j+0.5)/res])
+        Q_vis = np.zeros((int(self.env.size_x*res_x), int(self.env.size_z*res_z),8))
+        for i in range(int(self.env.size_x*res_x)):
+            for j in range(int(self.env.size_z*res_z)):
+                position = np.array([(i+0.5)/res_x,(j+0.5)/res_z])
                 obs = self.env.character_v(position)
                 state = torch.Tensor(obs).unsqueeze(0)
                 Q = self.agent.model.forward(state)

@@ -37,8 +37,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     display_movement(screen, int(screen_width), int(screen_height), size_x, size_z, render_ratio, window_size, res, character, world_name, train_or_test)
 
     # text
-    unit_vector = [yaml_p['unit_xy'], yaml_p['unit_z']]
-    myfont = pygame.font.SysFont('Arial', 10, bold = True)
+    myfont = pygame.font.SysFont('Arial', 10, bold = False)
     t_reward_step = myfont.render('reward_step: ' + str(np.round(reward_step,3)), False, pygame.Color('LightGray'))
     t_reward_epi = myfont.render('reward_epi: ' + str(np.round(reward_epi,3)), False, pygame.Color('LightGray'))
     t_residual = myfont.render('residual: ' + str(np.round(np.multiply(character.state[0:2],[yaml_p['unit_xy'], yaml_p['unit_z']]),4)), False, pygame.Color('LightGray'))
@@ -48,7 +47,8 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
         t_border_z = myfont.render('border_z: ' + str(np.round(np.multiply(character.state[6:8],[yaml_p['unit_z'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
         t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[8:],1)), False, pygame.Color('LightGray'))
     else:
-        t_border = myfont.render('border: ' + str(np.round(character.state[2:6],1)), False, pygame.Color('LightGray'))
+        t_border_x = myfont.render('border_x: ' + str(np.round(np.multiply(character.state[2:4],[yaml_p['unit_xy'], yaml_p['unit_xy']]),1)), False, pygame.Color('LightGray'))
+        t_border_z = myfont.render('border_z: ' + str(np.round(np.multiply(character.state[4:6],[yaml_p['unit_z'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
         t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[6:],1)), False, pygame.Color('LightGray'))
 
 
@@ -109,7 +109,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         # write and display ceiling
         ceiling = []
         for i in range(len(character.ceiling)):
-            pair = (((1+1/len(character.ceiling))*i*render_ratio*res,(size_z - character.ceiling[i])*res))
+            pair = (((1+1/len(character.ceiling))*i*render_ratio*res,(size_2 - character.ceiling[i])*res))
             ceiling.append(pair)
         ceiling.append((size_1*res, 0))
         ceiling.append((0, 0))
@@ -123,7 +123,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
 
         # write and display observing box
         size_obs_x = window_size*2*res
-        size_obs_y = size_2*2*res
+        size_obs_y = size_2*res
         pos_obs = [position_1*res, size_2/2*res]
         rec_obs = pygame.Rect(pos_obs[0] - size_obs_x/2, pos_obs[1] - size_obs_y/2, size_obs_x, size_obs_y)
 
@@ -159,7 +159,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         # write and display ceiling
         ceiling = []
         for i in range(len(character.ceiling)):
-            pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_z - character.ceiling[i])*res))
+            pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_2 - character.ceiling[i])*res))
             ceiling.append(pair)
         ceiling.append((size_1*res, 0))
         ceiling.append((0, 0))
@@ -173,7 +173,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
 
         # write and display observing box
         size_obs_x = window_size*2*res
-        size_obs_y = size_2*2*res
+        size_obs_y = size_2*res
         pos_obs = [(position_1 + offset)*res, size_2/2*res]
         rec_obs = pygame.Rect(pos_obs[0] - size_obs_x/2, pos_obs[1] - size_obs_y/2, size_obs_x, size_obs_y)
 
@@ -209,7 +209,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         # draw and display ceiling
         ceiling = []
         for i in range(len(character.ceiling)):
-            pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_z - character.ceiling[i])*res))
+            pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_2 - character.ceiling[i])*res))
             ceiling.append(pair)
         ceiling.append((size_1*res, 0))
         ceiling.append((0, 0))
@@ -223,7 +223,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
 
         # write and display observing box
         size_obs_x = window_size*2*res
-        size_obs_y = size_2*2*res
+        size_obs_y = size_2*res
         pos_obs = [screen_width/2, size_2/2*res]
         rec_obs = pygame.Rect(pos_obs[0] - size_obs_x/2, pos_obs[1] - size_obs_y/2, size_obs_x, size_obs_y)
 

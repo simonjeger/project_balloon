@@ -16,6 +16,8 @@ with open(args.yaml_file, 'rt') as fh:
 
 class character():
     def __init__(self, size_x, size_z, start, target, T, world, world_compressed):
+        self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
+
         if yaml_p['physics']:
             self.mass = 3400 #kg
         else:
@@ -42,7 +44,6 @@ class character():
         self.velocity = np.array([0,0])
         self.min_x = self.position[0] - 0
         self.max_x = self.size_x - self.position[0]
-        #self.min_z = self.hight_above_ground()
         self.min_z = self.position[1] - 0
         self.max_z = self.dist_to_ceiling()
 
@@ -51,7 +52,7 @@ class character():
         else:
             self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
         self.path = [self.position.copy(), self.position.copy()]
-        self.min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2)
+        self.min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + self.residual[1]**2)
 
     def update(self, action, world_compressed):
         self.action = action
@@ -66,7 +67,6 @@ class character():
         self.residual = self.target - self.position
         self.min_x = self.position[0] - 0
         self.max_x = self.size_x - self.position[0]
-        #self.min_z = self.hight_above_ground()
         self.min_z = self.position[1] - 0
         self.max_z = self.dist_to_ceiling()
         if yaml_p['physics']:
@@ -74,7 +74,7 @@ class character():
         else:
             self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
 
-        min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2)
+        min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + self.residual[1]**2)
         if min_distance < self.min_distance:
             self.min_distance = min_distance
 

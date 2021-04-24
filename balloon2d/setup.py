@@ -35,13 +35,13 @@ shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['pro
 size_x = yaml_p['size_x']
 size_z = yaml_p['size_z']
 
-#generate_world(size_x, size_z, 1, 'train')
+generate_world(size_x, size_z, 1, 'train')
 #generate_world(size_x, size_z, 15, 'test')
 
 #import autoencoder_train
 #import autoencoder_test
 
-#visualize_world('train')
+visualize_world('train')
 #visualize_world('test')
 
 import agent_train

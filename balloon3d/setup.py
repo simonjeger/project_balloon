@@ -37,7 +37,7 @@ size_x = yaml_p['size_x']
 size_y = yaml_p['size_y']
 size_z = yaml_p['size_z']
 
-#generate_world(size_x, size_y, size_z, 500, 'train')
+generate_world(size_x, size_y, size_z, 1, 'train')
 #generate_world(size_x, size_y, size_z, 15, 'test')
 
 #import autoencoder_train

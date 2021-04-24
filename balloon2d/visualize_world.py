@@ -62,11 +62,12 @@ def visualize_world(train_or_test):
 
         #cmap = sns.diverging_palette(220, 20, as_cmap=True)
         cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5)
+        ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
         #cmap = sns.diverging_palette(145, 300, s=60, as_cmap=True)
-        cmap = 'PiYG'
         cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
+        ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
+
         ax.set_aspect(1/render_ratio)
 
         c_terrain = (169/255,163/255,144/255) #because plt uses values between 0 and 1
@@ -76,7 +77,7 @@ def visualize_world(train_or_test):
         ax.fill_between(np.linspace(0,size_x,len(terrain)),terrain, color=c_terrain)
 
         # draw coordinate system
-        ratio = size_x/100
+        ratio = 2*size_x/render_ratio
         tick_length = size_z/30
         for i in range(int(size_x/ratio)):
             i+=0.5
@@ -84,7 +85,7 @@ def visualize_world(train_or_test):
             ax.plot(x, y, color=c_ticks, linewidth=size_z/100)
             ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=size_z/20)
 
-        ratio = size_z/5
+        ratio = 5*size_z/render_ratio
         tick_length /= render_ratio
         for j in range(int(size_z/ratio)):
             j+=0.5
@@ -99,6 +100,7 @@ def visualize_world(train_or_test):
         # save figure
         plt.savefig(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', dpi = 150, bbox_inches='tight', pad_inches=0)
         plt.close()
+
         """
         # read in image with cv to then crop it
         img = cv2.imread(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', cv2.IMREAD_UNCHANGED)

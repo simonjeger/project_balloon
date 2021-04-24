@@ -131,7 +131,7 @@ def plot_path():
 
             step = df_loc['position_x'].index[0] + 1
 
-        axs[0].set_aspect('equal')
+        #axs[0].set_aspect('equal')
         axs[0].set_title(str(int(i/n_f*100)) + ' %')
 
         # plot epsilon
@@ -270,6 +270,10 @@ def write_overview():
     for i in dic_copy:
         dic_copy[i] = [dic_copy[i]]
 
+    # success_n
+    success_n = np.array(df['success_n'].dropna())
+    success_rate = success_n[-1]/yaml_p['num_epochs']
+
     # write down
     df_reward = pd.DataFrame(dic_copy)
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
@@ -277,6 +281,7 @@ def write_overview():
     df_reward.insert(len(df_reward.columns),'linreg_slope', slope, True)
     df_reward.insert(len(df_reward.columns),'linreg_intercept', slope, True)
     df_reward.insert(len(df_reward.columns),'linreg_score', score, True)
+    df_reward.insert(len(df_reward.columns),'success_rate', success_rate, True)
     dirpath = Path('overview.csv')
     if dirpath.exists() and dirpath.is_file():
         df_reward.to_csv(dirpath, mode='a', header=False, index=False)
@@ -312,6 +317,7 @@ def disp_overview():
                 # colors
                 color_max='red'
                 color_mean='blue'
+                color_success='yellow'
                 color_slope='green'
                 color_intercept='orange'
                 color_score='pink'
@@ -331,16 +337,26 @@ def disp_overview():
                 ax2.scatter(df.iloc[:,x],df['linreg_slope'], s=0.1, facecolors='none', edgecolors=color_slope, alpha=0.2)
                 """
 
-                # mean
+                # max
                 df_mean_max = pd.concat([df.iloc[:,x], df['rew_epi_max']], axis=1)
 
                 if df_mean_max.columns[0] != df_mean_max.columns[1]:
                     mean_rew_max = df_mean_max.groupby(df_mean_max.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_max.iloc[:,0], mean_rew_max.iloc[:,1], s=0.1, color=color_max)
                 df_mean_mean = pd.concat([df.iloc[:,x], df['rew_epi_mean']], axis=1)
+
+                # mean
                 if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
                     mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, color=color_mean)
+
+                # success
+                df_mean_success = pd.concat([df.iloc[:,x], df['success_rate']], axis=1)
+
+                if df_mean_success.columns[0] != df_mean_success.columns[1]:
+                    mean_success = df_mean_success.groupby(df_mean_success.columns[0]).mean().reset_index()
+                    axs[i,j].scatter(mean_success.iloc[:,0], mean_success.iloc[:,1], s=0.1, color=color_success)
+
                 """
                 df_mean_slope = pd.concat([df.iloc[:,x], df['linreg_slope']], axis=1)
                 if df_mean_slope.columns[0] != df_mean_slope.columns[1]:
@@ -360,7 +376,7 @@ def disp_overview():
                 x += 1
 
     #fig.tight_layout()
-    fig.suptitle('max reward: red     mean reward: blue     linreg slope: green     linreg intercept: orange     linreg scoret: pink')
+    fig.suptitle('max reward: red     mean reward: blue     success rate: yellow     linreg slope: green     linreg intercept: orange     linreg scoret: pink')
     plt.subplots_adjust(wspace=0.5, hspace=1)
     plt.show()
     plt.close()

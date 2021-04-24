@@ -44,7 +44,7 @@ world = np.zeros(shape=(1+3,size_x,size_z))
 
 center_lat = 46.9480
 center_lon = 7.4474
-step_x = size_x/2*yaml_p['unit']
+step_x = size_x/2*yaml_p['unit_xy']
 step_y = 0
 
 start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
@@ -58,7 +58,7 @@ step_lat = (end_lat - start_lat)/size_x
 step_lon = (end_lon - start_lon)/size_x
 
 lowest = 0
-highest = size_z*yaml_p['unit']
+highest = size_z*yaml_p['unit_z']
 step_z = (highest - lowest)/size_z
 
 for i in range(size_x):

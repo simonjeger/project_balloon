@@ -131,7 +131,7 @@ def plot_path():
 
             step = df_loc['position_x'].index[0] + 1
 
-        axs[0].set_aspect('equal')
+        #axs[0].set_aspect('equal')
         axs[0].set_title(str(int(i/n_f*100)) + ' %')
 
         # plot epsilon

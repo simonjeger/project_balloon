@@ -34,6 +34,8 @@ def visualize_world(tensor, position):
     pos_z = max(pos_z, 0)
     pos_z = min(pos_z, size_z)
 
+    render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+
     for dim in ['xz', 'yz', 'xy']: #xz, yz, xy
         if dim == 'xz':
             terrain = tensor[0,:,pos_y,0]
@@ -59,55 +61,39 @@ def visualize_world(tensor, position):
         ax.set_axis_off()
         ax.set_aspect(1)
 
-        if dim != 'xy':
-            # standardise color map
-            ceil = 10
-            color_quiver = dir_x.copy()
-            color_quiver = np.maximum(color_quiver, -ceil)
-            color_quiver = np.minimum(color_quiver, ceil)
-            color_quiver /= 2*ceil
-            color_quiver += 0.5
-            cm = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-            colors = cm(color_quiver).reshape(local_size_x*local_size_y,4)
-            q = ax.quiver(x, y, dir_x, dir_y, color=colors, scale=50*yaml_p['unit'], headwidth=3, width=0.0015)
+        cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+        ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
-            c_terrain = (169/255,163/255,144/255) #because plt uses values between 0 and 1
-            ax.fill_between(np.linspace(0,local_size_x,len(terrain)),terrain, color=c_terrain)
-        else:
-            # standardise color map
-            ceil = 10
-            color_quiver = np.arctan2(dir_y, dir_x)
-            color_quiver /= 2*np.pi
-            color_quiver += 0.5
-            cm = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-            colors = cm(color_quiver).reshape(local_size_x*local_size_y,4)
-            q = ax.quiver(x, y, dir_x, dir_y, color=colors, scale=50*yaml_p['unit'], headwidth=3, width=0.0015)
+        cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
+        ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
-            #c_terrain = 'YlOrBr_r'
-            #ax.imshow(terrain.T, origin='lower', cmap=c_terrain)
+        ax.set_aspect(1/render_ratio)
 
         # draw coordinate system
         c_ticks = (242/255,242/255,242/255)
-        ratio = local_size_y/5
+
+        ratio = 2*local_size_x/render_ratio
         tick_length = local_size_y/30
         for i in range(int(local_size_x/ratio)):
             i+=0.5
             x, y = [i*ratio, i*ratio], [0, tick_length]
-            ax.plot(x, y, color=c_ticks, linewidth=local_size_y/10)
-            ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y)
+            ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
+            ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y/20)
 
+        ratio = 5*local_size_y/render_ratio
+        tick_length /= render_ratio
         for j in range(int(local_size_y/ratio)):
             j+=0.5
             x, y = [0, tick_length], [j*ratio, j*ratio]
-            ax.plot(x, y, color=c_ticks, linewidth=local_size_y/10)
-            ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y)
+            ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
+            ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_xy'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y/20)
 
         # Create a Rectangle patch
-        rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/10, edgecolor=c_ticks, facecolor='none')
+        rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/100, edgecolor=c_ticks, facecolor='none')
         ax.add_patch(rect)
 
         # save figure
-        dpi = 5
+        dpi = 100
         plt.savefig('render/wind_map_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close()
 

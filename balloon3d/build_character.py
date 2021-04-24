@@ -16,6 +16,8 @@ with open(args.yaml_file, 'rt') as fh:
 
 class character():
     def __init__(self, size_x, size_y, size_z, start, target, T, world, world_compressed):
+        self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
+
         if yaml_p['physics']:
             self.mass = 3400 #kg
         else:
@@ -53,7 +55,7 @@ class character():
         else:
             self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
         self.path = [self.position.copy(), self.position.copy()]
-        self.min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2 + self.residual[2]**2)
+        self.min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + (self.residual[1]*self.render_ratio)**2 + self.residual[2]**2 + self.residual[2]**2)
 
     def update(self, action, world_compressed):
         self.action = action
@@ -77,7 +79,7 @@ class character():
         else:
             self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
 
-        min_distance = np.sqrt(self.residual[0]**2 + self.residual[1]**2 + self.residual[2]**2)
+        min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + (self.residual[1]*self.render_ratio)**2 + self.residual[2]**2)
         if min_distance < self.min_distance:
             self.min_distance = min_distance
 
@@ -88,7 +90,7 @@ class character():
 
     def move_particle(self, n):
         c = self.area*self.rho*self.c_w/(2*self.mass)
-        b = (self.action - 1)*self.force/yaml_p['unit']/self.mass
+        b = (self.action - 1)*self.force/yaml_p['unit_z']/self.mass
         delta_t = yaml_p['time']/n
 
         p_x = (self.path[-1][0] - self.path[-2][0])/delta_t
@@ -100,9 +102,9 @@ class character():
             in_bounds = (0 <= coord[0] < self.size_x) & (0 <= coord[1] < self.size_y) & (0 <= coord[2] < self.size_z) #if still within bounds
             if in_bounds:
                 # calculate velocity at time step t
-                w_x = self.world[-4][coord[0], coord[1], coord[2]]/yaml_p['unit'] #wind field should be in [block] and not in [m]
-                w_y = self.world[-3][coord[0], coord[1], coord[2]]/yaml_p['unit']
-                w_z = self.world[-2][coord[0], coord[1], coord[2]]/yaml_p['unit']
+                w_x = self.world[-4][coord[0], coord[1], coord[2]]/yaml_p['unit_xy'] #wind field should be in [block] and not in [m]
+                w_y = self.world[-3][coord[0], coord[1], coord[2]]/yaml_p['unit_xy']
+                w_z = self.world[-2][coord[0], coord[1], coord[2]]/yaml_p['unit_z']
                 sig_xz = self.world[-1][coord[0], coord[1], coord[2]]
 
                 w_x += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?

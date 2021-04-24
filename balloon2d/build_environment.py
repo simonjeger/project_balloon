@@ -57,9 +57,10 @@ class balloon2d(Env):
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0)) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
 
         # initialize state and time
+        self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
         self.reset()
 
-        self.sucess_n = 0
+        self.success_n = 0
         self.step_n = 0
         self.epi_n = 0
 
@@ -93,6 +94,8 @@ class balloon2d(Env):
                 self.writer.add_scalar('target_z', self.character.target[1], self.step_n)
                 self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
 
+                self.writer.add_scalar('success_n', self.success_n , self.step_n)
+
         self.step_n += 1
         if done:
             self.epi_n += 1
@@ -104,17 +107,14 @@ class balloon2d(Env):
         return self.character.state, self.reward_step, done, info
 
     def cost(self, in_bounds):
-        init_min = np.sqrt((self.character.target[0] - self.character.start[0])**2 + (self.character.target[1] - self.character.start[1])**2)
+        init_min = np.sqrt(((self.character.target[0] - self.character.start[0])*self.render_ratio)**2 + (self.character.target[1] - self.character.start[1])**2)
+        distance = np.sqrt((self.character.residual[0]*self.render_ratio)**2 + self.character.residual[1]**2)
+
         if in_bounds:
             # calculate reward
-            render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
-            distance = np.sqrt((self.character.residual[0]*render_ratio)**2 + self.character.residual[1]**2)
-
             if distance <= yaml_p['radius']:
                 self.reward_step = yaml_p['hit']
-                self.sucess_n += 1
-                if self.writer is not None:
-                    self.writer.add_scalar('sucess_n', self.sucess_n , self.step_n)
+                self.success_n += 1
                 done = True
             else:
                 self.reward_step = yaml_p['step'] + abs(self.character.action - 1)*yaml_p['action']
@@ -142,7 +142,7 @@ class balloon2d(Env):
         self.reward_epi = 0
 
         # Set problem
-        border_x = self.size_x/10
+        border_x = self.size_x/(10*self.render_ratio)
         border_z = self.size_z/10
         above_ground = self.size_z/5
 

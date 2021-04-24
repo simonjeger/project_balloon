@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance, qfunction):
+def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, step, action, min_distance, qfunction):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -27,7 +27,8 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
     text = text + '\n' + '# setup' + '\n'
     text = text + 'size_x: 300' + '\n'
     text = text + 'size_z: 105' + '\n'
-    text = text + 'unit: 30.48' + '\n'
+    text = text + 'unit_xy: 1100' + '\n'
+    text = text + 'unit_z: 30.48' + '\n'
     text = text + 'time: 20' + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'
@@ -63,8 +64,8 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
     text = text + 'target: "random"' + '\n'
     text = text + 'radius: 10' + '\n'
     text = text + 'hit: 1' + '\n'
-    text = text + 'step: -0.001' + '\n'
-    text = text + 'action: -0.003' + '\n'
+    text = text + 'step: ' + f'{step:.10f}' + '\n'
+    text = text + 'action: ' + f'{action:.10f}' + '\n'
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_distance: ' + str(min_distance) + '\n'
     text = text + 'bounds: -1' + '\n'
@@ -97,7 +98,9 @@ for data_path in ['"data/"']:
                                             for update_target_interval in [300]:
                                                 for minibatch_size in [200]:
                                                     for n_times_update in [100, 500, 1000]:
-                                                        for min_distance in [0,1]:
-                                                            for repeat in range(2):
-                                                                write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, min_distance, qfunction)
-                                                                process_nr += 1
+                                                        for step in [-0.001, -0.0001, -0.00001]:
+                                                            for action in [-0.003, -0.0003, -0.00003]:
+                                                                for min_distance in [0,1]:
+                                                                    for repeat in range(2):
+                                                                        write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, step, action, min_distance, qfunction)
+                                                                        process_nr += 1
