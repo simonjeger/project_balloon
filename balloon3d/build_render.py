@@ -17,8 +17,8 @@ with open(args.yaml_file, 'rt') as fh:
 def build_render(character, reward_step, reward_epi, world_name, window_size, train_or_test):
     render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
-    size_x = character.size_x
-    size_y = character.size_y
+    size_x = character.size_x*render_ratio
+    size_y = character.size_y*render_ratio
     size_z = character.size_z
 
     # general setup
@@ -26,10 +26,13 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     clock = pygame.time.Clock()
 
     # setting up the main window
-    res = 3 #int(100/size_z)
+    res = 1 #int(100/size_z)
     screen_width = 3*size_z*res
     screen_height = (size_y + 2*size_z)*res
     screen = pygame.display.set_mode((screen_width, screen_height))
+
+    c_background = (34,42,53)
+    screen.fill(c_background)
     pygame.display.set_caption('balloon3d')
 
     # handling input
@@ -82,48 +85,44 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
     if dim == 'xz':
         i1 = 0
         i2 = 2
-
-        size_1 = size_x*render_ratio
+        size_1 = size_x
         size_2 = size_z
-
         dist_to_top = size_z
         dist_to_bottom = 2*size_z
-
+        position_1 = character.position[i1]*render_ratio
+        position_2 = character.position[i2]
+        target_1 = character.target[i1]*render_ratio
+        target_2 = character.target[i2]
         ceiling = character.ceiling[:,int(character.position[1])]
 
     if dim == 'yz':
         i1 = 1
         i2 = 2
-
-        size_1 = size_y*render_ratio
+        size_1 = size_y
         size_2 = size_z
-
         dist_to_top = 0
         dist_to_bottom = size_z
-
+        position_1 = character.position[i1]*render_ratio
+        position_2 = character.position[i2]
+        target_1 = character.target[i1]*render_ratio
+        target_2 = character.target[i2]
         ceiling = character.ceiling[int(character.position[0]),:]
 
     if dim == 'xy':
         i1 = 0
         i2 = 1
-
-        size_1 = size_x*render_ratio
-        size_2 = size_y*render_ratio
-
+        size_1 = size_x
+        size_2 = size_y
+        position_1 = character.position[i1]*render_ratio
+        position_2 = character.position[i2]*render_ratio
+        target_1 = character.target[i1]*render_ratio
+        target_2 = character.target[i2]*render_ratio
         dist_to_top = 2*size_z
         dist_to_bottom = size_y + 2*size_z
-
-    # adress the distortion through the render_ratio
-    position_1 = character.position[i1]*render_ratio
-    position_2 = character.position[i2]
-
-    target_1 = character.target[i1]*render_ratio
-    target_2 = character.target[i2]
 
     window_size = window_size*render_ratio
 
     # colors
-    c_background = (34,42,53)
     c_ceiling = (51,63,80,150)
     c_down = (117,21,0,255)
     c_stay = (173,29,0)
@@ -140,7 +139,6 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         offset = 0
 
         # write and display background
-        screen.fill(c_background)
         bg = pygame.image.load('render/wind_map_' + dim + '.png')
         img_height = int(screen_height*size_2/(size_y + 2*size_z))
         img_width = int(img_height*size_1/size_2)
@@ -156,21 +154,21 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
             w_ceiling.append((size_1*res, dist_to_top))
             w_ceiling.append((0, dist_to_top))
 
-        lx, ly = zip(*w_ceiling)
-        min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
-        target_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
-        shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
-        pygame.draw.polygon(shape_surf, c_ceiling, [(x - min_x, y - min_y) for x, y in w_ceiling])
-        screen.blit(shape_surf, target_rect)
+            lx, ly = zip(*w_ceiling)
+            min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
+            target_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
+            shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
+            pygame.draw.polygon(shape_surf, c_ceiling, [(x - min_x, y - min_y) for x, y in w_ceiling])
+            screen.blit(shape_surf, target_rect)
 
         # write and display observing box
         size_obs_x = window_size*2*res
         if dim != 'xy':
+            size_obs_y = (dist_to_bottom - dist_to_top)*res
+            pos_obs = [int(position_1 - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
+        else:
             size_obs_y = window_size*2*res
             pos_obs = [int(position_1 - window_size)*res, dist_to_top*res]
-        else:
-            size_obs_y = size_2*res
-            pos_obs = [int(position_1 - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
         rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
         shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
@@ -196,7 +194,6 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         offset = -right_border + screen_width/2/res
 
         # write and display background
-        screen.fill(c_background)
         bg = pygame.image.load('render/wind_map_' + dim + '.png')
         img_height = int(screen_height*size_2/(size_y + 2*size_z))
         img_width = int(img_height*size_1/size_2)
@@ -222,10 +219,10 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         # write and display observing box
         size_obs_x = window_size*2*res
         if dim != 'xy':
-            size_obs_y = window_size*2*res
+            size_obs_y = (dist_to_bottom - dist_to_top)*res
             pos_obs = [int(position_1 + offset - window_size)*res, dist_to_top*res]
         else:
-            size_obs_y = size_2*res
+            size_obs_y = window_size*2*res
             pos_obs = [int(position_1 + offset - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
         rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
@@ -252,7 +249,6 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         offset = left_border - position_1
 
         # write and display background
-        screen.fill(c_background)
         bg = pygame.image.load('render/wind_map_' + dim + '.png')
         img_height = int(screen_height*size_2/(size_y + 2*size_z))
         img_width = int(img_height*size_1/size_2)
@@ -278,10 +274,10 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         # write and display observing box
         size_obs_x = window_size*2*res
         if dim != 'xy':
-            size_obs_y = window_size*2*res
+            size_obs_y = (dist_to_bottom - dist_to_top)*res
             pos_obs = [int(position_1 - size_obs_x/2 - window_size)*res, dist_to_top*res]
         else:
-            size_obs_y = size_2*res
+            size_obs_y = window_size*2*res
             pos_obs = [int(position_1 - size_obs_x/2 - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
         rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 

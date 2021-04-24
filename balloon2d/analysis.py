@@ -314,10 +314,11 @@ def disp_overview():
     for i in range(n):
         for j in range(m):
             if x < len(df.columns):
+                axs[i,j].grid(linewidth=0.1)
                 # colors
                 color_max='red'
                 color_mean='blue'
-                color_success='yellow'
+                color_success='violet'
                 color_slope='green'
                 color_intercept='orange'
                 color_score='pink'
@@ -376,7 +377,7 @@ def disp_overview():
                 x += 1
 
     #fig.tight_layout()
-    fig.suptitle('max reward: red     mean reward: blue     success rate: yellow     linreg slope: green     linreg intercept: orange     linreg scoret: pink')
+    fig.suptitle('max reward: red     mean reward: blue     success rate: violet     linreg slope: green     linreg intercept: orange     linreg scoret: pink')
     plt.subplots_adjust(wspace=0.5, hspace=1)
     plt.show()
     plt.close()

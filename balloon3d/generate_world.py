@@ -44,7 +44,7 @@ def generate_terrain(size_x, size_y, size_z):
 
     min_sky = size_z/10*2
     m = int(size_x)
-    magnitude = 1000
+    magnitude = 75
     for i in range(m):
         pos_x = random.randint(0, size_x-1)
         pos_y = random.randint(0, size_y-1)
@@ -70,10 +70,10 @@ def generate_wind(size_x, size_y, size_z, terrain):
     mean_z = np.ones(shape=(size_x,size_y,size_z))*0
     sig = np.ones(shape=(size_x,size_y,size_z))*0.1
 
-    magnitude = 5
-    smear_xy = int(size_x/10)
-    smear_z = int(size_x/50)
-    m = 10*int(size_z)
+    magnitude = 10
+    smear_xy = max(int(size_x),1)
+    smear_z = max(int(size_z/10),1)
+    m = int(size_z)
     sign_x = random.choice([-1,1])
     sign_y = random.choice([-1,1])
     for i in range(m):

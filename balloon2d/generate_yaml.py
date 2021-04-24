@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, step, action, min_distance, qfunction):
+def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, step, action, min_distance, short_sighted, qfunction):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -25,7 +25,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
     text = text + 'process_nr: ' + str(process_nr) + '\n'
 
     text = text + '\n' + '# setup' + '\n'
-    text = text + 'size_x: 10' + '\n'
+    text = text + 'size_x: 100' + '\n'
     text = text + 'size_z: 105' + '\n'
     text = text + 'unit_xy: 1100' + '\n'
     text = text + 'unit_z: 30.48' + '\n'
@@ -71,6 +71,9 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
     text = text + 'bounds: -1' + '\n'
     text = text + 'physics: True' + '\n'
 
+    text = text + '\n' + '# build_character' + '\n'
+    text = text + 'short_sighted: ' + str(short_sighted) + '\n'
+
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
     text = text + "qfunction: " + str(qfunction) + '\n'
@@ -83,24 +86,25 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
     file.write(text)
     file.close()
 
-process_nr = 3150
+process_nr = 3300
 for data_path in ['"data/"']:
     for qfunction in [True]:
-        for autoencoder in ['"HAE"']:
-            for num_epochs in [18000]:
-                for buffer_size in [1000000]:
-                    for lr in [0.001, 0.0005]:
-                        for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                            for epsi_low in [0.1]:
-                                for decay in [100000, 200000]:
-                                    for max_grad_norm in [1]:
-                                        for update_interval in [300]:
-                                            for update_target_interval in [300]:
-                                                for minibatch_size in [100]:
-                                                    for n_times_update in [100]:
-                                                        for step in [-0.01,-0.001, 0.0001]:
-                                                            for action in [-0.03,-0.003,-0.0003]:
-                                                                for min_distance in [0,1]:
-                                                                    for repeat in range(2):
-                                                                        write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, step, action, min_distance, qfunction)
-                                                                        process_nr += 1
+        for short_sighted in [True, False]:
+            for autoencoder in ['"HAE"']:
+                for num_epochs in [30000]:
+                    for buffer_size in [1000000]:
+                        for lr in [0.0005]:
+                            for explorer_type in ['"LinearDecayEpsilonGreedy"']:
+                                for epsi_low in [0.1]:
+                                    for decay in [150000, 200000]:
+                                        for max_grad_norm in [1]:
+                                            for update_interval in [300]:
+                                                for update_target_interval in [300]:
+                                                    for minibatch_size in [100]:
+                                                        for n_times_update in [100]:
+                                                            for step in [-0.1,-0.01,-0.001]:
+                                                                for action in [-0.3,-0.03,-0.003]:
+                                                                    for min_distance in [0,1]:
+                                                                        for repeat in range(2):
+                                                                            write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, update_target_interval, minibatch_size, n_times_update, data_path, step, action, min_distance, short_sighted, qfunction)
+                                                                            process_nr += 1

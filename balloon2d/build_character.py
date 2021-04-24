@@ -54,6 +54,9 @@ class character():
         self.path = [self.position.copy(), self.position.copy()]
         self.min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + self.residual[1]**2)
 
+        if yaml_p['short_sighted']:
+            self.become_short_sighted()
+
     def update(self, action, world_compressed):
         self.action = action
 
@@ -77,6 +80,9 @@ class character():
         min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + self.residual[1]**2)
         if min_distance < self.min_distance:
             self.min_distance = min_distance
+
+        if yaml_p['short_sighted']:
+            self.become_short_sighted()
 
         # reduce flight length by 1 second
         self.t -= 1
@@ -129,3 +135,16 @@ class character():
     def dist_to_ceiling(self):
         x = np.linspace(0,self.size_x,len(self.ceiling))
         return np.interp(self.position[0],x,self.ceiling) - self.position[1]
+
+    def become_short_sighted(self):
+        sight = yaml_p['window_size']
+        if yaml_p['physics']:
+            self.state[0] = np.minimum(self.state[0], sight)
+            self.state[0] = np.maximum(self.state[0], -sight)
+            self.state[4:6] = np.minimum(self.state[4:6], [sight]*len(self.state[4:6]))
+            self.state[4:6] = np.maximum(self.state[4:6], [-sight]*len(self.state[4:6]))
+        else:
+            self.state[0] = np.minimum(self.state[0], sight)
+            self.state[0] = np.maximum(self.state[0], -sight)
+            self.state[2:4] = np.minimum(self.state[2:4], [sight]*len(self.state[2:4]))
+            self.state[2:4] = np.maximum(self.state[2:4], [-sight]*len(self.state[2:4]))

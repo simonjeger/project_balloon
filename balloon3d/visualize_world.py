@@ -57,46 +57,70 @@ def visualize_world(tensor, position):
         local_size_y = len(dir_x[0])
 
         y,x = np.meshgrid(np.arange(0, local_size_y, 1),np.arange(0, local_size_x, 1))
-        fig, ax = plt.subplots(frameon=False, figsize=(local_size_x, local_size_y))
+        if dim != 'xy':
+            fig, ax = plt.subplots(frameon=False, figsize=(local_size_x, local_size_y))
+        else:
+            fig, ax = plt.subplots(frameon=False, figsize=(local_size_x, local_size_y))
         ax.set_axis_off()
-        ax.set_aspect(1)
 
         cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
+        cbar = ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
         cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
         ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
-        ax.set_aspect(1/render_ratio)
-
         # draw coordinate system
         c_ticks = (242/255,242/255,242/255)
 
-        ratio = 2*local_size_x/render_ratio
-        tick_length = local_size_y/30
-        for i in range(int(local_size_x/ratio)):
-            i+=0.5
-            x, y = [i*ratio, i*ratio], [0, tick_length]
-            ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
-            ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y/20)
+        if dim != 'xy':
+            dpi = 200
+            ax.set_aspect(1/render_ratio)
+            ratio = 2*local_size_x/render_ratio
+            tick_length = local_size_y/30
+            for i in range(int(local_size_x/ratio)):
+                i+=0.5
+                x, y = [i*ratio, i*ratio], [0, tick_length]
+                ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
+                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y/20)
 
-        ratio = 5*local_size_y/render_ratio
-        tick_length /= render_ratio
-        for j in range(int(local_size_y/ratio)):
-            j+=0.5
-            x, y = [0, tick_length], [j*ratio, j*ratio]
-            ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
-            ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_xy'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y/20)
+            ratio = 5*local_size_y/render_ratio
+            tick_length /= render_ratio
+            for j in range(int(local_size_y/ratio)):
+                j+=0.5
+                x, y = [0, tick_length], [j*ratio, j*ratio]
+                ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
+                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y/20)
 
-        # Create a Rectangle patch
-        rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/100, edgecolor=c_ticks, facecolor='none')
-        ax.add_patch(rect)
+            # Create a Rectangle patch
+            rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/100, edgecolor=c_ticks, facecolor='none')
+            ax.add_patch(rect)
+
+        else:
+            ax.set_aspect(1)
+            dpi = 100
+            ratio = 2*local_size_x/render_ratio
+            tick_length = local_size_y/30
+            for i in range(int(local_size_x/ratio)):
+                i+=0.5
+                x, y = [i*ratio, i*ratio], [0, tick_length]
+                ax.plot(x, y, color=c_ticks, linewidth=local_size_y/10)
+                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y)
+
+            for j in range(int(local_size_y/ratio)):
+                j+=0.5
+                x, y = [0, tick_length], [j*ratio, j*ratio]
+                ax.plot(x, y, color=c_ticks, linewidth=local_size_y/10)
+                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y)
+
+            # Create a Rectangle patch
+            rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/10, edgecolor=c_ticks, facecolor='none')
+            ax.add_patch(rect)
 
         # save figure
-        dpi = 100
         plt.savefig('render/wind_map_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close()
 
+        """
         # read in image with cv to then crop it
         img = cv2.imread('render/wind_map_' + dim + '.png', cv2.IMREAD_UNCHANGED)
 
@@ -109,3 +133,4 @@ def visualize_world(tensor, position):
         img = img[border_left:border_right,border_top:border_bottom]
 
         cv2.imwrite('render/wind_map_' + dim + '.png', img)
+        """
