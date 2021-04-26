@@ -61,6 +61,7 @@ class balloon2d(Env):
         self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
         self.reset()
 
+        self.success_n = 0
         self.step_n = 0
         self.epi_n = 0
 
@@ -80,19 +81,25 @@ class balloon2d(Env):
             if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
                 self.writer.add_scalar('episode', self.epi_n , self.step_n)
                 self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-                self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
+                self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
+                self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
                 self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
             if done:
                 self.writer.add_scalar('episode', self.epi_n , self.step_n)
                 self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-                self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
+                self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
+                self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
                 self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
 
                 self.writer.add_scalar('size_x', self.size_x , self.step_n)
+                self.writer.add_scalar('size_y', self.size_y , self.step_n)
                 self.writer.add_scalar('size_z', self.size_z , self.step_n)
                 self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
-                self.writer.add_scalar('target_z', self.character.target[1], self.step_n)
+                self.writer.add_scalar('target_y', self.character.target[1], self.step_n)
+                self.writer.add_scalar('target_z', self.character.target[2], self.step_n)
                 self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
+
+                self.writer.add_scalar('success_n', self.success_n, self.step_n)
 
         self.step_n += 1
         if done:
@@ -112,6 +119,7 @@ class balloon2d(Env):
             # calculate reward
             if distance <= yaml_p['radius']:
                 self.reward_step = yaml_p['hit']
+                self.success_n += 1
                 done = True
             else:
                 self.reward_step = yaml_p['step'] + abs(self.character.action - 1)*yaml_p['action']

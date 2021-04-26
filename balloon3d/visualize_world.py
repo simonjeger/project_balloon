@@ -28,11 +28,11 @@ def visualize_world(tensor, position):
     pos_z = int(position[2])
 
     pos_x = max(pos_x, 0)
-    pos_x = min(pos_x, size_x)
+    pos_x = min(pos_x, size_x-1)
     pos_y = max(pos_y, 0)
-    pos_y = min(pos_y, size_y)
+    pos_y = min(pos_y, size_y-1)
     pos_z = max(pos_z, 0)
-    pos_z = min(pos_z, size_z)
+    pos_z = min(pos_z, size_z-1)
 
     render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
 
@@ -73,7 +73,7 @@ def visualize_world(tensor, position):
         c_ticks = (242/255,242/255,242/255)
 
         if dim != 'xy':
-            dpi = 200
+            dpi = 100
             ax.set_aspect(1/render_ratio)
             ratio = 2*local_size_x/render_ratio
             tick_length = local_size_y/30
@@ -81,7 +81,7 @@ def visualize_world(tensor, position):
                 i+=0.5
                 x, y = [i*ratio, i*ratio], [0, tick_length]
                 ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
-                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y/20)
+                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y/15)
 
             ratio = 5*local_size_y/render_ratio
             tick_length /= render_ratio
@@ -89,7 +89,7 @@ def visualize_world(tensor, position):
                 j+=0.5
                 x, y = [0, tick_length], [j*ratio, j*ratio]
                 ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
-                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y/20)
+                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y/15)
 
             # Create a Rectangle patch
             rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/100, edgecolor=c_ticks, facecolor='none')
@@ -97,20 +97,20 @@ def visualize_world(tensor, position):
 
         else:
             ax.set_aspect(1)
-            dpi = 100
+            dpi = 50
             ratio = 2*local_size_x/render_ratio
-            tick_length = local_size_y/30
+            tick_length = local_size_y/60
             for i in range(int(local_size_x/ratio)):
                 i+=0.5
                 x, y = [i*ratio, i*ratio], [0, tick_length]
                 ax.plot(x, y, color=c_ticks, linewidth=local_size_y/10)
-                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y)
+                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=1.1*local_size_y)
 
             for j in range(int(local_size_y/ratio)):
                 j+=0.5
                 x, y = [0, tick_length], [j*ratio, j*ratio]
                 ax.plot(x, y, color=c_ticks, linewidth=local_size_y/10)
-                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y)
+                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=1.1*local_size_y)
 
             # Create a Rectangle patch
             rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/10, edgecolor=c_ticks, facecolor='none')
@@ -119,18 +119,3 @@ def visualize_world(tensor, position):
         # save figure
         plt.savefig('render/wind_map_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close()
-
-        """
-        # read in image with cv to then crop it
-        img = cv2.imread('render/wind_map_' + dim + '.png', cv2.IMREAD_UNCHANGED)
-
-        c = [150, 150, 150, 150]
-        indices = np.where(np.all(img >= c, axis=-1))
-        border_left = indices[0][0]
-        border_right = indices[0][-1]+1
-        border_top = indices[1][0]
-        border_bottom = indices[1][-1]+1
-        img = img[border_left:border_right,border_top:border_bottom]
-
-        cv2.imwrite('render/wind_map_' + dim + '.png', img)
-        """

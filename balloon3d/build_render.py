@@ -26,9 +26,9 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     clock = pygame.time.Clock()
 
     # setting up the main window
-    res = 1 #int(100/size_z)
-    screen_width = 3*size_z*res
-    screen_height = (size_y + 2*size_z)*res
+    res = 1.55 #int(100/size_z)
+    screen_width = int(3*size_z*res)
+    screen_height = int((size_y + 2*size_z)*res)
     screen = pygame.display.set_mode((screen_width, screen_height))
 
     c_background = (34,42,53)
@@ -67,15 +67,17 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
         t_border_z = myfont.render('border_z: ' + str(np.round(np.multiply(character.state[7:9],[yaml_p['unit_z'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
         t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[9:],1)), False, pygame.Color('LightGray'))
 
-    screen.blit(t_reward_step,(50,10))
-    screen.blit(t_reward_epi,(50,25))
-    screen.blit(t_residual,(50,55))
+    start_text = 2*size_z*res
+    space_text = 15
+    screen.blit(t_reward_step,(space_text,start_text+1*space_text))
+    screen.blit(t_reward_epi,(space_text,start_text+2*space_text))
+    screen.blit(t_residual,(space_text,start_text+3*space_text))
     if yaml_p['physics']:
-        screen.blit(t_velocity,(50,70))
-    screen.blit(t_border_x,(50,85))
-    screen.blit(t_border_y,(50,100))
-    screen.blit(t_border_z,(50,115))
-    screen.blit(t_world_compressed,(50,130))
+        screen.blit(t_velocity,(space_text,start_text+4*space_text))
+    screen.blit(t_border_x,(space_text,start_text+5*space_text))
+    screen.blit(t_border_y,(space_text,start_text+6*space_text))
+    screen.blit(t_border_z,(space_text,start_text+7*space_text))
+    screen.blit(t_world_compressed,(space_text,start_text+8*space_text))
 
     # updating the window
     pygame.display.flip()
@@ -165,10 +167,10 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         size_obs_x = window_size*2*res
         if dim != 'xy':
             size_obs_y = (dist_to_bottom - dist_to_top)*res
-            pos_obs = [int(position_1 - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
+            pos_obs = [int(position_1 - window_size)*res, dist_to_top*res]
         else:
             size_obs_y = window_size*2*res
-            pos_obs = [int(position_1 - window_size)*res, dist_to_top*res]
+            pos_obs = [int(position_1 - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
         rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
         shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
@@ -177,8 +179,12 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
 
         # write path
         path = []
-        for i in character.path:
-            path.append((i[i1]*render_ratio*res, (dist_to_bottom-i[i2])*res))
+        if dim != 'xy':
+            for i in character.path:
+                path.append((i[i1]*render_ratio*res, (dist_to_bottom-i[i2])*res))
+        else:
+            for i in character.path:
+                path.append((i[i1]*render_ratio*res, (dist_to_bottom-i[i2]*render_ratio)*res))
 
         # write balloon
         size_balloon = 0.5*res
@@ -232,8 +238,12 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
 
         # write path
         path = []
-        for i in character.path:
-            path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2])*res))
+        if dim != 'xy':
+            for i in character.path:
+                path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2])*res))
+        else:
+            for i in character.path:
+                path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom*render_ratio-i[i2])*res))
 
         # write balloon
         size_balloon = 0.5*res
@@ -275,10 +285,10 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         size_obs_x = window_size*2*res
         if dim != 'xy':
             size_obs_y = (dist_to_bottom - dist_to_top)*res
-            pos_obs = [int(position_1 - size_obs_x/2 - window_size)*res, dist_to_top*res]
+            pos_obs = [int(position_1 + offset - window_size)*res, dist_to_top*res]
         else:
             size_obs_y = window_size*2*res
-            pos_obs = [int(position_1 - size_obs_x/2 - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
+            pos_obs = [int(position_1 + offset - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
         rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
         shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
@@ -287,8 +297,12 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
 
         # write path
         path = []
-        for i in character.path:
-            path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2])*res))
+        if dim != 'xy':
+            for i in character.path:
+                path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2])*res))
+        else:
+            for i in character.path:
+                path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2]*render_ratio)*res))
 
         # write balloon
         size_balloon = 0.5*res
@@ -320,10 +334,20 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
     pygame.draw.circle(shape_surf, c_target_radius, (radius, radius), radius)
     screen.blit(shape_surf, target_rect)
 
-    # draw position bar
-    length = screen_width/10
-    point = position_1/size_1*length
-    position_bar = [[screen_width - 20 - length, 20], [screen_width - 20, 20]]
-    pygame.draw.lines(screen, c_path, False, position_bar, 1)
-    position_point = [position_bar[0][0]+point, position_bar[0][1]]
-    pygame.draw.circle(screen, c_target_radius, position_point, 2)
+    # draw minimap
+    length_mm = screen_width/10
+    height_mm = length_mm/size_1*size_2
+    position_mm = [screen_width - 20 - length_mm, dist_to_top*res + 20]
+    rec_obs = pygame.Rect(position_mm[0], position_mm[1], length_mm, height_mm)
+    shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
+    pygame.draw.rect(shape_surf, c_window, shape_surf.get_rect())
+    screen.blit(shape_surf, rec_obs)
+
+    mm_balloon = [position_1/size_1*length_mm, height_mm - position_2/size_2*height_mm]
+    position_balloon_mm = [position_mm[0]+mm_balloon[0], position_mm[1]+mm_balloon[1]]
+    pygame.draw.circle(screen, c_stay, position_balloon_mm, 1)
+
+
+    mm_target = [target_1/size_1*length_mm, height_mm - target_2/size_2*height_mm]
+    position_target_mm = [position_mm[0]+mm_target[0], position_mm[1]+mm_target[1]]
+    pygame.draw.circle(screen, c_target_radius, position_target_mm, 1)

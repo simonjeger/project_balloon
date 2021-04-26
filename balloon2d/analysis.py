@@ -103,8 +103,10 @@ def plot_path():
     idx = np.linspace(0,N-N/n_f,n_f)
     idx = [int(i) for i in idx]
 
-    vmin = np.min(df['reward_epi'])
-    vmax = np.max(df['reward_epi'])
+    #vmin = np.min(df['reward_epi'])
+    #vmax = np.max(df['reward_epi'])
+    vmin = -2
+    vmax = 1
 
 
     vn = 100
@@ -121,6 +123,13 @@ def plot_path():
         for j in idx_fra:
             df_loc = df_fra[df_fra['episode'].isin([j])]
 
+            # add legend
+            legend = [-2, -1.5, -1, -0.5, 0, 0.5, 1]
+            for l in range(len(legend)):
+                c = np.argmin(np.abs(spectrum - legend[l]))
+                axs[0].text(df_fra['size_x'].iloc[-1],df_fra['size_z'].iloc[-1]/len(legend)*(l), str(legend[l]), verticalalignment='bottom', horizontalalignment='left', color=colors[c])
+
+            # add path
             c = np.argmin(np.abs(spectrum - df_loc['reward_epi'].iloc[-1]))
 
             # plot path
@@ -131,7 +140,6 @@ def plot_path():
 
             step = df_loc['position_x'].index[0] + 1
 
-        #axs[0].set_aspect('equal')
         axs[0].set_title(str(int(i/n_f*100)) + ' %')
 
         # plot epsilon

@@ -22,9 +22,9 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     clock = pygame.time.Clock()
 
     # setting up the main window
-    res = int(500/size_z) #40
-    screen_width = 3*size_z*res
-    screen_height = size_z*res
+    res = 480/size_z
+    screen_width = int(3*size_z*res)
+    screen_height = int(size_z*res)
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption('balloon2d')
 
@@ -137,12 +137,12 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
             path.append((i[i1]*render_ratio*res, (size_2-i[i2])*res))
 
         # write balloon
-        size_balloon = 0.5*res
+        size_balloon = 2*res
         pos_balloon = [position_1*res, (size_2 - position_2)*res]
         rec_balloon = pygame.Rect(pos_balloon[0] - size_balloon/2, pos_balloon[1] - size_balloon/2, size_balloon, size_balloon)
 
         # write target
-        size_target = 0.5*res
+        size_target = 2*res
         pos_target = [target_1*res, (size_2 - target_2)*res]
         rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
@@ -187,12 +187,12 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
             path.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
 
         # write balloon
-        size_balloon = 0.5*res
+        size_balloon = 2*res
         pos_balloon = [(position_1 + offset)*res, (size_2 - position_2)*res]
         rec_balloon = pygame.Rect(pos_balloon[0] - size_balloon/2, pos_balloon[1] - size_balloon/2, size_balloon, size_balloon)
 
         # write target
-        size_target = 0.5*res
+        size_target = 2*res
         pos_target = [(target_1 + offset)*res, (size_2 - target_2)*res]
         rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
@@ -237,12 +237,12 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
             path.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
 
         # write balloon
-        size_balloon = 0.5*res
+        size_balloon = 2*res
         pos_balloon = [screen_width/2, (size_2 - position_2)*res]
         rec_balloon = pygame.Rect(pos_balloon[0] - size_balloon/2, pos_balloon[1] - size_balloon/2, size_balloon, size_balloon)
 
         # write target
-        size_target = 0.5*res
+        size_target = 2*res
         pos_target = [(target_1 + offset)*res, (size_2 - target_2)*res]
         rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
