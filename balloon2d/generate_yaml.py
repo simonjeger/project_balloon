@@ -29,7 +29,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
     text = text + 'size_z: 105' + '\n'
     text = text + 'unit_xy: 1100' + '\n'
     text = text + 'unit_z: 30.48' + '\n'
-    text = text + 'time: 60' + '\n'
+    text = text + 'time: 30' + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
@@ -59,7 +59,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
-    text = text + 'T: 300' + '\n'
+    text = text + 'T: 600' + '\n'
     text = text + 'start: [7,0]' + '\n'
     text = text + 'target: "random"' + '\n'
     text = text + 'radius: 10' + '\n'
@@ -86,24 +86,24 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, e
     file.write(text)
     file.close()
 
-process_nr = 3750
+process_nr = 3850
 for data_path in ['"data/"']:
     for qfunction in [True]:
         for short_sighted in [True, False]:
             for min_distance in [0,1]:
                 for autoencoder in ['"HAE"']:
-                    for num_epochs in [50000]:
-                        for buffer_size in [1000000]:
+                    for num_epochs in [30000]:
+                        for buffer_size in [100000000]:
                             for lr in [0.0005]:
-                                for explorer_type in ['"LinearDecayEpsilonGreedy"']:
+                                for explorer_type in ['"LinearDecayEpsilonGreedy"', '"Boltzmann"']:
                                     for epsi_low in [0.1]:
-                                        for decay in [200000, 300000, 500000]:
+                                        for decay in [300000]:
                                             for max_grad_norm in [1]:
-                                                for update_interval in [300, 600]:
+                                                for update_interval in [300]:
                                                     for minibatch_size in [100]:
-                                                        for n_times_update in [100, 200]:
-                                                            for step in [-0.01]:
-                                                                for action in [-0.003]:
-                                                                    for repeat in range(2):
+                                                        for n_times_update in [100]:
+                                                            for step in [-0.01, -0.001]:
+                                                                for action in [-0.03, -0.003]:
+                                                                    for repeat in range(3):
                                                                         write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, decay, max_grad_norm, update_interval, minibatch_size, n_times_update, data_path, step, action, min_distance, short_sighted, qfunction)
                                                                         process_nr += 1

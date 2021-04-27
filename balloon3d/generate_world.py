@@ -73,6 +73,7 @@ def generate_wind(size_x, size_y, size_z, terrain):
     magnitude = 10
     smear_xy = max(int(size_x),1)
     smear_z = max(int(size_z/10),1)
+    tunnel = size_z/10
     m = int(size_z)
     sign_x = random.choice([-1,1])
     sign_y = random.choice([-1,1])
@@ -80,11 +81,14 @@ def generate_wind(size_x, size_y, size_z, terrain):
         pos_x = random.randint(0,size_x-1)
         pos_y = random.randint(0,size_y-1)
         pos_z = random.randint(0,size_z-1)
-        if random.uniform(0, 1) < pos_z/size_z:
+        if random.uniform(0, 1) < (pos_z+tunnel)/size_z:
             seed_x = 1
-            seed_y = 1
         else:
             seed_x = -1
+
+        if random.uniform(0, 1) < (pos_z-tunnel)/size_z:
+            seed_y = 1
+        else:
             seed_y = -1
 
         seed_x *= sign_x

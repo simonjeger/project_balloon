@@ -101,7 +101,10 @@ class Agent:
             if done:
                 # logger
                 if self.writer is not None:
-                    self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
+                    if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
+                        self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
+                    else:
+                        self.writer.add_scalar('epsilon', 0 , self.step_n-1) # because we do above self.step_n += 1
                     if len(self.agent.loss_record) != 0:
                         self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
                         """
@@ -135,6 +138,9 @@ class Agent:
         i = np.argmax(phase)
         copy_tree(path_temp + name_list[i], path + 'weights_agent')
         print('weights saved')
+
+        if self.writer is not None:
+            self.writer.add_scalar('weights_saved', self.epi_n , self.step_n-1) # because we do above self.step_n += 1
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')

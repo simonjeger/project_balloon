@@ -25,7 +25,7 @@ class character():
         self.area = 21**2/4*np.pi
         self.rho = 1.2
         self.c_w = 0.45
-        self.force = 80 #N
+        self.force = 60 #80 #N
 
         self.size_x = size_x
         self.size_y = size_y
