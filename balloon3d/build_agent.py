@@ -43,44 +43,119 @@ class Agent:
 
         acts = env.action_space
         obs = env.observation_space
-        self.qfunction = QFunction(obs.shape[0],acts.n)
-        #self.qfunction.apply(self.weights_init) # delibratly initialize weights of NN as defined in function below
 
-        epsi_high = yaml_p['epsi_high']
-        epsi_low = yaml_p['epsi_low']
-        decay = yaml_p['decay']
-        scale = yaml_p['scale']
+        if yaml_p['continuous']:
+            obs_size = obs.low.size
+            action_size = acts.low.size
 
-        if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
-            explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps=decay, random_action_func=env.action_space.sample)
-        elif yaml_p['explorer_type'] == 'Boltzmann':
-            explorer = pfrl.explorers.Boltzmann()
-        elif yaml_p['explorer_type'] == 'AdditiveGaussian':
-            explorer = pfrl.explorers.AdditiveGaussian(scale, low=0, high=2)
+            def squashed_diagonal_gaussian_head(x):
+                assert x.shape[-1] == action_size * 2
+                mean, log_scale = torch.chunk(x, 2, dim=1)
+                log_scale = torch.clamp(log_scale, -20.0, 2.0)
+                var = torch.exp(log_scale * 2)
+                base_distribution = torch.distributions.Independent(
+                    torch.distributions.Normal(loc=mean, scale=torch.sqrt(var)), 1
+                )
+                # cache_size=1 is required for numerical stability
+                return torch.distributions.transformed_distribution.TransformedDistribution(
+                    base_distribution, [torch.distributions.transforms.TanhTransform(cache_size=1)]
+                )
+
+            policy = torch.nn.Sequential(
+                torch.nn.Linear(obs_size, 256),
+                torch.nn.ReLU(),
+                torch.nn.Linear(256, 256),
+                torch.nn.ReLU(),
+                torch.nn.Linear(256, action_size * 2),
+                pfrl.nn.lmbda.Lambda(squashed_diagonal_gaussian_head),
+            )
+
+            torch.nn.init.xavier_uniform_(policy[0].weight)
+            torch.nn.init.xavier_uniform_(policy[2].weight)
+            torch.nn.init.xavier_uniform_(policy[4].weight)
+            policy_optimizer = torch.optim.Adam(policy.parameters(), lr=3e-4)
+
+            def make_q_func_with_optimizer():
+                q_func = torch.nn.Sequential(
+                    pfrl.nn.ConcatObsAndAction(),
+                    torch.nn.Linear(obs_size + action_size, 256),
+                    torch.nn.ReLU(),
+                    torch.nn.Linear(256, 256),
+                    torch.nn.ReLU(),
+                    torch.nn.Linear(256, 1),
+                )
+                torch.nn.init.xavier_uniform_(q_func[1].weight)
+                torch.nn.init.xavier_uniform_(q_func[3].weight)
+                torch.nn.init.xavier_uniform_(q_func[5].weight)
+                q_func_optimizer = torch.optim.Adam(q_func.parameters(), lr=3e-4)
+                return q_func, q_func_optimizer
+
+            q_func1, q_func1_optimizer = make_q_func_with_optimizer()
+            q_func2, q_func2_optimizer = make_q_func_with_optimizer()
+
+            def burnin_action_func():
+                return np.random.uniform(acts.low, acts.high).astype(np.float32) #select random actions until model is updated one or more times
+
+            if yaml_p['agent_type'] == 'SoftActorCritic':
+                self.agent = pfrl.agents.SoftActorCritic(
+                    policy,
+                    q_func1,
+                    q_func2,
+                    policy_optimizer,
+                    q_func1_optimizer,
+                    q_func2_optimizer,
+                    pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size']),
+                    gamma=0.95,
+                    replay_start_size=yaml_p['replay_start_size'],
+                    gpu=-1,
+                    minibatch_size=yaml_p['minibatch_size'],
+                    burnin_action_func=burnin_action_func,
+                    entropy_target=-action_size,
+                    temperature_optimizer_lr=3e-4,
+                )
+
+            else:
+                print('please choose one of the implemented agents')
+
+        else:
+            epsi_high = yaml_p['epsi_high']
+            epsi_low = yaml_p['epsi_low']
+            decay = yaml_p['decay']
+            scale = yaml_p['scale']
+
+            if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
+                explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps=decay, random_action_func=env.action_space.sample)
+            elif yaml_p['explorer_type'] == 'Boltzmann':
+                explorer = pfrl.explorers.Boltzmann()
+            elif yaml_p['explorer_type'] == 'AdditiveGaussian':
+                explorer = pfrl.explorers.AdditiveGaussian(scale, low=0, high=2)
+
+            if yaml_p['agent_type'] == 'DoubleDQN':
+                self.qfunction = QFunction(obs.shape[0],acts.n)
+                
+                self.agent = pfrl.agents.DoubleDQN(
+                    self.qfunction,
+                    torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']), #in my case ADAMS
+                    #torch.optim.Adadelta(self.qfunction.parameters()),
+                    pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size']), #number of experiences I train my NN with
+                    yaml_p['gamma'], #discount factor
+                    explorer, #how to choose next action
+                    clip_delta=True,
+                    max_grad_norm=yaml_p['max_grad_norm'],
+                    replay_start_size=yaml_p['replay_start_size'], #number of experiences in replay buffer when training begins
+                    update_interval=yaml_p['update_interval'], #in later parts of the code I set the timer to this, so it updates every episode
+                    target_update_interval=yaml_p['target_update_interval'],
+                    minibatch_size=yaml_p['minibatch_size'], #minibatch_size used for training the q-function network
+                    n_times_update=yaml_p['n_times_update'], #how many times we update the NN with a new batch per update step
+                    phi=lambda x: x.astype(np.float32, copy=False), #feature extractor applied to observations
+                    gpu=-1, #actual GPU used for computation
+                )
+
+            else:
+                print('please choose one of the implemented agents')
 
         self.epi_n = 0
         self.step_n = 0
-
-        if yaml_p['agent_type'] == 'DoubleDQN':
-            self.agent = pfrl.agents.DoubleDQN(
-                self.qfunction,
-                torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']), #in my case ADAMS
-                pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size']), #number of experiences I train my NN with
-                yaml_p['gamma'], #discount factor
-                explorer, #how to choose next action
-                clip_delta=True,
-                max_grad_norm=yaml_p['max_grad_norm'],
-                replay_start_size=yaml_p['replay_start_size'], #number of experiences in replay buffer when training begins
-                update_interval=yaml_p['update_interval'], #in later parts of the code I set the timer to this, so it updates every episode
-                target_update_interval=yaml_p['target_update_interval'],
-                minibatch_size=yaml_p['minibatch_size'], #minibatch_size used for training the q-function network
-                n_times_update=yaml_p['n_times_update'], #how many times we update the NN with a new batch per update step
-                phi=lambda x: x.astype(np.float32, copy=False), #feature extractor applied to observations
-                gpu=-1, #actual GPU used for computation
-            )
-
-        else:
-            print('please choose one of the implemented agents')
 
     def run_epoch(self, render):
         obs = self.env.reset()
@@ -88,6 +163,13 @@ class Agent:
 
         while True:
             action = self.agent.act(obs) #uses self.agent.model to decide next step
+
+            # actions are not in the same range in discrete / continuous cases
+            if yaml_p['continuous']:
+                action = action[0]+1
+            else:
+                action = action
+
             obs, reward, done, _ = self.env.step(action)
 
             sum_r = sum_r + reward
@@ -101,12 +183,14 @@ class Agent:
             if done:
                 # logger
                 if self.writer is not None:
-                    if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
-                        self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
-                    else:
+                    if yaml_p['continuous']:
                         self.writer.add_scalar('epsilon', 0 , self.step_n-1) # because we do above self.step_n += 1
-                    if len(self.agent.loss_record) != 0:
-                        self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
+                        self.writer.add_scalar('loss_qfunction', 0, self.step_n-1)
+                    else:
+                        if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
+                            self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
+                        if len(self.agent.loss_record) != 0:
+                            self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
                         """
                         for i in range(len(self.agent.loss_record)):
                             self.writer.add_scalar('local_loss_qfunction', self.agent.loss_record[i], self.step_n-1 + i/len(self.agent.loss_record))

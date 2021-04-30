@@ -25,7 +25,7 @@ class character():
         self.area = 21**2/4*np.pi
         self.rho = 1.2
         self.c_w = 0.45
-        self.force = 60 #80 #N
+        self.force = 80 #80 #N
 
         self.size_x = size_x
         self.size_z = size_z
@@ -51,6 +51,8 @@ class character():
             self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
         else:
             self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+        self.state = self.state.astype(np.float32)
+
         self.path = [self.position.copy(), self.position.copy()]
         self.min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + self.residual[1]**2)
 
@@ -76,6 +78,7 @@ class character():
             self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
         else:
             self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+        self.state = self.state.astype(np.float32)
 
         min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + self.residual[1]**2)
         if min_distance < self.min_distance:

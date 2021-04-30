@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import pygame, sys
+import matplotlib.pylab as pl
 
 from visualize_world import visualize_world
 
@@ -133,6 +134,7 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
     c_window = (217,217,217, 50)
     c_target_center = (242,242,242)
     c_target_radius = (217,217,217,50)
+    c_continuous = 'seismic'
 
     left_border = (screen_width/2)/res
     right_border = size_1 - left_border
@@ -314,16 +316,23 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         pos_target = [(target_1 + offset)*res, (dist_to_bottom - target_2)*res]
         rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
-    # balloon
-    #pygame.draw.lines(screen, pygame.Color('Black'), False, ground_detection, 1) #remove if not needed anymore
+    # path
     if len(character.path) > 1:
         pygame.draw.lines(screen, c_path, False, path, 1)
-    if character.action == 2:
-        pygame.draw.ellipse(screen, c_up, rec_balloon)
-    if character.action == 1:
-        pygame.draw.ellipse(screen, c_stay, rec_balloon)
-    if character.action == 0:
-        pygame.draw.ellipse(screen, c_down, rec_balloon)
+
+    # balloon
+    if yaml_p['continuous']:
+        cv = 100
+        colors = pl.cm.BrBG(np.linspace(0,1,cv))
+        color = colors[int(character.action/2*cv)]*255
+        pygame.draw.ellipse(screen, color, rec_balloon)
+    else:
+        if character.action == 2:
+            pygame.draw.ellipse(screen, c_up, rec_balloon)
+        if character.action == 1:
+            pygame.draw.ellipse(screen, c_stay, rec_balloon)
+        if character.action == 0:
+            pygame.draw.ellipse(screen, c_down, rec_balloon)
 
     # draw target (dense and transparent)
     pygame.draw.ellipse(screen, c_target_center, rec_target)

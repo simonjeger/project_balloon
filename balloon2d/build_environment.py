@@ -39,8 +39,12 @@ class balloon2d(Env):
         # load new world to get size_x, size_z
         self.load_new_world()
 
-        # action we can take: down, stay, up
-        self.action_space = Discrete(3) #discrete space
+        if yaml_p['continuous']:
+            # action we can take: -1 to 1
+            self.action_space = Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float64) #continuous space
+        else:
+            # action we can take: down, stay, up
+            self.action_space = Discrete(3) #discrete space
 
         # set maximal duration of flight
         self.T = yaml_p['T']
@@ -54,15 +58,15 @@ class balloon2d(Env):
             regular_state_space_high = np.array([self.size_x,self.size_z,self.size_x,self.size_x,self.size_z,self.size_z])
         world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
         world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
-        self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0)) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
+        self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
 
         # initialize state and time
-        self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
-        self.reset()
-
         self.success_n = 0
         self.step_n = 0
         self.epi_n = 0
+
+        self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+        self.reset()
 
     def step(self, action):
         # Update compressed wind map
@@ -142,33 +146,11 @@ class balloon2d(Env):
         self.reward_epi = 0
 
         # Set problem
-        border_x = self.size_x/(10*self.render_ratio)
-        border_z = self.size_z/10
-        above_ground = self.size_z/5
-
-        if yaml_p['start'] == 'random':
-            start = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
-        elif yaml_p['start'] == 'random_low':
-            start = np.array([border_x + random.random()*(self.size_x - 2*border_x),0], dtype=float)
-        elif yaml_p['start'] == 'left':
-            start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
-        elif yaml_p['start'] == 'left_low':
-            start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),0], dtype=float)
-        else:
-            start = np.array(yaml_p['start'], dtype=float)
-
-        if yaml_p['target'] == 'random':
-            target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
-        elif yaml_p['target'] == 'random_low':
-            target = np.array([border_x + random.random()*(self.size_x - 2*border_x),0], dtype=float)
-        elif yaml_p['target'] == 'right':
-            target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
-        elif yaml_p['target'] == 'right_low':
-            target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),0], dtype=float)
-        else:
-            target = np.array(yaml_p['target'], dtype=float)
+        start = self.set_start()
+        target = self.set_target(start)
 
         # if started "under ground"
+        above_ground = self.size_z/5
         x = np.linspace(0,self.size_x,len(self.world[0,:,0]))
 
         if start[1] <= np.interp(start[0],x,self.world[0,:,0]):
@@ -196,6 +178,61 @@ class balloon2d(Env):
         # define world size
         self.size_x = len(self.world[-1,:,:])
         self.size_z = len(self.world[-1,:,:][0])
+
+    def set_start(self):
+        border_x = self.size_x/(10*self.render_ratio)
+        border_z = self.size_z/10
+
+        if yaml_p['start'] == 'random':
+            start = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+        elif yaml_p['start'] == 'random_low':
+            start = np.array([border_x + random.random()*(self.size_x - 2*border_x),0], dtype=float)
+        elif yaml_p['start'] == 'left':
+            start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+        elif yaml_p['start'] == 'left_low':
+            start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),0], dtype=float)
+        else:
+            start = np.array(yaml_p['start'], dtype=float)
+        return start
+
+    def set_target(self, start):
+        border_x = self.size_x/(10*self.render_ratio)
+        border_z = self.size_z/10
+
+        if yaml_p['target'] == 'random':
+            target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+        elif yaml_p['target'] == 'random_low':
+            target = np.array([border_x + random.random()*(self.size_x - 2*border_x),0], dtype=float)
+        elif yaml_p['target'] == 'right':
+            target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+        elif yaml_p['target'] == 'right_low':
+            target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),0], dtype=float)
+        else:
+            target = np.array(yaml_p['target'], dtype=float)
+
+        # set curriculum
+        curr_start = 0.2
+        curr_end = 1
+        if yaml_p['num_epochs'] != 0:
+            curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['num_epochs'],1)
+        else:
+            curr = 1
+
+        # find dist_max
+        dist = 0
+        dist_max = 0
+        for c in [[0,0], [0,self.size_z], [self.size_x,0], [self.size_x,self.size_z]]:
+            dist = np.sqrt((start[0] - c[0])**2 + (start[1] - c[1])**2)
+            if dist > dist_max:
+                dist_max = dist
+
+        # correct target if needed
+        dist_now = np.sqrt((start[0] - target[0])**2 + (start[1] - target[1])**2)
+        if dist_now > dist_max*curr:
+            dir_norm = [target[0] - start[0], target[1] - start[1]] / dist_now
+            target = start + dir_norm*dist_max*curr
+
+        return target
 
     def character_v(self, position):
         world_compressed = self.ae.compress(self.world, self.character.position)
