@@ -163,7 +163,7 @@ class Agent:
         curr_window = 0.2
         curr_end = 1 - curr_window
         if yaml_p['num_epochs'] != 0:
-            curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['num_epochs'],1)
+            curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['curriculum'],1)
         else:
             curr = curr_end
 
