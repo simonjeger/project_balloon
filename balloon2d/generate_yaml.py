@@ -60,10 +60,10 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
     text = text + 'continuous: ' + str(continuous) + '\n'
-    text = text + 'T: 600' + '\n'
+    text = text + 'T: 100' + '\n'
     text = text + 'start: [7,0]' + '\n'
-    text = text + 'curriculum: ' + str(curriculum) + '\n'
     text = text + 'target: "random"' + '\n'
+    text = text + 'curriculum: ' + str(curriculum) + '\n'
     text = text + 'radius: 10' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: ' + f'{step:.10f}' + '\n'
@@ -88,7 +88,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     file.write(text)
     file.close()
 
-process_nr = 3850
+process_nr = 4000
 for data_path in ['"data/"']:
     for qfunction in [False]:
         for short_sighted in [False]:

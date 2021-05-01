@@ -255,7 +255,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
     # balloon
     if yaml_p['continuous']:
         cv = 100
-        colors = pl.cm.BrBG(np.linspace(0,1,cv))
+        colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
         color = colors[int(character.action/2*cv)]*255
         pygame.draw.ellipse(screen, color, rec_balloon)
     else:

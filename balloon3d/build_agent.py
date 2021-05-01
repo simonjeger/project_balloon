@@ -132,7 +132,7 @@ class Agent:
 
             if yaml_p['agent_type'] == 'DoubleDQN':
                 self.qfunction = QFunction(obs.shape[0],acts.n)
-                
+
                 self.agent = pfrl.agents.DoubleDQN(
                     self.qfunction,
                     torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']), #in my case ADAMS
@@ -157,9 +157,49 @@ class Agent:
         self.epi_n = 0
         self.step_n = 0
 
+    def set_reachable_target(self):
+        curr_start = 0.5
+        curr_window = 0.2
+        curr_end = 1 - curr_window
+        if yaml_p['num_epochs'] != 0:
+            curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['num_epochs'],1)
+        else:
+            curr = curr_end
+
+        action = 2
+        step_n = 0
+
+        while True:
+            action = np.random.normal(1,0.3)
+            action = np.clip(action,0,2)
+
+            # actions are not in the same range in discrete / continuous cases
+            if yaml_p['continuous']:
+                action = action
+            else:
+                action = np.round(action,0)
+
+            _, _, done, _ = self.env.step(action, blind=True)
+
+            step_n += 1
+            if done & (step_n > yaml_p['T']/3):
+                break
+            elif done:
+                self.env.reset(blind=True)
+                action = 2
+                step_n = 0
+
+        idx = np.random.randint(int(curr*len(self.env.character.path)), int((curr+curr_window)*len(self.env.character.path)))
+        target = self.env.character.path[idx]
+        self.env.reset(blind=True)
+        self.env.character.target = target
+
     def run_epoch(self, render):
         obs = self.env.reset()
         sum_r = 0
+
+        if yaml_p['curriculum'] > 0: #reset target to something reachable if that flag is set
+            self.set_reachable_target()
 
         while True:
             action = self.agent.act(obs) #uses self.agent.model to decide next step

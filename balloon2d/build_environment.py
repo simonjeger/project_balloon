@@ -68,7 +68,7 @@ class balloon2d(Env):
         self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
         self.reset()
 
-    def step(self, action):
+    def step(self, action, blind=False):
         # Update compressed wind map
         self.world_compressed = self.ae.compress(self.world, self.character.position)
 
@@ -79,30 +79,31 @@ class balloon2d(Env):
         in_bounds = self.character.update(action, self.world_compressed)
         done = self.cost(in_bounds)
 
-        # logger
-        if self.writer is not None:
-            if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
-                self.writer.add_scalar('episode', self.epi_n , self.step_n)
-                self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-                self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
-                self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+        if not blind:
+            # logger
+            if self.writer is not None:
+                if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
+                    self.writer.add_scalar('episode', self.epi_n , self.step_n)
+                    self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
+                    self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
+                    self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+                if done:
+                    self.writer.add_scalar('episode', self.epi_n , self.step_n)
+                    self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
+                    self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
+                    self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+
+                    self.writer.add_scalar('size_x', self.size_x , self.step_n)
+                    self.writer.add_scalar('size_z', self.size_z , self.step_n)
+                    self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
+                    self.writer.add_scalar('target_z', self.character.target[1], self.step_n)
+                    self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
+
+                    self.writer.add_scalar('success_n', self.success_n , self.step_n)
+
+            self.step_n += 1
             if done:
-                self.writer.add_scalar('episode', self.epi_n , self.step_n)
-                self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-                self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
-                self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
-
-                self.writer.add_scalar('size_x', self.size_x , self.step_n)
-                self.writer.add_scalar('size_z', self.size_z , self.step_n)
-                self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
-                self.writer.add_scalar('target_z', self.character.target[1], self.step_n)
-                self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
-
-                self.writer.add_scalar('success_n', self.success_n , self.step_n)
-
-        self.step_n += 1
-        if done:
-            self.epi_n += 1
+                self.epi_n += 1
 
         # set placeholder for info
         info = {}
@@ -139,9 +140,10 @@ class balloon2d(Env):
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
         build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.train_or_test)
 
-    def reset(self):
-        # load new world
-        self.load_new_world()
+    def reset(self, blind=False):
+        if not blind:
+            # load new world
+            self.load_new_world()
         self.reward_step = 0
         self.reward_epi = 0
 
@@ -209,28 +211,6 @@ class balloon2d(Env):
             target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),0], dtype=float)
         else:
             target = np.array(yaml_p['target'], dtype=float)
-
-        # set curriculum
-        curr_start = 0.2
-        curr_end = 1
-        if yaml_p['num_epochs'] != 0:
-            curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['num_epochs'],1)
-        else:
-            curr = 1
-
-        # find dist_max
-        dist = 0
-        dist_max = 0
-        for c in [[0,0], [0,self.size_z], [self.size_x,0], [self.size_x,self.size_z]]:
-            dist = np.sqrt((start[0] - c[0])**2 + (start[1] - c[1])**2)
-            if dist > dist_max:
-                dist_max = dist
-
-        # correct target if needed
-        dist_now = np.sqrt((start[0] - target[0])**2 + (start[1] - target[1])**2)
-        if dist_now > dist_max*curr:
-            dir_norm = [target[0] - start[0], target[1] - start[1]] / dist_now
-            target = start + dir_norm*dist_max*curr
 
         return target
 
