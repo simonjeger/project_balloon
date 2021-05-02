@@ -95,7 +95,7 @@ def generate_wind(size_x, size_y, size_z, terrain):
         seed_y *= sign_y
         mean_x[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_z:pos_z+smear_z] = gauss(magnitude*seed_x,10)
         mean_y[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_z:pos_z+smear_z] = gauss(magnitude*seed_y,10)
-        mean_z[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_xy:pos_z+smear_xy] = gauss(0,10)
+        mean_z[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_xy:pos_z+smear_xy] = gauss(0,2)
         sig[pos_x, pos_y, pos_z] = abs(gauss(1,1))
     mean_x = gaussian_filter(mean_x, sigma = 20)
     mean_y = gaussian_filter(mean_y, sigma = 20)

@@ -158,19 +158,24 @@ class Agent:
         self.step_n = 0
 
     def set_reachable_target(self):
-        curr_start = 0.5
-        curr_window = 0.2
+        curr_start = 0.3
+        curr_window = 0.4
         curr_end = 1 - curr_window
         if yaml_p['num_epochs'] != 0:
             curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['curriculum'],1)
         else:
             curr = curr_end
 
-        action = 2
-        step_n = 0
-
+        round = 0
         while True:
-            action = np.random.normal(1,0.3)
+            self.env.character.target = [-10,-10,-10] #set target outside map
+
+            if self.env.character.position[2] < self.env.size_z*0.2:
+                action = np.random.normal(1.8,0.3)
+            elif self.env.character.position[2] > self.env.size_z*0.8:
+                action = np.random.normal(0.3,0.3)
+            else:
+                action = np.random.normal(1,0.3)
             action = np.clip(action,0,2)
 
             # actions are not in the same range in discrete / continuous cases
@@ -181,15 +186,17 @@ class Agent:
 
             _, _, done, _ = self.env.step(action, blind=True)
 
-            step_n += 1
-            if done & (step_n > yaml_p['T']/3):
+            dist_to_start = np.sqrt((self.env.character.position[0] - self.env.character.start[0])**2 + (self.env.character.position[1] - self.env.character.start[1])**2)
+            if done & (dist_to_start > yaml_p['radius']):
                 break
             elif done:
-                self.env.reset(blind=True)
-                action = 2
-                step_n = 0
+                if round >= 3:
+                    break
+                else:
+                    self.env.reset(blind=True)
+                    round += 1
 
-        idx = np.random.randint(int(curr*len(self.env.character.path)), int((curr+curr_window)*len(self.env.character.path)))
+        idx = np.random.randint(int(curr*len(self.env.character.path)), int((curr+curr_window-0.1)*len(self.env.character.path)))
         target = self.env.character.path[idx]
         self.env.reset(blind=True)
         self.env.character.target = target

@@ -89,7 +89,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     file.write(text)
     file.close()
 
-process_nr = 550
+process_nr = 600
 for data_path in ['"data/"']:
     for qfunction in [False]:
         for short_sighted in [False]:

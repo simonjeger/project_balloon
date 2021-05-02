@@ -1,6 +1,7 @@
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.interpolate
 import pandas as pd
 import torch
 import netCDF4
@@ -26,8 +27,12 @@ with open(args.yaml_file, 'rt') as fh:
 #size_y = yaml_p['size_y']
 #size_z = yaml_p['size_z']
 
-size_x = 362
-size_y = 261
+#size_x = 362
+#size_y = 261
+#size_z = 105
+
+size_x = 3
+size_y = 3
 size_z = 105
 
 def dist(lat_1, lon_1, lat_2, lon_2):
@@ -60,11 +65,6 @@ step_y = size_y/2*yaml_p['unit_xy']
 start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
 end_lat, end_lon = step(center_lat, center_lon, step_x, step_y)
 
-print(start_lat)
-print(start_lon)
-print(end_lat)
-print(start_lon)
-
 print('------- start at ' + str(np.round(start_lat,3)) + ', '+ str(np.round(start_lon,3)) + ' -------')
 print('------- end at ' + str(np.round(end_lat,3)) + ', '+ str(np.round(end_lon,3)) + ' -------')
 print('------- spanning over ' + str(np.round(np.sqrt((2*step_x)**2 + (2*step_y)**2),1)) + ' m -------')
@@ -92,6 +92,19 @@ for i in range(size_x):
                 world[-3,i,j,k] = np.mean(out['wind_y'][idx,q_lat,q_lon])
                 world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                 #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
+
+                # interpolation in z
+                idx = int(step_z*k)
+                interp_z = out['z'][idx]
+
+                x = [out['z'], out['lat'], out['lon']]
+                y = np.zeros((len(out['wind_x']),2,2))
+                for l in range(len(out['wind_x'])):
+                    for m in range(2):
+                        for n in range(2):
+                            y[l,m,n] = out['wind_x'][l]
+
+                world[-4,i,j,k] = scipy.interpolate.interpn((step_z*k, start_lat + j*step_lat, start_lon + i*step_lon), x, out['wind_x'])
 
     print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
 print('------- converted to tensor -------')
