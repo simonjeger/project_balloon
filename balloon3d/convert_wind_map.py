@@ -93,9 +93,25 @@ for i in range(size_x):
                 world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                 #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
+
                 # interpolation in z
-                idx = int(step_z*k)
-                interp_z = out['z'][idx]
+                out_z = out['z'].reshape(-1,4)
+                out_lat = out['lat'].reshape(4)
+                out_lon = out['lon'].reshape(4)
+
+                idx = np.zeros(4)
+                for m in range(4):
+                    idx[m] = np.argmin(abs(out_z[:,m] - lowest - step_z*k))
+
+                interp_z = np.zeros(4)
+                for o in range(4):
+                    p = o + 1
+                    if p >= 4:
+                        p - 4
+                    x1 = out_lat[m]
+                    x2 = out_lon[m]
+                    y = [out_z[idx[m],m], out_z[idx[p],p]]
+                    #interp_z[m] = np.interp()
 
                 x = [out['z'], out['lat'], out['lon']]
                 y = np.zeros((len(out['wind_x']),2,2))

@@ -158,8 +158,8 @@ class Agent:
         self.step_n = 0
 
     def set_reachable_target(self):
-        curr_start = 0.3
-        curr_window = 0.4
+        curr_start = 0.2
+        curr_window = 0.3
         curr_end = 1 - curr_window
         if yaml_p['num_epochs'] != 0:
             curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['curriculum'],1)

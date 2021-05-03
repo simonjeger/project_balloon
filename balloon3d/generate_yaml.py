@@ -89,20 +89,20 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     file.write(text)
     file.close()
 
-process_nr = 600
+process_nr = 650
 for data_path in ['"data/"']:
     for qfunction in [False]:
         for short_sighted in [False]:
             for agent_type in ['"DoubleDQN"', '"SoftActorCritic"']:
                 for min_distance in [0,1]:
                     for autoencoder in ['"HAE"']:
-                        for num_epochs in [15000]:
+                        for num_epochs in [30000]:
                             for buffer_size in [100000000]:
                                 for lr in [0.0005]:
                                     for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                                        for curriculum in [1, 1000, 10000, 100000]:
+                                        for curriculum in [1, 100000, 200000, 400000]:
                                             for epsi_low in [0.1]:
-                                                for decay in [150000]:
+                                                for decay in [300000]:
                                                     for max_grad_norm in [1]:
                                                         for update_interval in [300]:
                                                             for minibatch_size in [100]:
