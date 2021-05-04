@@ -1,6 +1,7 @@
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.interpolate
 import pandas as pd
 import torch
 import netCDF4
@@ -22,8 +23,60 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-size_x = yaml_p['size_x']
-size_z = yaml_p['size_z']
+def convert_map():
+    size_x = 362
+    size_y = 1
+    size_z = 105
+
+    world = np.zeros(shape=(1+3,size_x,size_z))
+
+    #min_lat :48.096786
+    #max_lat :45.50961
+    #min_lon :10.868285
+    #max_lon :5.5040283
+
+    center_lat = 46.803198
+    center_lon = 8.18615665
+    step_x = size_x/2*yaml_p['unit_xy']
+    step_y = 0
+
+    start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
+    end_lat, end_lon = step(center_lat, center_lon, step_x, step_y)
+
+    print('------- start at ' + str(np.round(start_lat,3)) + ', '+ str(np.round(start_lon,3)) + ' -------')
+    print('------- end at ' + str(np.round(end_lat,3)) + ', '+ str(np.round(end_lon,3)) + ' -------')
+    print('------- spanning over ' + str(np.round(np.sqrt((2*step_x)**2 + (2*step_y)**2),1)) + ' m -------')
+
+    step_lat = (end_lat - start_lat)/size_y
+    step_lon = (end_lon - start_lon)/size_x
+
+    lowest = 0
+    highest = size_z*yaml_p['unit_z']
+    step_z = (highest - lowest)/size_z
+
+    for i in range(size_x):
+        out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat, start_lon + i*step_lon, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
+        for k in range(size_z):
+            # finding closest quadrant
+            q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
+            q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
+
+            # write terrain
+            world[0,i,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (3300 + highest - lowest) * size_z
+
+            if step_z*k >= out['z'][-1,q_lat,q_lon] - lowest:
+                idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*k))
+                world[-4,i,k] = np.mean(out['wind_x'][idx,q_lat,q_lon])
+                world[-3,i,k] = np.mean(out['wind_y'][idx,q_lat,q_lon])
+                world[-2,i,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
+                #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
+
+        torch.save(world, 'data_cosmo/tensor/wind_map_intsave_0.pt')
+        print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
+    print('------- converted to tensor -------')
+
+    # save
+    torch.save(world, 'data_cosmo/tensor/wind_map_CH.pt')
 
 def dist(lat_1, lon_1, lat_2, lon_2):
     R = 6371*1000 #radius of earth in meters
@@ -40,56 +93,28 @@ def step(lat, lon, step_x, step_y):
     lon = lon + (step_x/R) * (180/np.pi) / np.cos(lat*np.pi/180)
     return lat, lon
 
-world = np.zeros(shape=(1+3,size_x,size_z))
+def build_set(num, train_or_test):
+    tensor = torch.load('data_cosmo/tensor/wind_map_CH.pt')
+    size_c = len(tensor)
+    size_x = yaml_p['size_x']
+    size_z = yaml_p['size_z']
 
-center_lat = 46.9480
-center_lon = 7.4474
-step_x = size_x/2*yaml_p['unit_xy']
-step_y = 0
+    global_size_x = len(tensor[0])
+    global_size_z = len(tensor[0][0])
 
-start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
-end_lat, end_lon = step(center_lat, center_lon, step_x, step_y)
+    for n in range(num):
+        idx_x = np.random.randint(0,global_size_x - size_x - 1)
 
-print('------- start at ' + str(np.round(start_lat,3)) + ', '+ str(np.round(start_lon,3)) + ' -------')
-print('------- end at ' + str(np.round(end_lat,3)) + ', '+ str(np.round(end_lon,3)) + ' -------')
-print('------- spanning over ' + str(np.round(np.sqrt((2*step_x)**2 + (2*step_y)**2),1)) + ' m -------')
+        world = tensor[:,idx_x:idx_x+size_x,:]
 
-step_lat = (end_lat - start_lat)/size_x
-step_lon = (end_lon - start_lon)/size_x
-
-lowest = 0
-highest = size_z*yaml_p['unit_z']
-step_z = (highest - lowest)/size_z
-
-for i in range(size_x):
-    out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + i*step_lat, start_lon + i*step_lon, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
-    for j in range(size_z):
-
-        # finding closest quadrant
-        q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
-        q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
-
-        # write terrain
-        world[0,i,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (3300 + highest - lowest) * size_z
-        if step_z*j >= out['z'][-1,q_lat,q_lon] - lowest:
-            idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*j))
-            world[-3,i,j] = np.mean(out['wind_x'][idx,q_lat,q_lon])
-            world[-2,i,j] = np.mean(out['wind_z'][idx,q_lat,q_lon])
-            #world[-1,i,j] = np.mean(out['wind_z'][j,q_lat,q_lon])
-
-    print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
-print('------- converted to tensor -------')
-
-# save
-#torch.save(world, 'data_cosmo/tensor/wind_map' + str(n).zfill(5) + '.pt')
-torch.save(world, 'data_cosmo/tensor/wind_map_0.pt')
-
-"""
-# reading the nc file and creating Dataset
-nc_terrain = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_ana_const.nc')
-nc_wind = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc')
+        torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(n).zfill(5) + '.pt')
+        print('generated ' + str(n+1) + ' of ' + str(num) + ' sets')
 
 def visualize_real_data(dimension):
+    # reading the nc file and creating Dataset
+    nc_terrain = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_ana_const.nc')
+    nc_wind = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc')
+
     if dimension == 'z':
         N = min(len(nc_wind['U'][0,:,0,:]), len(nc_wind['U'][0,:,:,0]))
     else:
@@ -194,6 +219,7 @@ def visualize_real_data(dimension):
     # Delete temp folder
     shutil.rmtree(path)
 
-visualize_real_data('z')
-visualize_real_data('time')
-"""
+#visualize_real_data('z')
+#visualize_real_data('time')
+#convert_map()
+#build_set(10, 'train')

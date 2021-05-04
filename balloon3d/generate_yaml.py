@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, agent_type, epsi_low, decay, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum, step, action, min_distance, short_sighted, qfunction):
+def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_type, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum, step, action, min_distance, short_sighted):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -30,7 +30,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + 'size_z: 105' + '\n'
     text = text + 'unit_xy: 1100' + '\n'
     text = text + 'unit_z: 30.48' + '\n'
-    text = text + 'time: 60' + '\n'
+    text = text + 'time: ' + str(time) + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
@@ -51,7 +51,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: ' + str(buffer_size) + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
-    text = text + 'max_grad_norm: ' + str(max_grad_norm) + '\n'
+    text = text + 'max_grad_norm: 1' + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'update_interval: ' + str(update_interval) + '\n'
     text = text + 'target_update_interval: ' + str(update_interval) + '\n'
@@ -79,7 +79,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
-    text = text + "qfunction: " + str(qfunction) + '\n'
+    text = text + "qfunction: False" + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 15' + '\n'
@@ -90,32 +90,27 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     file.close()
 
 process_nr = 650
-for data_path in ['"data/"']:
-    for qfunction in [False]:
-        for short_sighted in [False]:
-            for agent_type in ['"DoubleDQN"', '"SoftActorCritic"']:
+for data_path in ['"data/"', '"data_constant/"']:
+    for short_sighted in [False]:
+        for agent_type in ['"SoftActorCritic"']:
+            for time in [60, 240]:
                 for min_distance in [0,1]:
                     for autoencoder in ['"HAE"']:
-                        for num_epochs in [30000]:
+                        for num_epochs in [int(20000/60*time)]:
                             for buffer_size in [100000000]:
                                 for lr in [0.0005]:
                                     for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                                        for curriculum in [1, 100000, 200000, 400000]:
+                                        for curriculum in [1, 200000, 400000]:
                                             for epsi_low in [0.1]:
                                                 for decay in [300000]:
-                                                    for max_grad_norm in [1]:
-                                                        for update_interval in [300]:
-                                                            for minibatch_size in [100]:
-                                                                for n_times_update in [100]:
-                                                                    for step in [-0.01]:
-                                                                        for action in [-0.03]:
-                                                                            for repeat in range(3):
-                                                                                if agent_type == '"SoftActorCritic"':
-                                                                                    continuous = True
-                                                                                    replay_start_size = 10000
-                                                                                else:
-                                                                                    continuous = False
-                                                                                    replay_start_size = minibatch_size
+                                                    for update_interval in [300]:
+                                                        for minibatch_size in [100]:
+                                                            for n_times_update in [100]:
+                                                                for step in [-0.01]:
+                                                                    for action in [-0.03]:
+                                                                        for repeat in range(2):
+                                                                            for replay_start_size in [5000, 10000, 500000]:
+                                                                                continuous = True
 
-                                                                                write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, agent_type, epsi_low, decay, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum, step, action, min_distance, short_sighted, qfunction)
+                                                                                write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_type, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum, step, action, min_distance, short_sighted)
                                                                                 process_nr += 1

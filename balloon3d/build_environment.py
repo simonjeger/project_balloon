@@ -118,11 +118,10 @@ class balloon2d(Env):
 
     def cost(self, in_bounds):
         init_min = np.sqrt(((self.character.target[0] - self.character.start[0])*self.render_ratio)**2 + ((self.character.target[1] - self.character.start[1])*self.render_ratio)**2 + (self.character.target[2] - self.character.start[2])**2)
-        distance = np.sqrt((self.character.residual[0]*self.render_ratio)**2 + (self.character.residual[1]*self.render_ratio)**2 + self.character.residual[2]**2)
 
         if in_bounds:
             # calculate reward
-            if distance <= yaml_p['radius']:
+            if self.character.min_distance <= yaml_p['radius']:
                 self.reward_step = yaml_p['hit']
                 self.success_n += 1
                 done = True

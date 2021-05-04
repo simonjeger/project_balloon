@@ -27,7 +27,7 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger')
 
 env = balloon2d('train',writer)
-ag = Agent(env,writer)
+ag = Agent('train',env,writer)
 
 # model_train
 num_epochs = yaml_p['num_epochs']

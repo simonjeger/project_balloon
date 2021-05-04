@@ -36,7 +36,8 @@ class QFunction(torch.nn.Module):
         return pfrl.action_value.DiscreteActionValue(h)
 
 class Agent:
-    def __init__(self, env, writer=None):
+    def __init__(self, train_or_test, env, writer=None):
+        self.train_or_test = train_or_test
         self.env = env
         self.stash = [0]*yaml_p['phase']
         self.writer = writer
@@ -161,7 +162,7 @@ class Agent:
         curr_start = 0.2
         curr_window = 0.3
         curr_end = 1 - curr_window
-        if yaml_p['num_epochs'] != 0:
+        if self.train_or_test == 'train':
             curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['curriculum'],1)
         else:
             curr = curr_end
@@ -196,7 +197,7 @@ class Agent:
                     self.env.reset(blind=True)
                     round += 1
 
-        idx = np.random.randint(int(curr*len(self.env.character.path)), int((curr+curr_window-0.1)*len(self.env.character.path)))
+        idx = np.random.randint(int(curr*len(self.env.character.path)), max(int((curr+curr_window-0.1)*len(self.env.character.path)),int(curr*len(self.env.character.path)) + 1))
         target = self.env.character.path[idx]
         self.env.reset(blind=True)
         self.env.character.target = target

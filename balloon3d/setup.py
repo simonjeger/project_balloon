@@ -1,6 +1,7 @@
 import matplotlib
 matplotlib.use('Agg') # this needs to be called at the very beginning on cluster server
 
+from convert_wind_map import build_set
 from generate_world import generate_world
 from visualize_world import visualize_world
 
@@ -37,8 +38,10 @@ size_x = yaml_p['size_x']
 size_y = yaml_p['size_y']
 size_z = yaml_p['size_z']
 
-#generate_world(size_x, size_y, size_z, 500, 'train')
-#generate_world(size_x, size_y, size_z, 15, 'test')
+#build_set(500, 'train')
+#build_set(15, 'test')
+#generate_world(500, 'train')
+#generate_world(15, 'test')
 
 #import autoencoder_train
 #import autoencoder_test

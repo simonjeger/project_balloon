@@ -57,24 +57,29 @@ def visualize_world(tensor, position):
         local_size_y = len(dir_x[0])
 
         y,x = np.meshgrid(np.arange(0, local_size_y, 1),np.arange(0, local_size_x, 1))
-        if dim != 'xy':
-            fig, ax = plt.subplots(frameon=False, figsize=(local_size_x, local_size_y))
-        else:
-            fig, ax = plt.subplots(frameon=False, figsize=(local_size_x, local_size_y))
+        fig, ax = plt.subplots(frameon=False, figsize=(local_size_x, local_size_y))
         ax.set_axis_off()
 
         cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        cbar = ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
+        ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
         cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
         ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
-        # draw coordinate system
+        # draw terrain & coordinate system
+        c_terrain = (169/255,163/255,144/255) #because plt uses values between 0 and 1
+        c_contour = 'Greys'
         c_ticks = (242/255,242/255,242/255)
 
         if dim != 'xy':
+            # set parameters
             dpi = 100
             ax.set_aspect(1/render_ratio)
+
+            # plot terrain
+            ax.fill_between(np.linspace(0,local_size_x,len(terrain)),terrain, color=c_terrain)
+
+            # create ticks
             ratio = 2*local_size_x/render_ratio
             tick_length = local_size_y/30
             for i in range(int(local_size_x/ratio)):
@@ -96,8 +101,17 @@ def visualize_world(tensor, position):
             ax.add_patch(rect)
 
         else:
-            ax.set_aspect(1)
+            # set parameters
             dpi = 50
+            ax.set_aspect(1)
+
+            # plot contour lines
+            x = np.arange(0, local_size_x, 1)
+            y = np.arange(0, local_size_x, 1)
+            X, Y = np.meshgrid(x, y)
+            ax.contour(X,Y,terrain, cmap=c_contour)
+
+            # create ticks
             ratio = 2*local_size_x/render_ratio
             tick_length = local_size_y/60
             for i in range(int(local_size_x/ratio)):

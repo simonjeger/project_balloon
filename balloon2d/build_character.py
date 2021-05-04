@@ -80,10 +80,6 @@ class character():
             self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
-        min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + self.residual[1]**2)
-        if min_distance < self.min_distance:
-            self.min_distance = min_distance
-
         if yaml_p['short_sighted']:
             self.become_short_sighted()
 
@@ -119,11 +115,16 @@ class character():
                 p_x = v_x
                 p_z = v_z
 
+                # set velocity for state
+                self.velocity = np.array([v_x, v_z])
+
                 # write down path in history
                 self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
 
-                # set velocity for state
-                self.velocity = np.array([v_x, v_z])
+                # find min_distance
+                min_distance = np.sqrt(((self.position[0]-self.target[0])*self.render_ratio)**2 + (self.position[1]-self.target[1])**2)
+                if min_distance < self.min_distance:
+                    self.min_distance = min_distance
 
         return in_bounds
 

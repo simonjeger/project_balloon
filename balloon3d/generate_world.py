@@ -16,7 +16,11 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def generate_world(size_x, size_y, size_z, num, train_or_test):
+def generate_world(num, train_or_test):
+    size_x = yaml_p['size_x']
+    size_y = yaml_p['size_y']
+    size_z = yaml_p['size_z']
+
     for n in range(num):
         terrain = generate_terrain(size_x, size_y, size_z)
         wind = generate_wind(size_x, size_y, size_z, terrain)
