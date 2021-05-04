@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('Agg') # this needs to be called at the very beginning on cluster server
 
-from convert_wind_map import build_set
+#from convert_wind_map import build_set
 from generate_world import generate_world
 from visualize_world import visualize_world
 
@@ -37,6 +37,7 @@ shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['pro
 size_x = yaml_p['size_x']
 size_y = yaml_p['size_y']
 size_z = yaml_p['size_z']
+
 
 #build_set(500, 'train')
 #build_set(15, 'test')

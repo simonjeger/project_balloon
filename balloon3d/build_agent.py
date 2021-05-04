@@ -272,7 +272,7 @@ class Agent:
         print('weights saved')
 
         if self.writer is not None:
-            self.writer.add_scalar('weights_saved', self.epi_n , self.step_n-1) # because we do above self.step_n += 1
+            self.writer.add_scalar('weights_saved', self.epi_n-1 , self.step_n-1) # because we do above self.step_n += 1
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')

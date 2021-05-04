@@ -56,17 +56,18 @@ def plot_reward():
     slope = linear_regressor.coef_[0]
     score = linear_regressor.score(X,Y)
 
-    # save_weights
-    weights_saved = np.array(df['weights_saved'].dropna())
-
     # plot
     fig, axs = plt.subplots(2,1)
     axs[0].plot(rew_epi, alpha=0.1)
     axs[0].plot(mean_reward_epi)
     axs[0].plot(Y_pred)
     axs[0].plot(mean_reward_epi_big)
-    for w in weights_saved:
-        axs[0].axvline(w, color='black', linewidth=0.5)
+
+    if yaml_p['cherry_pick']:
+        # save_weights
+        weights_saved = np.array(df['weights_saved'].dropna())
+        for w in weights_saved:
+            axs[0].axvline(w, color='black', linewidth=0.5)
 
     #axs[0].set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
     axs[0].set_xlabel('episode')

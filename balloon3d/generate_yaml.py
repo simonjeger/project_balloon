@@ -40,6 +40,7 @@ def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_t
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'num_epochs: ' + str(num_epochs) + '\n'
     text = text + 'phase: 50' + '\n'
+    text = text + 'cherry_pick: False' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'explorer_type: ' + str(explorer_type) + '\n'

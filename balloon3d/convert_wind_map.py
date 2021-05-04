@@ -111,7 +111,7 @@ def convert_map():
 
                     world[-4,i,j,k] = scipy.interpolate.interpn((step_z*k, start_lat + j*step_lat, start_lon + i*step_lon), x, out['wind_x'])
                     """
-        torch.save(world, 'data_cosmo/tensor/wind_map_intsave_0.pt')
+        torch.save(world, 'data_cosmo/tensor/wind_map_intsave.pt')
         print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
     print('------- converted to tensor -------')
 

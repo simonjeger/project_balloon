@@ -71,7 +71,7 @@ def convert_map():
                 world[-2,i,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                 #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
-        torch.save(world, 'data_cosmo/tensor/wind_map_intsave_0.pt')
+        torch.save(world, 'data_cosmo/tensor/wind_map_intsave.pt')
         print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
     print('------- converted to tensor -------')
 

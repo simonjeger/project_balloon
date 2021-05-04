@@ -62,11 +62,11 @@ def visualize_world(train_or_test):
 
         #cmap = sns.diverging_palette(220, 20, as_cmap=True)
         cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
+        ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5)
 
         #cmap = sns.diverging_palette(145, 300, s=60, as_cmap=True)
         cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
-        ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
+        ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5)
 
         ax.set_aspect(1/render_ratio)
 
