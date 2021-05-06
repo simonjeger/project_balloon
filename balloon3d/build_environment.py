@@ -67,9 +67,12 @@ class balloon2d(Env):
         self.epi_n = 0
 
         self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+
+        self.path_roll_out = None
+
         self.reset()
 
-    def step(self, action, blind=False):
+    def step(self, action, roll_out=False):
         # Update compressed wind map
         self.world_compressed = self.ae.compress(self.world, self.character.position)
 
@@ -80,7 +83,7 @@ class balloon2d(Env):
         in_bounds = self.character.update(action, self.world_compressed)
         done = self.cost(in_bounds)
 
-        if not blind:
+        if not roll_out:
             # logger
             if self.writer is not None:
                 if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
@@ -142,17 +145,20 @@ class balloon2d(Env):
         return done
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.train_or_test)
+        build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.train_or_test, self.path_roll_out)
 
-    def reset(self, blind=False):
-        if not blind:
-            # load new world
+    def reset(self, roll_out=False):
+        # load new world
+        if not roll_out:
             self.load_new_world()
         self.reward_step = 0
         self.reward_epi = 0
 
         # Set problem
-        start = self.set_start()
+        if not roll_out:
+            start = self.set_start()
+        else:
+            start = self.character.path[0]
         target = self.set_target(start)
 
         # if started "under ground"

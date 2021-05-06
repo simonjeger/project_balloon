@@ -61,10 +61,10 @@ def visualize_world(tensor, position):
         ax.set_axis_off()
 
         cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-5, vmax=5)
+        ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
         cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
-        ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-5, vmax=5)
+        ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-10, vmax=10)
 
         # draw terrain & coordinate system
         c_terrain = (169/255,163/255,144/255) #because plt uses values between 0 and 1
@@ -106,10 +106,10 @@ def visualize_world(tensor, position):
             ax.set_aspect(1)
 
             # plot contour lines
-            x = np.arange(0, local_size_x, 1)
-            y = np.arange(0, local_size_x, 1)
+            x = np.arange(0.5, local_size_x, 1)
+            y = np.arange(0.5, local_size_y, 1)
             X, Y = np.meshgrid(x, y)
-            ax.contour(X,Y,terrain, cmap=c_contour)
+            ax.contour(X,Y,terrain.T, cmap=c_contour)
 
             # create ticks
             ratio = 2*local_size_x/render_ratio

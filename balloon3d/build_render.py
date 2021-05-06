@@ -15,7 +15,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def build_render(character, reward_step, reward_epi, world_name, window_size, train_or_test):
+def build_render(character, reward_step, reward_epi, world_name, window_size, train_or_test, roll_out):
     render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
     size_x = character.size_x*render_ratio
@@ -27,7 +27,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     clock = pygame.time.Clock()
 
     # setting up the main window
-    res = 1.3 #int(100/size_z)
+    res = 1.2 #int(100/size_z)
     screen_width = int(3*size_z*res)
     screen_height = int((size_y + 2*size_z)*res)
     screen = pygame.display.set_mode((screen_width, screen_height))
@@ -43,13 +43,13 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
             sys.exit()
 
     # read in wind_map
-    world = torch.load('data/' + train_or_test + '/tensor/' + world_name + '.pt')
+    world = torch.load(yaml_p['data_path'] + train_or_test + '/tensor/' + world_name + '.pt')
 
     # generate the three windows
     visualize_world(world, character.position)
 
     for dim in ['xz', 'yz', 'xy']:
-        display_movement(dim, screen, int(screen_width), int(screen_height), size_x, size_y, size_z, render_ratio, window_size, res, character)
+        display_movement(dim, screen, int(screen_width), int(screen_height), size_x, size_y, size_z, render_ratio, window_size, res, character, roll_out)
 
     # text
     myfont = pygame.font.SysFont('Arial', 10, bold=False)
@@ -84,7 +84,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     pygame.display.flip()
     clock.tick(10) #cycles per second
 
-def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, size_z, render_ratio, window_size, res, character):
+def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, size_z, render_ratio, window_size, res, character, roll_out):
     if dim == 'xz':
         i1 = 0
         i2 = 2
@@ -96,7 +96,7 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         position_2 = character.position[i2]
         target_1 = character.target[i1]*render_ratio
         target_2 = character.target[i2]
-        ceiling = character.ceiling[:,int(character.position[1])]
+        ceiling = character.ceiling[:,min(int(character.position[1]),character.size_y-1)]
 
     if dim == 'yz':
         i1 = 1
@@ -109,7 +109,7 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         position_2 = character.position[i2]
         target_1 = character.target[i1]*render_ratio
         target_2 = character.target[i2]
-        ceiling = character.ceiling[int(character.position[0]),:]
+        ceiling = character.ceiling[min(int(character.position[0]),character.size_x-1),:]
 
     if dim == 'xy':
         i1 = 0
@@ -131,6 +131,7 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
     c_stay = (173,29,0)
     c_up = (237,35,1)
     c_path = (242,242,242)
+    c_path_roll_out = (110,110,110)
     c_window = (217,217,217, 50)
     c_target_center = (242,242,242)
     c_target_radius = (217,217,217,50)
@@ -171,8 +172,8 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
             size_obs_y = (dist_to_bottom - dist_to_top)*res
             pos_obs = [int(position_1 - window_size)*res, dist_to_top*res]
         else:
-            size_obs_y = window_size*2*res
-            pos_obs = [int(position_1 - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
+            size_obs_y = min(window_size*2*res, (size_y - position_2 + window_size)*res)
+            pos_obs = [int(position_1 - window_size)*res, int(max(dist_to_bottom - position_2 - window_size, dist_to_top))*res]
         rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
         shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
@@ -187,6 +188,15 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         else:
             for i in character.path:
                 path.append((i[i1]*render_ratio*res, (dist_to_bottom-i[i2]*render_ratio)*res))
+
+        if roll_out is not None:
+            path_roll_out = []
+            if dim != 'xy':
+                for i in roll_out:
+                    path_roll_out.append((i[i1]*render_ratio*res, (dist_to_bottom-i[i2])*res))
+            else:
+                for i in roll_out:
+                    path_roll_out.append((i[i1]*render_ratio*res, (dist_to_bottom-i[i2]*render_ratio)*res))
 
         # write balloon
         size_balloon = 4*res
@@ -230,8 +240,8 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
             size_obs_y = (dist_to_bottom - dist_to_top)*res
             pos_obs = [int(position_1 + offset - window_size)*res, dist_to_top*res]
         else:
-            size_obs_y = window_size*2*res
-            pos_obs = [int(position_1 + offset - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
+            size_obs_y = min(window_size*2*res, (size_y - position_2 + window_size)*res)
+            pos_obs = [int(position_1 + offset - window_size)*res, int(max(dist_to_bottom - position_2 - window_size, dist_to_top))*res]
         rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
         shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
@@ -245,7 +255,16 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
                 path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2])*res))
         else:
             for i in character.path:
-                path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom*render_ratio-i[i2])*res))
+                path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2]*render_ratio)*res))
+
+        if roll_out is not None:
+            path_roll_out = []
+            if dim != 'xy':
+                for i in roll_out:
+                    path_roll_out.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2])*res))
+            else:
+                for i in roll_out:
+                    path_roll_out.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2]*render_ratio)*res))
 
         # write balloon
         size_balloon = 4*res
@@ -289,8 +308,8 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
             size_obs_y = (dist_to_bottom - dist_to_top)*res
             pos_obs = [int(position_1 + offset - window_size)*res, dist_to_top*res]
         else:
-            size_obs_y = window_size*2*res
-            pos_obs = [int(position_1 + offset - window_size)*res, int(dist_to_bottom - position_2 - window_size)*res]
+            size_obs_y = min(window_size*2*res, (size_y - position_2 + window_size)*res)
+            pos_obs = [int(position_1 + offset - window_size)*res, int(max(dist_to_bottom - position_2 - window_size, dist_to_top))*res]
         rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
         shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
@@ -306,6 +325,15 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
             for i in character.path:
                 path.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2]*render_ratio)*res))
 
+        if roll_out is not None:
+            path_roll_out = []
+            if dim != 'xy':
+                for i in roll_out:
+                    path_roll_out.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2])*res))
+            else:
+                for i in roll_out:
+                    path_roll_out.append(((i[i1]*render_ratio+offset)*res, (dist_to_bottom-i[i2]*render_ratio)*res))
+
         # write balloon
         size_balloon = 4*res
         pos_balloon = [screen_width/2, (dist_to_bottom - position_2)*res]
@@ -317,6 +345,9 @@ def display_movement(dim, screen, screen_width, screen_height, size_x, size_y, s
         rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
     # path
+    if roll_out is not None:
+        pygame.draw.lines(screen, c_path_roll_out, False, path_roll_out, 1)
+
     if len(character.path) > 1:
         pygame.draw.lines(screen, c_path, False, path, 1)
 

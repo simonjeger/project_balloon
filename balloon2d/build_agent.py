@@ -123,14 +123,13 @@ class Agent:
             epsi_high = yaml_p['epsi_high']
             epsi_low = yaml_p['epsi_low']
             decay = yaml_p['decay']
-            scale = yaml_p['scale']
 
             if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
                 explorer = pfrl.explorers.LinearDecayEpsilonGreedy(start_epsilon=epsi_high, end_epsilon=epsi_low, decay_steps=decay, random_action_func=env.action_space.sample)
             elif yaml_p['explorer_type'] == 'Boltzmann':
                 explorer = pfrl.explorers.Boltzmann()
             elif yaml_p['explorer_type'] == 'AdditiveGaussian':
-                explorer = pfrl.explorers.AdditiveGaussian(scale, low=0, high=2)
+                explorer = pfrl.explorers.AdditiveGaussian(1, low=0, high=2) # scale = 1, but I've never really tried it
 
             if yaml_p['agent_type'] == 'DoubleDQN':
                 self.qfunction = QFunction(obs.shape[0],acts.n)
@@ -172,9 +171,9 @@ class Agent:
         while True:
             self.env.character.target = [-10,-10] #set target outside map
 
-            if self.env.character.position[1] < self.env.size_z*0.2:
+            if self.env.character.position[1] < self.env.size_z*0.3:
                 action = np.random.normal(1.8,0.3)
-            elif self.env.character.position[1] > self.env.size_z*0.8:
+            elif self.env.character.position[1] > self.env.size_z*0.7:
                 action = np.random.normal(0.3,0.3)
             else:
                 action = np.random.normal(1,0.3)
@@ -186,7 +185,7 @@ class Agent:
             else:
                 action = np.round(action,0)
 
-            _, _, done, _ = self.env.step(action, blind=True)
+            _, _, done, _ = self.env.step(action, roll_out=True)
 
             dist_to_start = np.sqrt((self.env.character.position[0] - self.env.character.start[0])**2)
             if done & (dist_to_start > yaml_p['radius']):
@@ -195,12 +194,16 @@ class Agent:
                 if round >= 3:
                     break
                 else:
-                    self.env.reset(blind=True)
+                    self.env.reset(roll_out=True)
                     round += 1
 
         idx = np.random.randint(int(curr*len(self.env.character.path)), max(int((curr+curr_window-0.1)*len(self.env.character.path)),int(curr*len(self.env.character.path)) + 1))
+
+        # write down path and set target
+        self.env.path_roll_out = self.env.character.path[0:idx]
         target = self.env.character.path[idx]
-        self.env.reset(blind=True)
+        
+        self.env.reset(roll_out=True)
         self.env.character.target = target
 
     def run_epoch(self, render):

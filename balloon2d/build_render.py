@@ -12,7 +12,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def build_render(character, reward_step, reward_epi, world_name, window_size, train_or_test):
+def build_render(character, reward_step, reward_epi, world_name, window_size, train_or_test, roll_out):
     render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
     size_x = character.size_x
@@ -35,7 +35,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
             pygame.quit()
             sys.exit()
 
-    display_movement(screen, int(screen_width), int(screen_height), size_x, size_z, render_ratio, window_size, res, character, world_name, train_or_test)
+    display_movement(screen, int(screen_width), int(screen_height), size_x, size_z, render_ratio, window_size, res, character, world_name, train_or_test, roll_out)
 
     # text
     myfont = pygame.font.SysFont('Arial', 10, bold = False)
@@ -67,7 +67,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
     clock.tick(10) #cycles per second
 
 
-def display_movement(screen, screen_width, screen_height, size_x, size_z, render_ratio, window_size, res, character, world_name, train_or_test):
+def display_movement(screen, screen_width, screen_height, size_x, size_z, render_ratio, window_size, res, character, world_name, train_or_test, roll_out):
     # for this 2d case I only look at xz
     i1 = 0
     i2 = 1
@@ -90,6 +90,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
     c_stay = (173,29,0)
     c_up = (237,35,1)
     c_path = (242,242,242)
+    c_path_roll_out = (110,110,110)
     c_window = (217,217,217, 50)
     c_target_center = (242,242,242)
     c_target_radius = (217,217,217,50)
@@ -137,6 +138,11 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         path = []
         for i in character.path:
             path.append((i[i1]*render_ratio*res, (size_2-i[i2])*res))
+
+        if roll_out is not None:
+            path_roll_out = []
+            for i in roll_out:
+                path_roll_out.append((i[i1]*render_ratio*res, (size_2-i[i2])*res))
 
         # write balloon
         size_balloon = 2*res
@@ -188,6 +194,11 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         for i in character.path:
             path.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
 
+        if roll_out is not None:
+            path_roll_out = []
+            for i in roll_out:
+                path_roll_out.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
+
         # write balloon
         size_balloon = 2*res
         pos_balloon = [(position_1 + offset)*res, (size_2 - position_2)*res]
@@ -238,6 +249,11 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         for i in character.path:
             path.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
 
+        if roll_out is not None:
+            path_roll_out = []
+            for i in roll_out:
+                path_roll_out.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
+
         # write balloon
         size_balloon = 2*res
         pos_balloon = [screen_width/2, (size_2 - position_2)*res]
@@ -249,6 +265,9 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
         rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
     # path
+    if roll_out is not None:
+        pygame.draw.lines(screen, c_path_roll_out, False, path_roll_out, 1)
+
     if len(character.path) > 1:
         pygame.draw.lines(screen, c_path, False, path, 1)
 

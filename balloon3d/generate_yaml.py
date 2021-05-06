@@ -48,7 +48,6 @@ def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_t
     text = text + 'epsi_high: 0.9' + '\n'
     text = text + 'epsi_low: ' + str(epsi_low) + '\n'
     text = text + 'decay: ' + str(decay) + '\n'
-    text = text + 'scale: 1' + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: ' + str(buffer_size) + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)

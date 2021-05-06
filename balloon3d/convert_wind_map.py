@@ -24,8 +24,10 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 def convert_map():
-    size_x = 362
-    size_y = 261
+    #size_x = 362
+    size_x = 250
+    #size_y = 252
+    size_y = 250
     size_z = 105
 
     world = np.zeros(shape=(1+3,size_x,size_y,size_z))
@@ -264,5 +266,5 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map()
+convert_map()
 #build_set(10, 'train')

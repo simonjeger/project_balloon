@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('Agg') # this needs to be called at the very beginning on cluster server
 
-from convert_wind_map import build_set
+#from convert_wind_map import build_set
 from generate_world import generate_world
 from visualize_world import visualize_world
 

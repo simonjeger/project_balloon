@@ -408,3 +408,7 @@ def clear():
     dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)
+
+    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp_w')
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath, ignore_errors=True)
