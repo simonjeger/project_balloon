@@ -101,168 +101,62 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
 
     if (position_1 < left_border): #left border
         offset = 0
-
-        # write and display background
-        screen.fill(c_background)
-        bg = pygame.image.load(yaml_p['data_path'] + train_or_test + '/image/' + world_name + '.png')
-        size = bg.get_rect().size
-        bg = pygame.transform.scale(bg, (int(screen_height*size[0]/size[1]), screen_height))
-        screen.blit(bg, (0, 0))
-
-        # write and display ceiling
-        ceiling = []
-        for i in range(len(character.ceiling)):
-            pair = (((1+1/len(character.ceiling))*i*render_ratio*res,(size_2 - character.ceiling[i])*res))
-            ceiling.append(pair)
-        ceiling.append((size_1*res, 0))
-        ceiling.append((0, 0))
-
-        lx, ly = zip(*ceiling)
-        min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
-        target_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
-        shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
-        pygame.draw.polygon(shape_surf, c_ceiling, [(x - min_x, y - min_y) for x, y in ceiling])
-        screen.blit(shape_surf, target_rect)
-
-        # write and display observing box
-        size_obs_x = window_size*2*res
-        size_obs_y = size_2*res
-        pos_obs = [position_1*res, size_2/2*res]
-        rec_obs = pygame.Rect(pos_obs[0] - size_obs_x/2, pos_obs[1] - size_obs_y/2, size_obs_x, size_obs_y)
-
-        shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
-        pygame.draw.rect(shape_surf, c_window, shape_surf.get_rect())
-        screen.blit(shape_surf, rec_obs)
-
-        # write path
-        path = []
-        for i in character.path:
-            path.append((i[i1]*render_ratio*res, (size_2-i[i2])*res))
-
-        if roll_out is not None:
-            path_roll_out = []
-            for i in roll_out:
-                path_roll_out.append((i[i1]*render_ratio*res, (size_2-i[i2])*res))
-
-        # write balloon
-        size_balloon = 2*res
-        pos_balloon = [position_1*res, (size_2 - position_2)*res]
-        rec_balloon = pygame.Rect(pos_balloon[0] - size_balloon/2, pos_balloon[1] - size_balloon/2, size_balloon, size_balloon)
-
-        # write target
-        size_target = 2*res
-        pos_target = [target_1*res, (size_2 - target_2)*res]
-        rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
-
     elif (position_1 >= right_border): #right border
         offset = -right_border + screen_width/2/res
-
-        # write and display background
-        screen.fill(c_background)
-        bg = pygame.image.load(yaml_p['data_path'] + train_or_test + '/image/' + world_name + '.png')
-        size = bg.get_rect().size
-        bg = pygame.transform.scale(bg, (int(screen_height*size[0]/size[1]), screen_height))
-        screen.blit(bg, (int(offset*res), 0))
-
-        # write and display ceiling
-        ceiling = []
-        for i in range(len(character.ceiling)):
-            pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_2 - character.ceiling[i])*res))
-            ceiling.append(pair)
-        ceiling.append((size_1*res, 0))
-        ceiling.append((0, 0))
-
-        lx, ly = zip(*ceiling)
-        min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
-        target_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
-        shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
-        pygame.draw.polygon(shape_surf, c_ceiling, [(x - min_x, y - min_y) for x, y in ceiling])
-        screen.blit(shape_surf, target_rect)
-
-        # write and display observing box
-        size_obs_x = window_size*2*res
-        size_obs_y = size_2*res
-        pos_obs = [(position_1 + offset)*res, size_2/2*res]
-        rec_obs = pygame.Rect(pos_obs[0] - size_obs_x/2, pos_obs[1] - size_obs_y/2, size_obs_x, size_obs_y)
-
-        shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
-        pygame.draw.rect(shape_surf, c_window, shape_surf.get_rect())
-        screen.blit(shape_surf, rec_obs)
-
-        # write path
-        path = []
-        for i in character.path:
-            path.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
-
-        if roll_out is not None:
-            path_roll_out = []
-            for i in roll_out:
-                path_roll_out.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
-
-        # write balloon
-        size_balloon = 2*res
-        pos_balloon = [(position_1 + offset)*res, (size_2 - position_2)*res]
-        rec_balloon = pygame.Rect(pos_balloon[0] - size_balloon/2, pos_balloon[1] - size_balloon/2, size_balloon, size_balloon)
-
-        # write target
-        size_target = 2*res
-        pos_target = [(target_1 + offset)*res, (size_2 - target_2)*res]
-        rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
-
     else: #in between
         offset = left_border - position_1
 
-        # write and display background
-        screen.fill(c_background)
-        bg = pygame.image.load(yaml_p['data_path'] + train_or_test + '/image/' + world_name + '.png')
-        size = bg.get_rect().size
-        bg = pygame.transform.scale(bg, (int(screen_height*size[0]/size[1]), screen_height))
-        screen.blit(bg, (int(offset*res), 0))
+    # write and display background
+    screen.fill(c_background)
+    bg = pygame.image.load(yaml_p['data_path'] + train_or_test + '/image/' + world_name + '.png')
+    size = bg.get_rect().size
+    bg = pygame.transform.scale(bg, (int(screen_height*size[0]/size[1]), screen_height))
+    screen.blit(bg, (int(offset*res), 0))
 
-        # draw and display ceiling
-        ceiling = []
-        for i in range(len(character.ceiling)):
-            pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_2 - character.ceiling[i])*res))
-            ceiling.append(pair)
-        ceiling.append((size_1*res, 0))
-        ceiling.append((0, 0))
+    # draw and display ceiling
+    ceiling = []
+    for i in range(len(character.ceiling)):
+        pair = (((1+1/len(character.ceiling))*(i*render_ratio+offset)*res,(size_2 - character.ceiling[i])*res))
+        ceiling.append(pair)
+    ceiling.append((size_1*res, 0))
+    ceiling.append((0, 0))
 
-        lx, ly = zip(*ceiling)
-        min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
-        target_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
-        shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
-        pygame.draw.polygon(shape_surf, c_ceiling, [(x - min_x, y - min_y) for x, y in ceiling])
-        screen.blit(shape_surf, target_rect)
+    lx, ly = zip(*ceiling)
+    min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
+    target_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
+    shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
+    pygame.draw.polygon(shape_surf, c_ceiling, [(x - min_x, y - min_y) for x, y in ceiling])
+    screen.blit(shape_surf, target_rect)
 
-        # write and display observing box
-        size_obs_x = window_size*2*res
-        size_obs_y = size_2*res
-        pos_obs = [screen_width/2, size_2/2*res]
-        rec_obs = pygame.Rect(pos_obs[0] - size_obs_x/2, pos_obs[1] - size_obs_y/2, size_obs_x, size_obs_y)
+    # write and display observing box
+    size_obs_x = window_size*2*res
+    size_obs_y = size_2*res
+    pos_obs = [screen_width/2, size_2/2*res]
+    rec_obs = pygame.Rect(pos_obs[0] - size_obs_x/2, pos_obs[1] - size_obs_y/2, size_obs_x, size_obs_y)
 
-        shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
-        pygame.draw.rect(shape_surf, c_window, shape_surf.get_rect())
-        screen.blit(shape_surf, rec_obs)
+    shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)
+    pygame.draw.rect(shape_surf, c_window, shape_surf.get_rect())
+    screen.blit(shape_surf, rec_obs)
 
-        # write path
-        path = []
-        for i in character.path:
-            path.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
+    # write path
+    path = []
+    for i in character.path:
+        path.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
 
-        if roll_out is not None:
-            path_roll_out = []
-            for i in roll_out:
-                path_roll_out.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
+    if roll_out is not None:
+        path_roll_out = []
+        for i in roll_out:
+            path_roll_out.append(((i[i1]*render_ratio+offset)*res, (size_2-i[i2])*res))
 
-        # write balloon
-        size_balloon = 2*res
-        pos_balloon = [screen_width/2, (size_2 - position_2)*res]
-        rec_balloon = pygame.Rect(pos_balloon[0] - size_balloon/2, pos_balloon[1] - size_balloon/2, size_balloon, size_balloon)
+    # write balloon
+    size_balloon = 2*res
+    pos_balloon = [screen_width/2, (size_2 - position_2)*res]
+    rec_balloon = pygame.Rect(pos_balloon[0] - size_balloon/2, pos_balloon[1] - size_balloon/2, size_balloon, size_balloon)
 
-        # write target
-        size_target = 2*res
-        pos_target = [(target_1 + offset)*res, (size_2 - target_2)*res]
-        rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
+    # write target
+    size_target = 2*res
+    pos_target = [(target_1 + offset)*res, (size_2 - target_2)*res]
+    rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
     # path
     if roll_out is not None:

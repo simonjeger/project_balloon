@@ -38,7 +38,7 @@ size_z = yaml_p['size_z']
 
 #build_set(500, 'train')
 #build_set(15, 'test')
-#generate_world(500, 'train')
+#generate_world(10, 'train')
 #generate_world(15, 'test')
 
 #import autoencoder_train

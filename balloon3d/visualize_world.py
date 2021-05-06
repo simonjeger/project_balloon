@@ -86,7 +86,7 @@ def visualize_world(tensor, position):
                 i+=0.5
                 x, y = [i*ratio, i*ratio], [0, tick_length]
                 ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
-                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y/15)
+                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=local_size_y/10)
 
             ratio = 5*local_size_y/render_ratio
             tick_length /= render_ratio
@@ -94,7 +94,7 @@ def visualize_world(tensor, position):
                 j+=0.5
                 x, y = [0, tick_length], [j*ratio, j*ratio]
                 ax.plot(x, y, color=c_ticks, linewidth=local_size_y/100)
-                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y/15)
+                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=local_size_y/10)
 
             # Create a Rectangle patch
             rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/100, edgecolor=c_ticks, facecolor='none')
@@ -118,17 +118,17 @@ def visualize_world(tensor, position):
                 i+=0.5
                 x, y = [i*ratio, i*ratio], [0, tick_length]
                 ax.plot(x, y, color=c_ticks, linewidth=local_size_y/10)
-                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=1.1*local_size_y)
+                ax.text(i*ratio, tick_length*1.2, str(int(i*ratio*yaml_p['unit_xy'])), color=c_ticks, horizontalalignment='center', fontsize=1.1*local_size_y/1.1)
 
             for j in range(int(local_size_y/ratio)):
                 j+=0.5
                 x, y = [0, tick_length], [j*ratio, j*ratio]
                 ax.plot(x, y, color=c_ticks, linewidth=local_size_y/10)
-                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_z'])), color=c_ticks, verticalalignment='center', fontsize=1.1*local_size_y)
+                ax.text(tick_length*1.2, j*ratio, str(int(j*ratio*yaml_p['unit_xy'])), color=c_ticks, verticalalignment='center', fontsize=1.1*local_size_y/1.1)
 
             # Create a Rectangle patch
-            rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/10, edgecolor=c_ticks, facecolor='none')
-            ax.add_patch(rect)
+            #rect = patches.Rectangle((0, 0), local_size_x, local_size_y, linewidth=local_size_y/10, edgecolor=c_ticks, facecolor='none')
+            #ax.add_patch(rect)
 
         # save figure
         plt.savefig('render/wind_map_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
