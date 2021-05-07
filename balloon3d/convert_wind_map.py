@@ -28,6 +28,9 @@ def convert_map():
     size_x = 250
     #size_y = 252
     size_y = 250
+
+    size_x = 10
+    size_y = 10
     size_z = 105
 
     world = np.zeros(shape=(1+3,size_x,size_y,size_z))
@@ -65,7 +68,7 @@ def convert_map():
                 q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
 
                 # write terrain
-                world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (3300 + highest - lowest) * size_z
+                world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
 
                 if step_z*k >= out['z'][-1,q_lat,q_lon] - lowest:
                     idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*k))
@@ -74,45 +77,6 @@ def convert_map():
                     world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                     #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
-                    """
-                    # interpolation in z
-                    out_lat = out['lat'].reshape(4)
-                    out_lon = out['lon'].reshape(4)
-                    out_z = out['z'].reshape(-1,4)
-                    out_wind_x = out['wind_x'].reshape(-1,4)
-                    out_wind_y = out['wind_y'].reshape(-1,4)
-                    out_wind_z = out['wind_z'].reshape(-1,4)
-
-                    # interpolate over z
-                    interp_z = np.zeros(4)
-                    for p in range(4):
-                        interp_z[p] = np.interp(lowest + step_z*k, out_z[:,p], out_wind_x[:,p])
-
-                    from scipy.interpolate import interpn
-                    from scipy.interpolate import griddata
-
-                    points = (out_lat, out_lon)
-                    values = interp_z
-                    values = np.meshgrid(*values)
-                    point = np.array([start_lat + j*step_lat, start_lon + i*step_lon])
-                    grid_x, grid_y = np.mgrid[min(out_lat):max(out_lat):100j, min(out_lon):max(out_lon):100j]
-                    grid = griddata(points, values, (grid_x, grid_y), method='linear')
-                    print(points)
-                    print(values)
-                    print(grid)
-
-                    print('----------------------------------------------------')
-
-
-                    x = [out['z'], out['lat'], out['lon']]
-                    y = np.zeros((len(out['wind_x']),2,2))
-                    for l in range(len(out['wind_x'])):
-                        for m in range(2):
-                            for n in range(2):
-                                y[l,m,n] = out['wind_x'][l]
-
-                    world[-4,i,j,k] = scipy.interpolate.interpn((step_z*k, start_lat + j*step_lat, start_lon + i*step_lon), x, out['wind_x'])
-                    """
         torch.save(world, 'data_cosmo/tensor/wind_map_intsave.pt')
         print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
     print('------- converted to tensor -------')

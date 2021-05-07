@@ -61,7 +61,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, tr
         t_border_x = myfont.render('border_x: ' + str(np.round(np.multiply(character.state[6:8],[yaml_p['unit_xy'], yaml_p['unit_xy']]),1)), False, pygame.Color('LightGray'))
         t_border_y = myfont.render('border_y: ' + str(np.round(np.multiply(character.state[8:10],[yaml_p['unit_xy'], yaml_p['unit_xy']]),1)), False, pygame.Color('LightGray'))
         t_border_z = myfont.render('border_z: ' + str(np.round(np.multiply(character.state[10:12],[yaml_p['unit_z'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
-        t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[8:],1)), False, pygame.Color('LightGray'))
+        t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[12:],1)), False, pygame.Color('LightGray'))
     else:
         t_border_x = myfont.render('border_x: ' + str(np.round(np.multiply(character.state[3:5],[yaml_p['unit_xy'], yaml_p['unit_xy']]),1)), False, pygame.Color('LightGray'))
         t_border_y = myfont.render('border_y: ' + str(np.round(np.multiply(character.state[5:7],[yaml_p['unit_xy'], yaml_p['unit_xy']]),1)), False, pygame.Color('LightGray'))
@@ -151,7 +151,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
     upper_border = size_2 - lower_border
     if (position_2 < lower_border): #lower border
         offset_2 = 0
-    elif (position_1 >= upper_border): #upper border
+    elif (position_2 >= upper_border): #upper border
         offset_2 = -upper_border + lower_border
     else: #in between
         offset_2 = lower_border - position_2
@@ -166,7 +166,6 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         screen.blit(bg, (offset_1*res, dist_to_top*res))
     else:
         screen.blit(bg, (offset_1*res, (dist_to_top-offset_2 - upper_border + lower_border)*res))
-        pygame.draw.rect(screen, c_background, pygame.Rect(0, 0, screen_width, dist_to_top*res))
 
     if dim != 'xy':
         # draw and display ceiling
@@ -190,7 +189,8 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         size_obs_y = (dist_to_bottom - dist_to_top)*res
         pos_obs = [int(position_1 + offset_1 - window_size)*res, dist_to_top*res]
     else:
-        size_obs_y = min(window_size*2*res, (size_y - position_2 + window_size)*res)
+        #size_obs_y = min(window_size*2*res, (size_y - position_2 + window_size)*res)
+        size_obs_y = window_size*2*res
         pos_obs = [int(position_1 + offset_1 - window_size)*res, int(dist_to_bottom - position_2 - offset_2 - window_size)*res]
     rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
@@ -279,3 +279,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
     mm_target = [target_1/size_1*length_mm, height_mm - target_2/size_2*height_mm]
     position_target_mm = [position_mm[0]+mm_target[0], position_mm[1]+mm_target[1]]
     pygame.draw.circle(screen, c_target_radius, position_target_mm, 1)
+
+    # overlay everything that overlaps from the xy plane
+    if dim == 'xy':
+        pygame.draw.rect(screen, c_background, pygame.Rect(0, 0, screen_width, dist_to_top*res))

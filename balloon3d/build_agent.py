@@ -171,7 +171,12 @@ class Agent:
         while True:
             self.env.character.target = [-10,-10,-10] #set target outside map
 
-            if self.env.character.position[2] < self.env.size_z*0.3:
+            if yaml_p['physics']:
+                hight_above_ground = self.env.character.state[12]
+            else:
+                hight_above_ground = self.env.character.state[9]
+
+            if hight_above_ground < self.env.size_z*0.3:
                 action = np.random.normal(1.8,0.3)
             elif self.env.character.position[2] > self.env.size_z*0.7:
                 action = np.random.normal(0.3,0.3)

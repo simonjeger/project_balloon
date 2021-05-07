@@ -1,5 +1,4 @@
 import numpy as np
-import scipy
 import random
 from random import gauss
 import copy
@@ -95,14 +94,14 @@ class character():
 
         p_x = (self.path[-1][0] - self.path[-2][0])/delta_t
         p_z = (self.path[-1][1] - self.path[-2][1])/delta_t
+
         for _ in range(n):
-            coord = [int(i) for i in np.floor(self.position)]
-            in_bounds = (0 <= coord[0] < self.size_x) & (0 <= coord[1] < self.size_z) #if still within bounds
+            in_bounds = (0 <= self.position[0] < self.size_x) & (0 <= self.position[1] < self.size_z) #if still within bounds
             if in_bounds:
                 # calculate velocity at time step t
-                w_x = self.world[-3][coord[0], coord[1]]/yaml_p['unit_xy'] #wind field should be in [block] and not in [m]
-                w_z = self.world[-2][coord[0], coord[1]]/yaml_p['unit_z']
-                sig_xz = self.world[-1][coord[0], coord[1]]
+                w_x, w_z, sig_xz = self.interpolate_wind()
+                w_x /= yaml_p['unit_xy']
+                w_z /= yaml_p['unit_z']
 
                 w_x += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
                 w_z += gauss(0,sig_xz/np.sqrt(n))
@@ -139,6 +138,28 @@ class character():
     def dist_to_ceiling(self):
         x = np.linspace(0,self.size_x,len(self.ceiling))
         return np.interp(self.position[0],x,self.ceiling) - self.position[1]
+
+    def interpolate_wind(self):
+        coord_x = int(self.position[0])
+        coord_z = int(self.position[1])
+
+        x = self.position[0] - coord_x
+        z = self.position[1] - coord_z
+
+        if coord_x == self.size_x-1:
+            coord_x -= 1
+            x = 1
+        if coord_z == self.size_z-1:
+            coord_z -= 1
+            z = 1
+
+        f_00 = self.world[-3::,coord_x,coord_z]
+        f_10 = self.world[-3::,coord_x+1,coord_z]
+        f_01 = self.world[-3::,coord_x,coord_z+1]
+        f_11 = self.world[-3::,coord_x+1,coord_z+1]
+
+        wind = f_00*(1-x)*(1-z) + f_10*x*(1-z) + f_01*(1-x)*z + f_11*x*z
+        return wind
 
     def become_short_sighted(self):
         sight = yaml_p['window_size']

@@ -104,13 +104,17 @@ class character():
 
         for _ in range(n):
             coord = [int(i) for i in np.floor(self.position)]
-            in_bounds = (0 <= coord[0] < self.size_x) & (0 <= coord[1] < self.size_y) & (0 <= coord[2] < self.size_z) #if still within bounds
+            in_bounds = (0 <= self.position[0] < self.size_x) & (0 <= self.position[1] < self.size_y) & (0 <= self.position[2] < self.size_z) #if still within bounds
             if in_bounds:
                 # calculate velocity at time step t
-                w_x = self.world[-4][coord[0], coord[1], coord[2]]/yaml_p['unit_xy'] #wind field should be in [block] and not in [m]
-                w_y = self.world[-3][coord[0], coord[1], coord[2]]/yaml_p['unit_xy']
-                w_z = self.world[-2][coord[0], coord[1], coord[2]]/yaml_p['unit_z']
-                sig_xz = self.world[-1][coord[0], coord[1], coord[2]]
+                w_x, w_y, w_z, sig_xz = self.interpolate_wind()
+                w_x /= yaml_p['unit_xy']
+                w_y /= yaml_p['unit_xy']
+                w_z /= yaml_p['unit_z']
+
+                x = np.arange(0,self.size_x,1)
+                y = np.arange(0,self.size_y,1)
+                z = np.arange(0,self.size_z,1)
 
                 w_x += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
                 w_y += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
@@ -156,6 +160,37 @@ class character():
         f = scipy.interpolate.interp2d(x,y,self.ceiling.T)
 
         return f(self.position[0], self.position[1])[0] - self.position[2]
+
+    def interpolate_wind(self):
+        coord_x = int(self.position[0])
+        coord_y = int(self.position[1])
+        coord_z = int(self.position[2])
+
+        x = self.position[0] - coord_x
+        y = self.position[1] - coord_y
+        z = self.position[2] - coord_z
+
+        if coord_x == self.size_x-1:
+            coord_x -= 1
+            x = 1
+        if coord_y == self.size_y-1:
+            coord_y -= 1
+            y = 1
+        if coord_z == self.size_z-1:
+            coord_z -= 1
+            z = 1
+
+        f_000 = self.world[-4::,coord_x,coord_y,coord_z]
+        f_001 = self.world[-4::,coord_x,coord_y,coord_z+1]
+        f_010 = self.world[-4::,coord_x,coord_y+1,coord_z]
+        f_011 = self.world[-4::,coord_x,coord_y+1,coord_z+1]
+        f_100 = self.world[-4::,coord_x+1,coord_y,coord_z]
+        f_101 = self.world[-4::,coord_x+1,coord_y,coord_z+1]
+        f_110 = self.world[-4::,coord_x+1,coord_y+1,coord_z]
+        f_111 = self.world[-4::,coord_x+1,coord_y+1,coord_z+1]
+
+        wind = f_000*(1-x)*(1-y)*(1-z) + f_001*(1-x)*(1-y)*z + f_010*(1-x)*y*(1-z) + f_011*(1-x)*y*z + f_100*x*(1-y)*(1-z) + f_101*x*(1-y)*z + f_110*x*y*(1-z) + f_111*x*y*z
+        return wind
 
     def become_short_sighted(self):
         sight = yaml_p['window_size']

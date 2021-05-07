@@ -62,12 +62,15 @@ def convert_map():
             q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
 
             # write terrain
-            world[0,i,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (3300 + highest - lowest) * size_z
+            world[0,i,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
 
-            if step_z*k >= out['z'][-1,q_lat,q_lon] - lowest:
+            if step_z*k < out['z'][-1,q_lat,q_lon] - lowest:
+                world[-3,i,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
+                world[-2,i,k] = np.mean(out['wind_z'][0,q_lat,q_lon])
+                #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
+            else:
                 idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*k))
-                world[-4,i,k] = np.mean(out['wind_x'][idx,q_lat,q_lon])
-                world[-3,i,k] = np.mean(out['wind_y'][idx,q_lat,q_lon])
+                world[-3,i,k] = np.mean(out['wind_x'][idx,q_lat,q_lon])
                 world[-2,i,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                 #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
@@ -221,5 +224,5 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map()
-#build_set(10, 'train')
+convert_map()
+build_set(10, 'train')

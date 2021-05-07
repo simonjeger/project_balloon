@@ -42,31 +42,13 @@ def visualize_world(train_or_test):
         ax.set_axis_off()
         ax.set_aspect(1/render_ratio)
 
-        """
-        # standardise color map
-        ceil = 10
-        color_quiver = mean_x.copy()
-        color_quiver = np.maximum(color_quiver, -ceil)
-        color_quiver = np.minimum(color_quiver, ceil)
-        color_quiver /= 2*ceil
-        color_quiver += 0.5
-
-
-        cm = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        #cm = sns.color_palette("icefire", as_cmap=True)
-        colors = cm(color_quiver).reshape(size_x*size_z,4)
-
-        # generate quiver
-        q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=50*yaml_p['unit_z'], headwidth=3, width=0.0015)
-        """
-
         #cmap = sns.diverging_palette(220, 20, as_cmap=True)
         cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5)
+        ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
 
         #cmap = sns.diverging_palette(145, 300, s=60, as_cmap=True)
         cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
-        ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5)
+        ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
 
         ax.set_aspect(1/render_ratio)
 
@@ -100,20 +82,5 @@ def visualize_world(train_or_test):
         # save figure
         plt.savefig(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', dpi = 150, bbox_inches='tight', pad_inches=0)
         plt.close()
-
-        """
-        # read in image with cv to then crop it
-        img = cv2.imread(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', cv2.IMREAD_UNCHANGED)
-
-        c = [150, 150, 150, 150]
-        indices = np.where(np.all(img >= c, axis=-1))
-        border_left = indices[0][0]
-        border_right = indices[0][-1]+1
-        border_top = indices[1][0]
-        border_bottom = indices[1][-1]+1
-        img = img[border_left:border_right,border_top:border_bottom]
-
-        cv2.imwrite(yaml_p['data_path'] + train_or_test + '/image/wind_map' + str(n).zfill(5) + '.png', img)
-        """
 
         print('visualized ' + str(n+1) + ' of ' + str(num) + ' windmaps')
