@@ -89,27 +89,27 @@ def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_t
     file.write(text)
     file.close()
 
-process_nr = 650
-for data_path in ['"data/"', '"data_constant/"']:
-    for short_sighted in [False]:
-        for agent_type in ['"SoftActorCritic"']:
-            for time in [60, 240]:
-                for min_distance in [0,1]:
-                    for autoencoder in ['"HAE"']:
-                        for num_epochs in [int(20000/60*time)]:
-                            for buffer_size in [100000000]:
-                                for lr in [0.0005]:
-                                    for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                                        for curriculum in [1, 200000, 400000]:
-                                            for epsi_low in [0.1]:
-                                                for decay in [300000]:
-                                                    for update_interval in [300]:
-                                                        for minibatch_size in [100]:
-                                                            for n_times_update in [100]:
-                                                                for step in [-0.01]:
-                                                                    for action in [-0.03]:
+process_nr = 830
+for data_path in ['"data/"','"data_constant/"']:
+    for agent_type in ['"SoftActorCritic"']:
+        for time in [360]:
+            for min_distance in [0,1]:
+                for autoencoder in ['"HAE"']:
+                    for num_epochs in [15000]:
+                        for buffer_size in [100000000]:
+                            for lr in [0.0005]:
+                                for explorer_type in ['"LinearDecayEpsilonGreedy"']:
+                                    for curriculum in [1, 150000, 300000, 500000]:
+                                        for epsi_low in [0.1]:
+                                            for decay in [300000]:
+                                                for update_interval in [300]:
+                                                    for minibatch_size in [100]:
+                                                        for n_times_update in [100]:
+                                                            for step in [-0.01]:
+                                                                for action in [-0.03]:
+                                                                    for short_sighted in [False]:
                                                                         for repeat in range(2):
-                                                                            for replay_start_size in [5000, 10000, 500000]:
+                                                                            for replay_start_size in [1000]:
                                                                                 continuous = True
 
                                                                                 write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_type, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum, step, action, min_distance, short_sighted)

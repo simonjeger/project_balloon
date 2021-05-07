@@ -160,7 +160,7 @@ class Agent:
 
     def set_reachable_target(self):
         curr_start = 0.2
-        curr_window = 0.3
+        curr_window = 0.2
         curr_end = 1 - curr_window
         if self.train_or_test == 'train':
             curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['curriculum'],1)
@@ -176,12 +176,12 @@ class Agent:
             else:
                 hight_above_ground = self.env.character.state[9]
 
-            if hight_above_ground < self.env.size_z*0.3:
-                action = np.random.normal(1.8,0.3)
-            elif self.env.character.position[2] > self.env.size_z*0.7:
-                action = np.random.normal(0.3,0.3)
+            if hight_above_ground < self.env.size_z*0.1:
+                action = np.random.normal(1.2,0.01)
+            elif self.env.character.position[2] > self.env.size_z*0.8:
+                action = np.random.normal(0.8,0.01)
             else:
-                action = np.random.normal(1,0.3)
+                action = np.random.normal(1,0.1)
             action = np.clip(action,0,2)
 
             # actions are not in the same range in discrete / continuous cases
@@ -193,7 +193,7 @@ class Agent:
             _, _, done, _ = self.env.step(action, roll_out=True)
 
             dist_to_start = np.sqrt((self.env.character.position[0] - self.env.character.start[0])**2 + (self.env.character.position[1] - self.env.character.start[1])**2)
-            if done & (dist_to_start > yaml_p['radius']):
+            if done & (dist_to_start > 3*yaml_p['radius']):
                 break
             elif done:
                 if round >= 3:
@@ -248,10 +248,6 @@ class Agent:
                             self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
                         if len(self.agent.loss_record) != 0:
                             self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
-                        """
-                        for i in range(len(self.agent.loss_record)):
-                            self.writer.add_scalar('local_loss_qfunction', self.agent.loss_record[i], self.step_n-1 + i/len(self.agent.loss_record))
-                        """
                 self.epi_n += 1
                 break
 

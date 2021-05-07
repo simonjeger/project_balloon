@@ -29,8 +29,8 @@ def convert_map():
     #size_y = 252
     size_y = 250
 
-    size_x = 10
-    size_y = 10
+    size_x = 20
+    size_y = 20
     size_z = 105
 
     world = np.zeros(shape=(1+3,size_x,size_y,size_z))
@@ -99,7 +99,7 @@ def step(lat, lon, step_x, step_y):
     lon = lon + (step_x/R) * (180/np.pi) / np.cos(lat*np.pi/180)
     return lat, lon
 
-def build_set(num):
+def build_set(num, train_or_test):
     tensor = torch.load('data_cosmo/tensor/wind_map_CH.pt')
     size_c = len(tensor)
     size_x = yaml_p['size_x']
@@ -230,5 +230,5 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map()
-#build_set(10, 'train')
+#convert_map()
+#build_set(500, 'train')
