@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_type, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum, step, action, min_distance, short_sighted):
+def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum_dist, curriculum_rad, step, action, min_proj_dist, short_sighted):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -43,7 +43,7 @@ def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_t
     text = text + 'cherry_pick: False' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
-    text = text + 'explorer_type: ' + str(explorer_type) + '\n'
+    text = text + 'explorer_type: LinearDecayEpsilonGreedy' + '\n'
     text = text + 'agent_type: ' + str(agent_type) + '\n'
     text = text + 'epsi_high: 0.9' + '\n'
     text = text + 'epsi_low: ' + str(epsi_low) + '\n'
@@ -64,13 +64,15 @@ def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_t
     text = text + 'T: 100' + '\n'
     text = text + 'start: [7,6,0]' + '\n'
     text = text + 'target: "random"' + '\n'
-    text = text + 'curriculum: ' + str(curriculum) + '\n'
-    text = text + 'radius: 10' + '\n'
+    text = text + 'radius_xy: 10' + '\n'
+    text = text + 'radius_z: 30' + '\n'
+    text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
+    text = text + 'curriculum_rad: ' + str(curriculum_rad) + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: ' + f'{step:.10f}' + '\n'
     text = text + 'action: ' + f'{action:.10f}' + '\n'
     text = text + 'overtime: -1' + '\n'
-    text = text + 'min_distance: ' + str(min_distance) + '\n'
+    text = text + 'min_proj_dist: ' + str(min_proj_dist) + '\n'
     text = text + 'bounds: -1' + '\n'
     text = text + 'physics: True' + '\n'
 
@@ -89,17 +91,17 @@ def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_t
     file.write(text)
     file.close()
 
-process_nr = 830
+process_nr = 870
 for data_path in ['"data/"','"data_constant/"']:
     for agent_type in ['"SoftActorCritic"']:
         for time in [360]:
-            for min_distance in [0,1]:
+            for min_proj_dist in [0]:
                 for autoencoder in ['"HAE"']:
-                    for num_epochs in [15000]:
+                    for num_epochs in [20000]:
                         for buffer_size in [100000000]:
                             for lr in [0.0005]:
-                                for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                                    for curriculum in [1, 150000, 300000, 500000]:
+                                for curriculum_dist in [1]:
+                                    for curriculum_rad in [1,3]:
                                         for epsi_low in [0.1]:
                                             for decay in [300000]:
                                                 for update_interval in [300]:
@@ -112,5 +114,5 @@ for data_path in ['"data/"','"data_constant/"']:
                                                                             for replay_start_size in [1000]:
                                                                                 continuous = True
 
-                                                                                write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, explorer_type, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum, step, action, min_distance, short_sighted)
+                                                                                write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum_dist, curriculum_rad, step, action, min_proj_dist, short_sighted)
                                                                                 process_nr += 1

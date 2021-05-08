@@ -36,7 +36,7 @@ class QFunction(torch.nn.Module):
         return pfrl.action_value.DiscreteActionValue(h)
 
 class Agent:
-    def __init__(self, train_or_test, env, writer=None):
+    def __init__(self, epi_n, step_n, train_or_test, env, writer=None):
         self.train_or_test = train_or_test
         self.env = env
         self.stash = [0]*yaml_p['phase']
@@ -155,15 +155,15 @@ class Agent:
             else:
                 print('please choose one of the implemented agents')
 
-        self.epi_n = 0
-        self.step_n = 0
+        self.epi_n = epi_n
+        self.step_n = step_n
 
     def set_reachable_target(self):
         curr_start = 0.2
         curr_window = 0.2
         curr_end = 1 - curr_window
         if self.train_or_test == 'train':
-            curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['curriculum'],1)
+            curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['curriculum_dist'],1)
         else:
             curr = curr_end
 
@@ -193,7 +193,7 @@ class Agent:
             _, _, done, _ = self.env.step(action, roll_out=True)
 
             dist_to_start = np.sqrt((self.env.character.position[0] - self.env.character.start[0])**2 + (self.env.character.position[1] - self.env.character.start[1])**2)
-            if done & (dist_to_start > 3*yaml_p['radius']):
+            if done & (dist_to_start > 3*yaml_p['radius_xy']):
                 break
             elif done:
                 if round >= 3:
@@ -215,7 +215,7 @@ class Agent:
         obs = self.env.reset()
         sum_r = 0
 
-        if yaml_p['curriculum'] > 0: #reset target to something reachable if that flag is set
+        if yaml_p['curriculum_dist'] > 0: #reset target to something reachable if that flag is set
             self.set_reachable_target()
 
         while True:

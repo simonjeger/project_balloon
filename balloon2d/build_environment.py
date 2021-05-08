@@ -25,10 +25,11 @@ with open(args.yaml_file, 'rt') as fh:
 
 
 class balloon2d(Env):
-    def __init__(self, train_or_test, writer=None):
+    def __init__(self, epi_n, step_n, train_or_test, writer=None, radius_z=yaml_p['radius_x']):
         # which data to use
         self.train_or_test = train_or_test
         self.writer = writer
+        self.radius_z = radius_z
 
         # initialize autoencoder object
         if yaml_p['autoencoder'] == 'HAE':
@@ -62,8 +63,8 @@ class balloon2d(Env):
 
         # initialize state and time
         self.success_n = 0
-        self.step_n = 0
-        self.epi_n = 0
+        self.epi_n = epi_n
+        self.step_n = step_n
 
         self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
 
@@ -115,11 +116,11 @@ class balloon2d(Env):
         return self.character.state, self.reward_step, done, info
 
     def cost(self, in_bounds):
-        init_min = np.sqrt(((self.character.target[0] - self.character.start[0])*self.render_ratio)**2 + (self.character.target[1] - self.character.start[1])**2)
+        init_proj_min = np.sqrt(((self.character.target[0] - self.character.start[0])*self.render_ratio/yaml_p['radius_x'])**2 + ((self.character.target[1] - self.character.start[1])/self.radius_z)**2)
 
         if in_bounds:
             # calculate reward
-            if self.character.min_distance <= yaml_p['radius']:
+            if self.character.min_proj_dist <= 1:
                 self.reward_step = yaml_p['hit']
                 self.success_n += 1
                 done = True
@@ -128,11 +129,11 @@ class balloon2d(Env):
                 done = False
 
             if self.character.t <= 0:
-                self.reward_step = yaml_p['overtime'] + (init_min - self.character.min_distance)/init_min * yaml_p['min_distance']
+                self.reward_step = yaml_p['overtime'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min * yaml_p['min_proj_dist']
                 done = True
 
         else:
-            self.reward_step = yaml_p['bounds'] + (init_min - self.character.min_distance)/init_min * yaml_p['min_distance']
+            self.reward_step = yaml_p['bounds'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min * yaml_p['min_proj_dist']
             self.character.t = 0
             done = True
 
@@ -140,12 +141,13 @@ class balloon2d(Env):
         return done
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.train_or_test, self.path_roll_out)
+        build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.radius_z, self.train_or_test, self.path_roll_out)
 
     def reset(self, roll_out=False):
         if not roll_out:
             # load new world
             self.load_new_world()
+
         self.reward_step = 0
         self.reward_epi = 0
 
@@ -169,7 +171,7 @@ class balloon2d(Env):
         # Initial compressed wind map
         self.world_compressed = self.ae.compress(self.world, start)
 
-        self.character = character(self.size_x, self.size_z, start, target, self.T, self.world, self.world_compressed)
+        self.character = character(self.size_x, self.size_z, start, target, self.radius_z, self.T, self.world, self.world_compressed)
 
         return self.character.state
 

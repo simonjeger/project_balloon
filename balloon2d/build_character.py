@@ -14,8 +14,9 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 class character():
-    def __init__(self, size_x, size_z, start, target, T, world, world_compressed):
+    def __init__(self, size_x, size_z, start, target, radius_z, T, world, world_compressed):
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
+        self.radius_z = radius_z
 
         if yaml_p['physics']:
             self.mass = 3400 #kg
@@ -53,7 +54,7 @@ class character():
         self.state = self.state.astype(np.float32)
 
         self.path = [self.position.copy(), self.position.copy()]
-        self.min_distance = np.sqrt((self.residual[0]*self.render_ratio)**2 + self.residual[1]**2)
+        self.min_proj_dist = np.inf
 
         if yaml_p['short_sighted']:
             self.become_short_sighted()
@@ -120,10 +121,11 @@ class character():
                 # write down path in history
                 self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
 
-                # find min_distance
-                min_distance = np.sqrt(((self.position[0]-self.target[0])*self.render_ratio)**2 + (self.position[1]-self.target[1])**2)
-                if min_distance < self.min_distance:
-                    self.min_distance = min_distance
+                # find min_proj_dist
+                self.residual = self.target - self.position
+                min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/yaml_p['radius_x'])**2 + (self.residual[1]/self.radius_z)**2)
+                if min_proj_dist < self.min_proj_dist:
+                    self.min_proj_dist = min_proj_dist
 
         return in_bounds
 

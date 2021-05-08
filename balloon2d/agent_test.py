@@ -16,8 +16,8 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-env = balloon2d('test')
-ag = Agent('test',env)
+env = balloon2d(0,0,'test')
+ag = Agent(0,0,'test',env)
 ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
 with ag.agent.eval_mode():
