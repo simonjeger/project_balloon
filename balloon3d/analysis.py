@@ -367,8 +367,8 @@ def disp_overview():
                 axs[i,j].scatter(df.iloc[:,x],df['linreg_score'], s=0.1, facecolors='none', edgecolors=color_score, alpha=0.2)
                 """
 
-                ax2 = axs[i,j].twinx()
-                ax2.tick_params(axis='y', colors='green')
+                #ax2 = axs[i,j].twinx()
+                #ax2.tick_params(axis='y', colors='green')
 
                 """
                 ax2.scatter(df.iloc[:,x],df['linreg_slope'], s=0.1, facecolors='none', edgecolors=color_slope, alpha=0.2)

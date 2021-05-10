@@ -76,15 +76,10 @@ for r in range(yaml_p['curriculum_rad']):
 
 ag.clear_stash()
 
-# analyse
-if yaml_p['overview']:
-    write_overview()
-
 plot_reward()
 plot_path()
 if yaml_p['qfunction']:
     plot_qmap()
 
-# Delete log files
-if yaml_p['clear']:
-    clear()
+# Need to clear out for log files during testing
+clear()

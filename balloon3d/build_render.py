@@ -126,16 +126,15 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
     window_size = window_size*render_ratio
 
     # colors
-    c_ceiling = (51,63,80,150)
+    c_ceiling = (150,150,150,150)
     c_down = (117,21,0,255)
     c_stay = (173,29,0)
     c_up = (237,35,1)
     c_path = (242,242,242)
-    c_path_roll_out = (110,110,110)
+    c_path_roll_out = (130,130,130)
     c_window = (217,217,217, 50)
     c_target_center = (242,242,242)
     c_target_radius = (217,217,217,50)
-    c_continuous = 'seismic'
 
     left_border = (screen_width/2)/res
     right_border = size_1 - left_border
@@ -242,7 +241,8 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
     if yaml_p['continuous']:
         cv = 100
         colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
-        color = colors[int(character.action/2*cv)]*255
+        action = np.sign(character.action-1)*(abs(character.action - 1)**0.5 + 1)/2 #rescale the color map to make change more visible
+        color = colors[int(action*cv)]*255
         pygame.draw.ellipse(screen, color, rec_balloon)
     else:
         if character.action == 2:

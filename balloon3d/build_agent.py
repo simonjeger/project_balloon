@@ -218,6 +218,9 @@ class Agent:
         if yaml_p['curriculum_dist'] > 0: #reset target to something reachable if that flag is set
             self.set_reachable_target()
 
+        if render:
+            self.env.render(mode=True) #render initial state
+
         while True:
             action = self.agent.act(obs) #uses self.agent.model to decide next step
 

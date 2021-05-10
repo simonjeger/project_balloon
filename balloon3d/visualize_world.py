@@ -56,19 +56,19 @@ def visualize_world(tensor, position):
         local_size_x = len(dir_x)
         local_size_y = len(dir_x[0])
 
-        y,x = np.meshgrid(np.arange(0, local_size_y, 1),np.arange(0, local_size_x, 1))
         fig, ax = plt.subplots(frameon=False, figsize=(local_size_x, local_size_y))
         ax.set_axis_off()
 
-        cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+        if dim != 'xy':
+            cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
+            ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=1, vmin=-5, vmax=5, interpolation='bilinear')
 
-        cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
-        ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+            cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+            ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.7, vmin=-5, vmax=5, interpolation='bilinear')
 
         # draw terrain & coordinate system
-        c_terrain = (169/255,163/255,144/255) #because plt uses values between 0 and 1
-        c_contour = 'Greys'
+        c_terrain = (161/255,135/255,93/255) #because plt uses values between 0 and 1
+        c_contour = sns.cubehelix_palette(start=1.28, rot=0, dark=0.2, light=0.7, reverse=True, as_cmap=True)
         c_ticks = (242/255,242/255,242/255)
 
         if dim != 'xy':
@@ -106,10 +106,15 @@ def visualize_world(tensor, position):
             ax.set_aspect(1)
 
             # plot contour lines
-            x = np.arange(0.5, local_size_x, 1)
-            y = np.arange(0.5, local_size_y, 1)
+            x = np.arange(0, local_size_x, 1)
+            y = np.arange(0, local_size_y, 1)
+
+            x = np.linspace(0, local_size_x+1, local_size_x)
+            y = np.linspace(0, local_size_y+1, local_size_y)
+
             X, Y = np.meshgrid(x, y)
-            ax.contour(X,Y,terrain.T, cmap=c_contour)
+            ax.contourf(X,Y,terrain.T, cmap=c_contour, extend=(0,local_size_x,0,local_size_y))
+            ax.quiver(X, Y, dir_x, dir_y, scale=yaml_p['unit_xy']/5, headwidth=2.5, width=0.005)
 
             # create ticks
             ratio = 2*local_size_x/render_ratio

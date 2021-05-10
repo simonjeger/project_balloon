@@ -48,3 +48,4 @@ size_z = yaml_p['size_z']
 #visualize_world('test')
 
 import agent_train
+import agent_test

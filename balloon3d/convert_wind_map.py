@@ -29,8 +29,8 @@ def convert_map():
     #size_y = 252
     size_y = 250
 
-    size_x = 20
-    size_y = 20
+    size_x = 100
+    size_y = 100
     size_z = 105
 
     world = np.zeros(shape=(1+3,size_x,size_y,size_z))
@@ -230,5 +230,5 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map()
+convert_map()
 #build_set(500, 'train')
