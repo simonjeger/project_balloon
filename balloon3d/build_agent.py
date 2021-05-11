@@ -282,6 +282,10 @@ class Agent:
         if self.writer is not None:
             self.writer.add_scalar('weights_saved', self.epi_n-1 , self.step_n-1) # because we do above self.step_n += 1
 
+    def load_stash(self):
+        path_temp = yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        self.agent.load(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
+
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
         print('weights loaded')

@@ -230,5 +230,5 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map()
+#convert_map()
 #build_set(500, 'train')

@@ -53,11 +53,19 @@ for r in range(yaml_p['curriculum_rad']):
     for i in range(num_epochs):
         ag.stash_weights()
         log = ag.run_epoch(False)
-        current_phase[i%phase] = log
         print('epoch: ' + str(i) + ' reward: ' + str(log))
 
         # save weights
         if yaml_p['cherry_pick']:
+            env_val = balloon2d(epi_n,step_n,'val',radius_z=radius_z)
+            ag_val = Agent(epi_n,step_n,'val',env_val)
+            ag_val.load_stash()
+            with ag_val.agent.eval_mode():
+                log_val = ag_val.run_epoch(False)
+            current_phase[i%phase] = log_val
+            writer.add_scalar('reward_epi_val', log_val, env.step_n-1)
+            print('epoch: ' + str(i) + ' reward_val: ' + str(log_val))
+
             if sum(current_phase) > sum(best_phase):
                 ag.save_weights(current_phase, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
                 best_phase = current_phase[:]

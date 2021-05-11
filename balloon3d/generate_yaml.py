@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum_dist, curriculum_rad, step, action, min_proj_dist, short_sighted):
+def write(process_nr, time, autoencoder, window_size, num_epochs, cherry_pick, buffer_size, lr, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum_dist, curriculum_rad, step, action, min_proj_dist, short_sighted):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -34,13 +34,13 @@ def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, agent_type
 
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
-    text = text + 'window_size: 3' + '\n'
+    text = text + 'window_size: ' + str(window_size) + '\n'
     text = text + 'bottleneck: 2' + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'num_epochs: ' + str(num_epochs) + '\n'
     text = text + 'phase: 50' + '\n'
-    text = text + 'cherry_pick: False' + '\n'
+    text = text + 'cherry_pick: ' + str(cherry_pick) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'explorer_type: LinearDecayEpsilonGreedy' + '\n'
@@ -91,28 +91,31 @@ def write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, agent_type
     file.write(text)
     file.close()
 
-process_nr = 870
-for data_path in ['"data/"','"data_constant/"']:
+step = -0.01
+action = -0.03
+
+process_nr = 900
+for data_path in ['"data/"']:
     for agent_type in ['"SoftActorCritic"']:
         for time in [360]:
             for min_proj_dist in [0]:
                 for autoencoder in ['"HAE"']:
-                    for num_epochs in [20000]:
-                        for buffer_size in [100000000]:
-                            for lr in [0.0005]:
-                                for curriculum_dist in [1]:
-                                    for curriculum_rad in [1,3]:
-                                        for epsi_low in [0.1]:
-                                            for decay in [300000]:
-                                                for update_interval in [300]:
-                                                    for minibatch_size in [100]:
-                                                        for n_times_update in [100]:
-                                                            for step in [-0.01]:
-                                                                for action in [-0.03]:
+                    for num_epochs in [10000]:
+                        for cherry_pick in [True, False]:
+                            for window_size in [1,2,3]:
+                                for buffer_size in [100000000]:
+                                    for lr in [0.0005]:
+                                        for curriculum_dist in [1]:
+                                            for curriculum_rad in [1]:
+                                                for epsi_low in [0.1]:
+                                                    for decay in [300000]:
+                                                        for update_interval in [300]:
+                                                            for minibatch_size in [100]:
+                                                                for n_times_update in [100]:
                                                                     for short_sighted in [False]:
                                                                         for repeat in range(2):
                                                                             for replay_start_size in [1000]:
                                                                                 continuous = True
 
-                                                                                write(process_nr, time, autoencoder, num_epochs, buffer_size, lr, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum_dist, curriculum_rad, step, action, min_proj_dist, short_sighted)
+                                                                                write(process_nr, time, autoencoder, window_size, num_epochs, cherry_pick, buffer_size, lr, agent_type, epsi_low, decay, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, curriculum_dist, curriculum_rad, step, action, min_proj_dist, short_sighted)
                                                                                 process_nr += 1
