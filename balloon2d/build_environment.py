@@ -173,6 +173,15 @@ class balloon2d(Env):
 
         self.character = character(self.size_x, self.size_z, start, target, self.radius_z, self.T, self.world, self.world_compressed)
 
+        # avoid impossible szenarios
+        min_space = self.size_z/5
+        if yaml_p['physics']:
+            if self.character.max_z + self.character.state[8] < min_space:
+                self.reset()
+        else:
+            if self.character.max_z + self.character.state[6] < min_space:
+                self.reset()
+
         return self.character.state
 
     def load_new_world(self):

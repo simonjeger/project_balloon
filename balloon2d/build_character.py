@@ -54,7 +54,7 @@ class character():
         self.state = self.state.astype(np.float32)
 
         self.path = [self.position.copy(), self.position.copy()]
-        self.min_proj_dist = np.inf
+        self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/yaml_p['radius_x'])**2 + (self.residual[1]/self.radius_z)**2)
 
         if yaml_p['short_sighted']:
             self.become_short_sighted()

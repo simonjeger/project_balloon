@@ -62,10 +62,15 @@ def plot_reward():
     axs[0].plot(mean_reward_epi_big)
 
     if yaml_p['cherry_pick']:
+        # validation
+        rew_epi_val = np.array(df['reward_epi_val'].dropna())
+        axs[0].plot(rew_epi_val)
+
         # save_weights
         weights_saved = np.array(df['weights_saved'].dropna())
         for w in weights_saved:
             axs[0].axvline(w, color='black', linewidth=0.5)
+
 
     #axs[0].set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
     axs[0].set_xlabel('episode')
@@ -76,7 +81,7 @@ def plot_reward():
         ['reward',
         'running mean over ' + str(N_epi) + ' episodes, max: ' + str(np.round(max(mean_reward_epi),5)) + ', avg: ' + str(np.round(np.mean(rew_epi),5)),
         r'linear regression, slope $\times$ N_epi: ' + str(np.round(slope*N_epi,5)) + ', score: ' + str(np.round(score,5)),
-        'running mean over ' + str(N_epi_big) + ' episodes']
+        'running mean over ' + str(N_epi_big) + ' episodes', 'reward_val']
         )
 
     axs[1].plot(qloss)

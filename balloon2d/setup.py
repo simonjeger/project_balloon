@@ -23,13 +23,15 @@ Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5)).mk
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_agent').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'test').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'test/image').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'test/tensor').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'test/tensor_comp').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train/image').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train/tensor').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + 'val').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + 'val/image').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + 'val/tensor').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + 'test').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + 'test/image').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + 'test/tensor').mkdir(parents=True, exist_ok=True)
 
 shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5))
 
@@ -37,14 +39,17 @@ size_x = yaml_p['size_x']
 size_z = yaml_p['size_z']
 
 #build_set(500, 'train')
-#build_set(15, 'test')
-#generate_world(10, 'train')
+#build_set(100, 'val')
+#build_set(100, 'test')
+#generate_world(500, 'train')
+#generate_world(500, 'val')
 #generate_world(15, 'test')
 
 #import autoencoder_train
 #import autoencoder_test
 
 #visualize_world('train')
+#visualize_world('val')
 #visualize_world('test')
 
 import agent_train

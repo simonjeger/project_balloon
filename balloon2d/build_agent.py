@@ -157,6 +157,7 @@ class Agent:
 
         self.epi_n = epi_n
         self.step_n = step_n
+        self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
 
     def set_reachable_target(self):
         curr_start = 0.2
@@ -171,18 +172,23 @@ class Agent:
         while True:
             self.env.character.target = [-10,-10] #set target outside map
 
-            if yaml_p['physics']:
-                hight_above_ground = self.env.character.state[8]
+            if self.env.character.t == yaml_p['T']:
+                action = 1.2
             else:
-                hight_above_ground = self.env.character.state[6]
+                if yaml_p['physics']:
+                    hight_above_ground = self.env.character.state[8]
+                    dist_to_ceiling = self.env.character.state[7]
+                else:
+                    hight_above_ground = self.env.character.state[6]
+                    dist_to_ceiling = self.env.character.state[5]
 
-            if hight_above_ground < self.env.size_z*0.3:
-                action = np.random.normal(1.8,0.3)
-            elif self.env.character.position[1] > self.env.size_z*0.7:
-                action = np.random.normal(0.3,0.3)
-            else:
-                action = np.random.normal(1,0.3)
-            action = np.clip(action,0,2)
+                if hight_above_ground < 15:
+                    action = np.random.normal(1.2,0.01)
+                elif dist_to_ceiling < 15:
+                    action = np.random.normal(0.8,0.01)
+                else:
+                    action = np.random.normal(1,0.1)
+                action = np.clip(action,0,2)
 
             # actions are not in the same range in discrete / continuous cases
             if yaml_p['continuous']:
@@ -192,8 +198,10 @@ class Agent:
 
             _, _, done, _ = self.env.step(action, roll_out=True)
 
-            dist_to_start = np.sqrt((self.env.character.position[0] - self.env.character.start[0])**2)
-            if done & (dist_to_start > yaml_p['radius_x']):
+            sucess = False
+            # dist_to_start does not change with radius_z
+            dist_to_start = np.sqrt(((self.env.character.position[0] - self.env.character.start[0])*self.render_ratio/yaml_p['radius_x'])**2 + ((self.env.character.position[1] - self.env.character.start[1])*self.render_ratio/yaml_p['radius_x'])**2)
+            if done & (dist_to_start > 2):
                 break
             elif done:
                 if round >= 3:
@@ -202,11 +210,18 @@ class Agent:
                     self.env.reset(roll_out=True)
                     round += 1
 
-        idx = np.random.randint(int(curr*len(self.env.character.path)), max(int((curr+curr_window-0.1)*len(self.env.character.path)),int(curr*len(self.env.character.path)) + 1))
-
-        # write down path and set target
-        self.env.path_roll_out = self.env.character.path[0:idx]
-        target = self.env.character.path[idx]
+        lowest = 50
+        # write down path and set target (avoid loops with else)
+        if len(self.env.character.path) > lowest:
+            lower = max(lowest,int(curr*len(self.env.character.path)))
+            upper = max(lowest+1,int((curr+curr_window-0.1)*len(self.env.character.path)),int(curr*len(self.env.character.path)) + 1)
+            idx = np.random.randint(lower, upper)
+            self.env.path_roll_out = self.env.character.path[0:idx]
+            target = self.env.character.path[idx]
+        else:
+            idx = 0
+            self.env.path_roll_out = self.env.character.path[0:idx]
+            target = self.env.character.path[idx] + [0,1] #set target so close, it will be counted as a success immediatly
 
         self.env.reset(roll_out=True)
         self.env.character.target = target
@@ -282,6 +297,10 @@ class Agent:
 
         if self.writer is not None:
             self.writer.add_scalar('weights_saved', self.epi_n-1 , self.step_n-1) # because we do above self.step_n += 1
+
+    def load_stash(self):
+        path_temp = yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
+        self.agent.load(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
