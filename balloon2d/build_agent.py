@@ -98,6 +98,11 @@ class Agent:
             def burnin_action_func():
                 return np.random.uniform(acts.low, acts.high).astype(np.float32) #select random actions until model is updated one or more times
 
+            if torch.cuda.is_available():
+                device = 0
+            else:
+                device = -1
+
             if yaml_p['agent_type'] == 'SoftActorCritic':
                 self.agent = pfrl.agents.SoftActorCritic(
                     policy,
@@ -109,7 +114,7 @@ class Agent:
                     pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size']),
                     gamma=0.95,
                     replay_start_size=yaml_p['replay_start_size'],
-                    gpu=-1,
+                    gpu=device,
                     minibatch_size=yaml_p['minibatch_size'],
                     burnin_action_func=burnin_action_func,
                     entropy_target=-action_size,
@@ -131,6 +136,11 @@ class Agent:
             elif yaml_p['explorer_type'] == 'AdditiveGaussian':
                 explorer = pfrl.explorers.AdditiveGaussian(1, low=0, high=2) # scale = 1, but I've never really tried it
 
+            if torch.cuda.is_available():
+                device = 0
+            else:
+                device = -1
+
             if yaml_p['agent_type'] == 'DoubleDQN':
                 self.qfunction = QFunction(obs.shape[0],acts.n)
 
@@ -149,7 +159,7 @@ class Agent:
                     minibatch_size=yaml_p['minibatch_size'], #minibatch_size used for training the q-function network
                     n_times_update=yaml_p['n_times_update'], #how many times we update the NN with a new batch per update step
                     phi=lambda x: x.astype(np.float32, copy=False), #feature extractor applied to observations
-                    gpu=-1, #actual GPU used for computation
+                    gpu=device, #actual GPU used for computation
                 )
 
             else:

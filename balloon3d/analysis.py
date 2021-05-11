@@ -66,7 +66,10 @@ def plot_reward():
     if yaml_p['cherry_pick']:
         # validation
         rew_epi_val = np.array(df['reward_epi_val'].dropna())
-        axs[0].plot(rew_epi_val)
+        N_epi_val = int(len(rew_epi)/10)
+        cumsum_rew_val = np.cumsum(np.insert(rew_epi_val, 0, 0))
+        mean_reward_epi_val = (cumsum_rew_val[N_epi_val:] - cumsum_rew_val[:-N_epi_val]) / float(N_epi_val)
+        axs[0].plot(mean_reward_epi_val)
 
         # save_weights
         weights_saved = np.array(df['weights_saved'].dropna())

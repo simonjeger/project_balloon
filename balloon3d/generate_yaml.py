@@ -94,13 +94,13 @@ def write(process_nr, time, autoencoder, window_size, num_epochs, cherry_pick, b
 step = -0.01
 action = -0.03
 
-process_nr = 900
+process_nr = 940
 for data_path in ['"data/"']:
     for agent_type in ['"SoftActorCritic"']:
         for time in [360]:
             for min_proj_dist in [0]:
                 for autoencoder in ['"HAE"']:
-                    for num_epochs in [10000]:
+                    for num_epochs in [15000, 30000]:
                         for cherry_pick in [True, False]:
                             for window_size in [1,2,3]:
                                 for buffer_size in [100000000]:
