@@ -288,7 +288,10 @@ class Agent:
     def stash_weights(self):
         path_temp = yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
         Path(path_temp).mkdir(parents=True, exist_ok=True)
-        self.agent.save(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
+        if yaml_p['cherry_pick'] > 0:
+            self.agent.save(path_temp + 'temp_agent_' + str(int((self.epi_n//yaml_p['cherry_pick'])%yaml_p['phase'])))
+        else:
+            self.agent.save(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
 
     def clear_stash(self):
         dirpath = Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/')

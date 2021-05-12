@@ -9,7 +9,8 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    #file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -n 4 -W 24:00 -R "rusage[mem=4000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -34,12 +35,13 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
     text = text + 'window_size: 3' + '\n'
-    text = text + 'bottleneck: 2' + '\n'
+    text = text + 'bottleneck: 4' + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
-    text = text + 'num_epochs: ' + str(num_epochs) + '\n'
+    text = text + 'num_epochs_train: ' + str(num_epochs) + '\n'
+    text = text + 'num_epochs_test: 1000' + '\n'
     text = text + 'phase: 50' + '\n'
-    text = text + 'cherry_pick: False' + '\n'
+    text = text + 'cherry_pick: 0' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'explorer_type: ' + str(explorer_type) + '\n'
@@ -61,8 +63,10 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + 'data_path: ' + data_path + '\n'
     text = text + 'continuous: ' + str(continuous) + '\n'
     text = text + 'T: 100' + '\n'
-    text = text + 'start: [7,0]' + '\n'
-    text = text + 'target: "random"' + '\n'
+    text = text + 'start_train: [7,0]' + '\n'
+    text = text + 'start_test: [7,0]' + '\n'
+    text = text + 'target_train: "random"' + '\n'
+    text = text + 'target_test: "random"' + '\n'
     text = text + 'radius_x: 10' + '\n'
     text = text + 'radius_z: 50' + '\n'
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'

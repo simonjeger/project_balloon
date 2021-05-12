@@ -28,7 +28,7 @@ class HAE():
 
         self.window_size = yaml_p['window_size']
         self.window_size_total = 2*self.window_size + 1
-        self.box_size = int(self.size_z/4)
+        self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
         self.bottleneck_terrain = 2
         self.bottleneck_wind = int(self.size_z/self.box_size)*2

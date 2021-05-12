@@ -63,7 +63,7 @@ def plot_reward():
     axs[0].plot(Y_pred)
     axs[0].plot(mean_reward_epi_big)
 
-    if yaml_p['cherry_pick']:
+    if yaml_p['cherry_pick'] > 0:
         # validation
         rew_epi_val = np.array(df['reward_epi_val'].dropna())
         N_epi_val = int(len(rew_epi)/10)
@@ -315,7 +315,7 @@ def write_overview():
 
     # success_n
     success_n = np.array(df['success_n'].dropna())
-    success_rate = success_n[-1]/yaml_p['num_epochs']
+    success_rate = success_n[-1]/yaml_p['num_epochs_test']
 
     # write down
     df_reward = pd.DataFrame(dic_copy)

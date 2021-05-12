@@ -27,7 +27,7 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger')
 
 # model_train
-num_epochs = int(yaml_p['num_epochs']/yaml_p['curriculum_rad'])
+num_epochs = int(yaml_p['num_epochs_train']/yaml_p['curriculum_rad'])
 
 # index for log file
 duration = yaml_p['duration']
@@ -35,7 +35,12 @@ fps = min(int(num_epochs/duration),yaml_p['fps'])
 n_f = duration*fps
 ratio = num_epochs/n_f
 
-phase = yaml_p['phase']
+if yaml_p['phase'] < yaml_p['cherry_pick']:
+    print('Please choose a higher phase / lower cherr_pick')
+if yaml_p['cherry_pick']:
+    phase = int(yaml_p['phase']/yaml_p['cherry_pick'])
+else:
+    phase = int(yaml_p['phase'])
 current_phase = [-np.inf]*phase
 best_phase = current_phase[:]
 
@@ -51,25 +56,30 @@ for r in range(yaml_p['curriculum_rad']):
         ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
     for i in range(num_epochs):
-        ag.stash_weights()
+        if yaml_p['cherry_pick'] > 0:
+            if i%yaml_p['cherry_pick'] == 0:
+                ag.stash_weights()
+        else:
+            ag.stash_weights()
+
         log = ag.run_epoch(False)
-        current_phase[i%phase] = log
         print('epoch: ' + str(i) + ' reward: ' + str(log))
 
         # save weights
-        if yaml_p['cherry_pick']:
-            env_val = balloon2d(epi_n,step_n,'val',radius_z=radius_z)
-            ag_val = Agent(epi_n,step_n,'val',env_val)
-            ag_val.load_stash()
-            with ag_val.agent.eval_mode():
-                log_val = ag_val.run_epoch(False)
-            current_phase[i%phase] = log_val
-            writer.add_scalar('reward_epi_val', log_val, env.step_n-1)
-            print('epoch: ' + str(i) + ' reward_val: ' + str(log_val))
+        if yaml_p['cherry_pick'] > 0:
+            if i%yaml_p['cherry_pick'] == 0:
+                env_val = balloon2d(epi_n,step_n,'val',radius_z=radius_z)
+                ag_val = Agent(epi_n,step_n,'val',env_val)
+                ag_val.load_stash()
+                with ag_val.agent.eval_mode():
+                    log_val = ag_val.run_epoch(False)
+                current_phase[int((i/yaml_p['cherry_pick'])%phase)] = log_val
+                writer.add_scalar('reward_epi_val', log_val, env.step_n-1)
+                print('epoch: ' + str(i) + ' reward_val: ' + str(log_val))
 
-            if sum(current_phase) > sum(best_phase):
-                ag.save_weights(current_phase, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
-                best_phase = current_phase[:]
+                if sum(current_phase) > sum(best_phase):
+                    ag.save_weights(current_phase, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
+                    best_phase = current_phase[:]
 
 
         # write in log file
@@ -78,7 +88,7 @@ for r in range(yaml_p['curriculum_rad']):
             Q_vis = ag.visualize_q_map()
             torch.save(Q_vis, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
 
-    if not yaml_p['cherry_pick']:
+    if yaml_p['cherry_pick'] == 0:
         ag.save_weights(current_phase, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
     epi_n = env.epi_n
