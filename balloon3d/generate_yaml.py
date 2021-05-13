@@ -107,8 +107,8 @@ for data_path in ['"data/"']:
                 for autoencoder in ['"HAE"']:
                     for num_epochs in [20000]:
                         for cherry_pick in [0]:
-                            for window_size in [1,2,3]:
-                                for bottleneck in [2,4,6,8]:
+                            for window_size in [0,1,2]:
+                                for bottleneck in [2,4,8,16]:
                                     for buffer_size in [100000000]:
                                         for curriculum_dist in [1]:
                                             for curriculum_rad in [1]:

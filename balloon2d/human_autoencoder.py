@@ -37,11 +37,14 @@ class HAE():
     def window(self, data, center):
         window = np.zeros((len(data),self.window_size_total,self.size_z))
         data_padded = np.zeros((len(data),self.size_x+2*self.window_size,self.size_z))
-        data_padded[:,self.window_size:-self.window_size,:] = data
+        if self.window_size == 0:
+            data_padded = data
+        else:
+            data_padded[:,self.window_size:-self.window_size,:] = data
 
-        for i in range(self.window_size):
-            data_padded[:,i,:] = data_padded[:,self.window_size,:]
-            data_padded[:,-(i+1),:] = data_padded[:,-(self.window_size+1),:]
+            for i in range(self.window_size):
+                data_padded[:,i,:] = data_padded[:,self.window_size,:]
+                data_padded[:,-(i+1),:] = data_padded[:,-(self.window_size+1),:]
 
         start_x = int(center)
         end_x = int(center + self.window_size_total)
@@ -76,15 +79,20 @@ class HAE():
         rel_z = position[1]
         terrain = data[0,:,0]
 
-        x = np.linspace(0,self.window_size_total,len(terrain))
-        distances = []
-        res = 100
-        for i in range(len(terrain)*res):
-            #distances.append(np.sqrt((rel_x-i)**2 + (rel_z-terrain[i])**2))
-            distances.append(np.sqrt((rel_x-i/res)**2 + (rel_z-np.interp(i/res,x,terrain))**2))
+        if self.window_size == 0:
+            distance = rel_z - terrain
+            bearing = 0
 
-        distance = np.min(distances)
-        bearing = np.arctan2(np.argmin(distances)/res - rel_x, rel_z - np.interp(np.argmin(distances)/res,x,terrain))
+        else:
+            x = np.linspace(0,self.window_size_total,len(terrain))
+            distances = []
+            res = 100
+            for i in range(len(terrain)*res):
+                #distances.append(np.sqrt((rel_x-i)**2 + (rel_z-terrain[i])**2))
+                distances.append(np.sqrt((rel_x-i/res)**2 + (rel_z-np.interp(i/res,x,terrain))**2))
+
+            distance = np.min(distances)
+            bearing = np.arctan2(np.argmin(distances)/res - rel_x, rel_z - np.interp(np.argmin(distances)/res,x,terrain))
 
         return [distance, bearing]
 

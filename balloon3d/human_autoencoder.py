@@ -39,13 +39,16 @@ class HAE():
     def window(self, data, position):
         window = np.zeros((len(data),self.window_size_total,self.size_z))
         data_padded = np.zeros((len(data),self.size_x+2*self.window_size,self.size_y+2*self.window_size,self.size_z))
-        data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data
+        if self.window_size == 0:
+            data_padded = data
+        else:
+            data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data
 
-        for i in range(self.window_size):
-            data_padded[:,i,:,:] = data_padded[:,self.window_size,:,:]
-            data_padded[:,:,i,:] = data_padded[:,:,self.window_size,:]
-            data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
-            data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
+            for i in range(self.window_size):
+                data_padded[:,i,:,:] = data_padded[:,self.window_size,:,:]
+                data_padded[:,:,i,:] = data_padded[:,:,self.window_size,:]
+                data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
+                data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
 
         start_x = int(position[0])
         start_y = int(position[1])
@@ -85,22 +88,28 @@ class HAE():
         rel_z = position[2]
         terrain = data[0,:,:,0]
 
-        distances = []
-        indices = []
-        res = 1
+        if self.window_size == 0:
+            distance = rel_z - terrain
+            bearing_x = 0
+            bearing_y = 0
 
-        x = np.linspace(0,self.window_size_total,len(data[0]))
-        y = np.linspace(0,self.window_size_total,len(data[0][0]))
+        else:
+            distances = []
+            indices = []
+            res = 1
 
-        f = scipy.interpolate.interp2d(x,y,data[0,:,:,0].T)
-        for i in range(len(terrain)*res):
-            for j in range(len(terrain[0])*res):
-                distances.append(np.sqrt((rel_x-i/res)**2 + (rel_y-j/res)**2 + (rel_z-f(rel_x, rel_y))**2))
-                indices.append([i,j])
+            x = np.linspace(0,self.window_size_total,len(data[0]))
+            y = np.linspace(0,self.window_size_total,len(data[0][0]))
 
-        distance = np.min(distances)
-        bearing_x = np.arctan2(indices[np.argmin(distances)][0]/res - rel_x, rel_z - f(indices[np.argmin(distances)][0]/res,rel_y)[0])
-        bearing_y = np.arctan2(indices[np.argmin(distances)][1]/res - rel_x, rel_z - f(indices[np.argmin(distances)][1]/res,rel_y)[0])
+            f = scipy.interpolate.interp2d(x,y,data[0,:,:,0].T)
+            for i in range(len(terrain)*res):
+                for j in range(len(terrain[0])*res):
+                    distances.append(np.sqrt((rel_x-i/res)**2 + (rel_y-j/res)**2 + (rel_z-f(rel_x, rel_y))**2))
+                    indices.append([i,j])
+
+            distance = np.min(distances)
+            bearing_x = np.arctan2(indices[np.argmin(distances)][0]/res - rel_x, rel_z - f(indices[np.argmin(distances)][0]/res,rel_y)[0])
+            bearing_y = np.arctan2(indices[np.argmin(distances)][1]/res - rel_x, rel_z - f(indices[np.argmin(distances)][1]/res,rel_y)[0])
 
         return [distance, bearing_x, bearing_y]
 

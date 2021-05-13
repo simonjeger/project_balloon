@@ -183,13 +183,13 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         screen.blit(shape_surf, target_rect)
 
     # write and display observing box
-    size_obs_x = window_size*2*res
+    size_obs_x = (window_size*2+1*render_ratio)*res
     if dim != 'xy':
         size_obs_y = (dist_to_bottom - dist_to_top)*res
-        pos_obs = [int(position_1 + offset_1 - window_size)*res, dist_to_top*res]
+        pos_obs = [(int(position_1/render_ratio)*render_ratio + offset_1 - window_size)*res, dist_to_top*res]
     else:
-        size_obs_y = window_size*2*res
-        pos_obs = [int(position_1 + offset_1 - window_size)*res, int(dist_to_bottom - position_2 - offset_2 - window_size)*res]
+        size_obs_y = (window_size*2+1*render_ratio)*res
+        pos_obs = [(int(position_1/render_ratio)*render_ratio + offset_1 - window_size)*res, (int((dist_to_bottom - position_2)/render_ratio)*render_ratio - offset_2 - window_size)*res]
     rec_obs = pygame.Rect(pos_obs[0], pos_obs[1], size_obs_x, size_obs_y)
 
     shape_surf = pygame.Surface(pygame.Rect(rec_obs).size, pygame.SRCALPHA)

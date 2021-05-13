@@ -25,15 +25,13 @@ with open(args.yaml_file, 'rt') as fh:
 
 def convert_map():
     #size_x = 362
-    size_x = 250
     #size_y = 252
-    size_y = 250
 
     size_x = 100
     size_y = 100
     size_z = 105
 
-    world = np.zeros(shape=(1+3,size_x,size_y,size_z))
+    world = np.zeros(shape=(1+4,size_x,size_y,size_z))
 
     #min_lat :48.096786
     #max_lat :45.50961
@@ -70,7 +68,12 @@ def convert_map():
                 # write terrain
                 world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
 
-                if step_z*k >= out['z'][-1,q_lat,q_lon] - lowest:
+                if step_z*k < out['z'][-1,q_lat,q_lon] - lowest:
+                    world[-4,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
+                    world[-3,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
+                    world[-2,i,j,k] = np.mean(out['wind_z'][0,q_lat,q_lon])
+                    #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
+                else:
                     idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*k))
                     world[-4,i,j,k] = np.mean(out['wind_x'][idx,q_lat,q_lon])
                     world[-3,i,j,k] = np.mean(out['wind_y'][idx,q_lat,q_lon])
@@ -231,4 +234,4 @@ def visualize_real_data(dimension):
 #visualize_real_data('z')
 #visualize_real_data('time')
 #convert_map()
-#build_set(500, 'train')
+#build_set(10, 'train')
