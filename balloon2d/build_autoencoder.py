@@ -70,10 +70,10 @@ class VAE(nn.Module):
         )
 
         self.encoder_wind = nn.Sequential( # kernel_size = H_in - H_out - 1 #for basic case with padding=0, stride=1, dialation=1
-            nn.Conv2d(nc, ndf, (3,5), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
+            nn.Conv2d(nc, ndf, (3,55), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf, ndf * 2, (2,3), bias=False),
+            nn.Conv2d(ndf, ndf * 2, (2,48), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(ndf * 2, ndf * 4, 4, bias=False),

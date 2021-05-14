@@ -31,7 +31,7 @@ class HAE():
         self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
         self.bottleneck_terrain = 2
-        self.bottleneck_wind = int(self.size_z/self.box_size)*2
+        self.bottleneck_wind = int(self.size_z/self.box_size)*1 #because we mainly look at wind in x direction
         self.bottleneck = self.bottleneck_terrain + self.bottleneck_wind
 
     def window(self, data, center):
@@ -67,11 +67,11 @@ class HAE():
         idx = np.arange(0,self.size_z, self.box_size)
         if self.size_z%self.box_size != 0:
             idx = idx[:-1]
-        pred = np.zeros((len(idx)*2)) # only consider 2 channels at the moment
+        pred = np.zeros((len(idx)*1)) # only consider 1 channels at the moment
         # wind
         for i in range(len(idx)):
             pred[i] = torch.mean(mean_x[:,idx[i]:idx[i] + self.box_size])
-            pred[len(idx)+i] = torch.mean(mean_z[:,idx[i]:idx[i] + self.box_size])
+            #pred[len(idx)+i] = torch.mean(mean_z[:,idx[i]:idx[i] + self.box_size])
         return pred
 
     def compress_terrain(self, data, position):

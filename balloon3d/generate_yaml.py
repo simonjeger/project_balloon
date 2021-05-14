@@ -107,17 +107,17 @@ for data_path in ['"data/"']:
                 for autoencoder in ['"HAE"']:
                     for num_epochs in [20000]:
                         for cherry_pick in [0]:
-                            for window_size in [0,1,2]:
-                                for bottleneck in [2,4,8,16]:
-                                    for buffer_size in [100000000]:
-                                        for curriculum_dist in [1]:
-                                            for curriculum_rad in [1]:
-                                                for epsi_low in [0.1]:
-                                                    for decay in [300000]:
-                                                        for update_interval in [300]:
-                                                            for minibatch_size in [100]:
-                                                                for n_times_update in [100]:
-                                                                    for short_sighted in [False]:
+                            for short_sighted in [False, True]:
+                                for window_size in [0,1,2]:
+                                    for bottleneck in [2,3,4,8,16]:
+                                        for buffer_size in [100000000]:
+                                            for curriculum_dist in [1]:
+                                                for curriculum_rad in [1]:
+                                                    for epsi_low in [0.1]:
+                                                        for decay in [300000]:
+                                                            for update_interval in [300]:
+                                                                for minibatch_size in [100]:
+                                                                    for n_times_update in [100]:
                                                                         for repeat in range(2):
                                                                             for replay_start_size in [1000]:
                                                                                 continuous = True
