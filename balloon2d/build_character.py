@@ -42,15 +42,12 @@ class character():
 
         self.residual = self.target - self.position
         self.velocity = np.array([0,0])
-        self.min_x = self.position[0] - 0
-        self.max_x = self.size_x - self.position[0]
-        self.min_z = self.position[1] - 0
-        self.max_z = self.dist_to_ceiling()
+        self.terrain = self.compress_terrain()
 
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -70,14 +67,11 @@ class character():
 
         # update state
         self.residual = self.target - self.position
-        self.min_x = self.position[0] - 0
-        self.max_x = self.size_x - self.position[0]
-        self.min_z = self.position[1] - 0
-        self.max_z = self.dist_to_ceiling()
+        self.terrain = self.compress_terrain()
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         if yaml_p['short_sighted']:
@@ -128,6 +122,37 @@ class character():
                     self.min_proj_dist = min_proj_dist
 
         return in_bounds
+
+    def compress_terrain(self):
+        terrain = self.world[0,:,0]
+        pos_x = int(np.clip(self.position[0],0,self.size_x - 1))
+
+        x = np.linspace(0,self.size_x,len(terrain))
+        distances = []
+        res = 10
+        for i in range(len(terrain)*res):
+            distances.append(np.sqrt(((i/res - self.position[0])*self.render_ratio)**2 + (np.interp(i/res,x,terrain) - self.position[1])**2))
+
+        distance = np.min(distances)
+        dist_x = np.argmin(distances)/res - self.position[0]
+        dist_z = np.interp(np.argmin(distances)/res,x,terrain) - self.position[1]
+
+        other_boundaries = [self.position[0]*self.render_ratio, (self.size_x - self.position[0])*self.render_ratio, self.ceiling[pos_x] - self.position[1]] - distance
+        case = np.argmin(other_boundaries)
+        value = other_boundaries[case]
+
+        if value < 0:
+            if case == 0:
+                dist_x = self.position[0]
+                dist_z = 0
+            if case == 1:
+                dist_x = self.size_x - self.position[0]
+                dist_z = 0
+            if case == 2:
+                dist_x = 0
+                dist_z = self.ceiling[pos_x] - self.position[1]
+
+        return np.array([dist_x, dist_z])
 
     def hight_above_ground(self):
         x = np.linspace(0,self.size_x,len(self.world[0,:,0]))

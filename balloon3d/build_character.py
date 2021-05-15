@@ -40,21 +40,21 @@ class character():
 
         self.position = copy.copy(self.start)
 
+        # interpolation for terrain
+        x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
+        y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
+        self.f_terrain = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
+
         self.set_ceiling()
 
         self.residual = self.target - self.position
         self.velocity = np.array([0,0,0])
-        self.min_x = self.position[0] - 0
-        self.max_x = self.size_x - self.position[0]
-        self.min_y = self.position[1] - 0
-        self.max_y = self.size_y - self.position[1]
-        self.min_z = self.position[2] - 0
-        self.max_z = self.dist_to_ceiling()
+        self.terrain = self.compress_terrain()
 
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -75,16 +75,12 @@ class character():
 
         # update state
         self.residual = self.target - self.position
-        self.min_x = self.position[0] - 0
-        self.max_x = self.size_x - self.position[0]
-        self.min_y = self.position[1] - 0
-        self.max_y = self.size_y - self.position[1]
-        self.min_z = self.position[1] - 0
-        self.max_z = self.dist_to_ceiling()
+        self.velocity = np.array([0,0,0])
+        self.terrain = self.compress_terrain()
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), [self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z], world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         if yaml_p['short_sighted']:
@@ -146,12 +142,63 @@ class character():
 
         return in_bounds
 
-    def hight_above_ground(self):
-        x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
-        y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
-        f = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
+    def compress_terrain(self):
+        terrain = self.world[0,:,:,0]
+        pos_x = int(np.clip(self.position[0],0,self.size_x - 1))
+        pos_y = int(np.clip(self.position[1],0,self.size_y - 1))
 
-        return self.position[2] - f(self.position[0], self.position[1])[0]
+        distances = []
+        indices = []
+        res = 3
+
+        init_guess = self.hight_above_ground()
+
+        for i in range(len(terrain)*res):
+            for j in range(len(terrain[0])*res):
+                if np.sqrt(((i/res - self.position[0])*self.render_ratio)**2 + ((j/res - self.position[1])*self.render_ratio)**2) < init_guess:
+                    distances.append(np.sqrt(((i/res - self.position[0])*self.render_ratio)**2 + ((j/res - self.position[1])*self.render_ratio)**2 + (self.f_terrain(i/res,j/res) - self.position[2])**2))
+                    indices.append([i,j])
+
+        if not distances:
+            distances.append(init_guess)
+            indices.append([int(self.position[0]*res),int(self.position[1]*res)])
+
+        pos_loc_x = indices[np.argmin(distances)][0]/res
+        pos_loc_y = indices[np.argmin(distances)][1]/res
+
+        distance = np.min(distances)
+        dist_x = pos_loc_x - self.position[0]
+        dist_y = pos_loc_y - self.position[1]
+        dist_z = self.f_terrain(pos_loc_x,pos_loc_y)[0] - self.position[2]
+
+        other_boundaries = [self.position[0]*self.render_ratio, (self.size_x - self.position[0])*self.render_ratio, self.position[1]*self.render_ratio, (self.size_y - self.position[1])*self.render_ratio, self.ceiling[pos_x,pos_y] - self.position[2]] - distance
+        case = np.argmin(other_boundaries)
+        value = other_boundaries[case]
+        if value < 0:
+            if case == 0:
+                dist_x = self.position[0]
+                dist_y = 0
+                dist_z = 0
+            if case == 1:
+                dist_x = (self.size_x - self.position[0])
+                dist_y = 0
+                dist_z = 0
+            if case == 2:
+                dist_x = 0
+                dist_y = self.position[1]
+                dist_z = 0
+            if case == 3:
+                dist_x = 0
+                dist_y = (self.size_y - self.position[1])
+                dist_z = 0
+            if case == 4:
+                dist_x = 0
+                dist_y = 0
+                dist_z = self.ceiling[pos_x,pos_y] - self.position[2]
+        return np.array([dist_x, dist_y, dist_z])
+
+    def hight_above_ground(self):
+        return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
 
     def set_ceiling(self):
         max = random.uniform(0.9, 1) * self.size_z
@@ -160,9 +207,8 @@ class character():
     def dist_to_ceiling(self):
         x = np.linspace(0,self.size_x,len(self.ceiling))
         y = np.linspace(0,self.size_y,len(self.ceiling[0]))
-        f = scipy.interpolate.interp2d(x,y,self.ceiling.T)
-
-        return f(self.position[0], self.position[1])[0] - self.position[2]
+        f_ceiling = scipy.interpolate.interp2d(x,y,self.ceiling.T)
+        return f_ceiling(self.position[0], self.position[1])[0] - self.position[2]
 
     def interpolate_wind(self):
         coord_x = int(self.position[0])

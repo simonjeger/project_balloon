@@ -186,16 +186,12 @@ class Agent:
                 action = 1.2
             else:
                 if yaml_p['physics']:
-                    hight_above_ground = self.env.character.state[12]
-                    dist_to_ceiling = self.env.character.state[11]
+                    dist = self.env.character.state[8]
                 else:
-                    hight_above_ground = self.env.character.state[9]
-                    dist_to_ceiling = self.env.character.state[8]
+                    dist = self.env.character.state[5]
 
-                if hight_above_ground < 10:
-                    action = np.random.normal(1.2,0.01)
-                elif dist_to_ceiling < 10:
-                    action = np.random.normal(0.8,0.01)
+                if abs(dist) < 15:
+                    action = np.random.normal(-np.sign(dist)*0.1 + 1,0.1)
                 else:
                     action = np.random.normal(1,0.1)
                 action = np.clip(action,0,2)

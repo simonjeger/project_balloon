@@ -53,11 +53,11 @@ class balloon2d(Env):
 
         # location array in x and z
         if yaml_p['physics']:
-            regular_state_space_low = np.array([-self.size_x,-self.size_y,-self.size_z,-np.inf,-np.inf,-np.inf,0,0,0,0,0,0]) #residual to target, velocity, distance to border
-            regular_state_space_high = np.array([self.size_x,self.size_y,self.size_z,np.inf,np.inf,np.inf,self.size_x,self.size_x,self.size_y,self.size_y,self.size_z,self.size_z])
+            regular_state_space_low = np.array([-self.size_x,-self.size_y,-self.size_z,-np.inf,-np.inf,-np.inf,-self.size_x,-self.size_y,-self.size_z]) #residual to target, velocity, distance to border
+            regular_state_space_high = np.array([self.size_x,self.size_y,self.size_z,np.inf,np.inf,np.inf,self.size_x,self.size_y,self.size_z])
         else:
-            regular_state_space_low = np.array([-self.size_x,-self.size_y,-self.size_z,-np.inf,0,0,0,0,0,0]) #residual to target, distance to border
-            regular_state_space_high = np.array([self.size_x,self.size_y,self.size_z,np.inf,self.size_x,self.size_x,self.size_y,self.size_y,self.size_z,self.size_z])
+            regular_state_space_low = np.array([-self.size_x,-self.size_y,-self.size_z,-np.inf,-self.size_x,-self.size_y,-self.size_z]) #residual to target, distance to border
+            regular_state_space_high = np.array([self.size_x,self.size_y,self.size_z,np.inf,self.size_x,self.size_y,self.size_z])
         world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
         world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
@@ -83,6 +83,7 @@ class balloon2d(Env):
         # move character
         in_bounds = self.character.update(action, self.world_compressed)
         done = self.cost(in_bounds)
+
 
         if not roll_out:
             # logger
@@ -183,12 +184,10 @@ class balloon2d(Env):
 
         # avoid impossible szenarios
         min_space = self.size_z/5
-        if yaml_p['physics']:
-            if self.character.max_z + self.character.state[12] < min_space:
-                self.reset()
-        else:
-            if self.character.max_z + self.character.state[9] < min_space:
-                self.reset()
+        pos_x = int(np.clip(self.character.position[0],0,self.size_x - 1))
+        pos_y = int(np.clip(self.character.position[1],0,self.size_y - 1))
+        if self.character.ceiling[pos_x,pos_y] - self.world[0,pos_x,pos_y,0] < min_space:
+            self.reset()
 
         return self.character.state
 
