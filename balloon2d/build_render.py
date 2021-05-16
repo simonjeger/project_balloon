@@ -44,13 +44,15 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     t_residual = myfont.render('residual: ' + str(np.round(np.multiply(character.state[0:2],[yaml_p['unit_xy'], yaml_p['unit_z']]),4)), False, pygame.Color('LightGray'))
     if yaml_p['physics']:
         t_velocity = myfont.render('velocity: ' + str(np.round(np.multiply(character.state[2:4],[yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+        t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[4:6],[yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+        t_border_x = myfont.render('border_x: ' + str(np.round(character.state[6]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+        t_border_z = myfont.render('border_z: ' + str(np.round(character.state[7]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
+        t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[8:],1)), False, pygame.Color('LightGray'))
+    else:
+        t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[2:4],[yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
         t_border_x = myfont.render('border_x: ' + str(np.round(character.state[4]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
         t_border_z = myfont.render('border_z: ' + str(np.round(character.state[5]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
         t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[6:],1)), False, pygame.Color('LightGray'))
-    else:
-        t_border_x = myfont.render('border_x: ' + str(np.round(character.state[2]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-        t_border_z = myfont.render('border_z: ' + str(np.round(character.state[3]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
-        t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[4:],1)), False, pygame.Color('LightGray'))
 
 
     screen.blit(t_reward_step,(50,10))
@@ -58,9 +60,10 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     screen.blit(t_residual,(50,55))
     if yaml_p['physics']:
         screen.blit(t_velocity,(50,70))
-    screen.blit(t_border_x,(50,85))
-    screen.blit(t_border_z,(50,100))
-    screen.blit(t_world_compressed,(50,115))
+    screen.blit(t_measurement,(50,85))
+    screen.blit(t_border_x,(50,100))
+    screen.blit(t_border_z,(50,115))
+    screen.blit(t_world_compressed,(50,130))
 
     # updating the window
     pygame.display.flip()
@@ -85,7 +88,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
 
     # colors
     c_background = (34,42,53)
-    c_ceiling = (51,63,80,150)
+    c_ceiling = (150,150,150,150)
     c_down = (117,21,0,255)
     c_stay = (173,29,0)
     c_up = (237,35,1)

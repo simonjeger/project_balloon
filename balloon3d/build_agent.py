@@ -186,9 +186,9 @@ class Agent:
                 action = 1.2
             else:
                 if yaml_p['physics']:
-                    dist = self.env.character.state[8]
+                    dist = self.env.character.state[11]
                 else:
-                    dist = self.env.character.state[5]
+                    dist = self.env.character.state[8]
 
                 if abs(dist) < 15:
                     action = np.random.normal(-np.sign(dist)*0.1 + 1,0.1)
@@ -201,7 +201,7 @@ class Agent:
                 action = action
             else:
                 action = np.round(action,0)
-            
+
             _, _, done, _ = self.env.step(action, roll_out=True)
 
             sucess = False

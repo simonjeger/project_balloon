@@ -52,10 +52,10 @@ class HAE():
 
     def compress(self, data, position):
         window = self.window(data, position[0])
-        wind = self.compress_wind(window)
+        wind = self.compress_wind_avg(window)
         return wind
 
-    def compress_wind(self, data):
+    def compress_wind_avg(self, data):
         # get rid of wind data that's below the terrain
         loc_x = len(data[0,:,0])
         loc_z = len(data[0,0,:])

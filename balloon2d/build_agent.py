@@ -186,16 +186,16 @@ class Agent:
                 action = 1.2
             else:
                 if yaml_p['physics']:
-                    dist = self.env.character.state[5]
+                    dist = self.env.character.state[7]
                 else:
-                    dist = self.env.character.state[3]
+                    dist = self.env.character.state[5]
 
                 if abs(dist) < 15:
                     action = np.random.normal(-np.sign(dist)*0.1 + 1,0.1)
                 else:
                     action = np.random.normal(1,0.1)
                 action = np.clip(action,0,2)
-
+            
             # actions are not in the same range in discrete / continuous cases
             if yaml_p['continuous']:
                 action = action

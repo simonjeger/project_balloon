@@ -42,12 +42,13 @@ class character():
 
         self.residual = self.target - self.position
         self.velocity = np.array([0,0])
+        self.measurement = self.interpolate_wind()[0:2] - self.velocity
         self.terrain = self.compress_terrain()
 
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -67,12 +68,12 @@ class character():
 
         # update state
         self.residual = self.target - self.position
+        self.measurement = self.interpolate_wind()[0:2] - self.velocity
         self.terrain = self.compress_terrain()
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
-        self.state = self.state.astype(np.float32)
+            self.state = np.concatenate((self.residual.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
 
         if yaml_p['short_sighted']:
             self.become_short_sighted()
@@ -95,8 +96,6 @@ class character():
             if in_bounds:
                 # calculate velocity at time step t
                 w_x, w_z, sig_xz = self.interpolate_wind()
-                w_x /= yaml_p['unit_xy']
-                w_z /= yaml_p['unit_z']
 
                 w_x += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
                 w_z += gauss(0,sig_xz/np.sqrt(n))
@@ -167,8 +166,8 @@ class character():
         return np.interp(self.position[0],x,self.ceiling) - self.position[1]
 
     def interpolate_wind(self):
-        coord_x = int(self.position[0])
-        coord_z = int(self.position[1])
+        coord_x = int(np.clip(self.position[0],0,self.size_x-1))
+        coord_z = int(np.clip(self.position[1],0,self.size_z-1))
 
         x = self.position[0] - coord_x
         z = self.position[1] - coord_z
@@ -186,7 +185,11 @@ class character():
         f_11 = self.world[-3::,coord_x+1,coord_z+1]
 
         wind = f_00*(1-x)*(1-z) + f_10*x*(1-z) + f_01*(1-x)*z + f_11*x*z
-        return wind
+
+        w_x, w_z, sig_xz = wind
+        w_x /= yaml_p['unit_xy']
+        w_z /= yaml_p['unit_z']
+        return np.array([w_x, w_z, sig_xz])
 
     def become_short_sighted(self):
         sight = yaml_p['window_size']
