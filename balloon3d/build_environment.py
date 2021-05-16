@@ -83,8 +83,6 @@ class balloon2d(Env):
         # move character
         in_bounds = self.character.update(action, self.world_compressed)
         done = self.cost(in_bounds)
-
-
         if not roll_out:
             # logger
             if self.writer is not None:
@@ -165,17 +163,18 @@ class balloon2d(Env):
         target = self.set_target(start)
 
         # if started "under ground"
-        above_ground = self.size_z/5
+        above_ground_start = self.size_z/100
+        above_ground_target = self.size_z/5
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
         y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
 
         f = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
 
-        if start[2] <= f(start[0], start[1])[0]:
-            start[2] = f(start[0], start[1])[0]
+        if start[2] <= f(start[0], start[1])[0] + above_ground_start:
+            start[2] = f(start[0], start[1])[0] + above_ground_start
 
-        if target[2] <= f(target[0], target[1])[0] + above_ground:
-            target[2] = f(target[0], target[1])[0] + above_ground
+        if target[2] <= f(target[0], target[1])[0] + above_ground_target:
+            target[2] = f(target[0], target[1])[0] + above_ground_target
 
         # Initial compressed wind map
         self.world_compressed = self.ae.compress(self.world, start)

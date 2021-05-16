@@ -201,7 +201,7 @@ class Agent:
                 action = action
             else:
                 action = np.round(action,0)
-
+            
             _, _, done, _ = self.env.step(action, roll_out=True)
 
             sucess = False

@@ -49,7 +49,7 @@ class character():
 
         self.residual = self.target - self.position
         self.velocity = np.array([0,0,0])
-        self.terrain = self.compress_terrain()
+        self.terrain = self.compress_terrain(True)
 
         if yaml_p['physics']:
             self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
@@ -75,8 +75,7 @@ class character():
 
         # update state
         self.residual = self.target - self.position
-        self.velocity = np.array([0,0,0])
-        self.terrain = self.compress_terrain()
+        self.terrain = self.compress_terrain(in_bounds)
         if yaml_p['physics']:
             self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
         else:
@@ -142,59 +141,70 @@ class character():
 
         return in_bounds
 
-    def compress_terrain(self):
-        terrain = self.world[0,:,:,0]
-        pos_x = int(np.clip(self.position[0],0,self.size_x - 1))
-        pos_y = int(np.clip(self.position[1],0,self.size_y - 1))
+    def compress_terrain(self, in_bounds):
+        if in_bounds:
+            terrain = self.world[0,:,:,0]
+            pos_x = int(np.clip(self.position[0],0,self.size_x - 1))
+            pos_y = int(np.clip(self.position[1],0,self.size_y - 1))
 
-        distances = []
-        indices = []
-        res = 3
+            distances = []
+            indices = []
+            res = 3
 
-        init_guess = self.hight_above_ground()
+            options = [self.hight_above_ground(),self.dist_to_ceiling()]
+            init_guess = min(options)
+            bottom_or_top = np.argmin(options)
 
-        for i in range(len(terrain)*res):
-            for j in range(len(terrain[0])*res):
-                if np.sqrt(((i/res - self.position[0])*self.render_ratio)**2 + ((j/res - self.position[1])*self.render_ratio)**2) < init_guess:
-                    distances.append(np.sqrt(((i/res - self.position[0])*self.render_ratio)**2 + ((j/res - self.position[1])*self.render_ratio)**2 + (self.f_terrain(i/res,j/res) - self.position[2])**2))
-                    indices.append([i,j])
+            for i in range(len(terrain)*res):
+                for j in range(len(terrain[0])*res):
+                    if np.sqrt(((i/res - self.position[0])*self.render_ratio)**2 + ((j/res - self.position[1])*self.render_ratio)**2) < init_guess:
+                        distances.append(np.sqrt(((i/res - self.position[0])*self.render_ratio)**2 + ((j/res - self.position[1])*self.render_ratio)**2 + (self.f_terrain(i/res,j/res) - self.position[2])**2))
+                        indices.append([i,j])
 
-        if not distances:
-            distances.append(init_guess)
-            indices.append([int(self.position[0]*res),int(self.position[1]*res)])
+            if len(distances) == 0:
+                if bottom_or_top == 0:
+                    distances.append(-init_guess)
+                if bottom_or_top == 1:
+                    distances.append(init_guess)
+                indices.append([int(self.position[0]*res),int(self.position[1]*res)])
 
-        pos_loc_x = indices[np.argmin(distances)][0]/res
-        pos_loc_y = indices[np.argmin(distances)][1]/res
+            ind_x = indices[np.argmin(distances)][0]/res
+            ind_y = indices[np.argmin(distances)][1]/res
 
-        distance = np.min(distances)
-        dist_x = pos_loc_x - self.position[0]
-        dist_y = pos_loc_y - self.position[1]
-        dist_z = self.f_terrain(pos_loc_x,pos_loc_y)[0] - self.position[2]
+            distance = np.min(distances)
+            dist_x = ind_x - self.position[0]
+            dist_y = ind_y - self.position[1]
+            dist_z = self.f_terrain(ind_x,ind_y)[0] - self.position[2]
 
-        other_boundaries = [self.position[0]*self.render_ratio, (self.size_x - self.position[0])*self.render_ratio, self.position[1]*self.render_ratio, (self.size_y - self.position[1])*self.render_ratio, self.ceiling[pos_x,pos_y] - self.position[2]] - distance
-        case = np.argmin(other_boundaries)
-        value = other_boundaries[case]
-        if value < 0:
-            if case == 0:
-                dist_x = self.position[0]
-                dist_y = 0
-                dist_z = 0
-            if case == 1:
-                dist_x = (self.size_x - self.position[0])
-                dist_y = 0
-                dist_z = 0
-            if case == 2:
-                dist_x = 0
-                dist_y = self.position[1]
-                dist_z = 0
-            if case == 3:
-                dist_x = 0
-                dist_y = (self.size_y - self.position[1])
-                dist_z = 0
-            if case == 4:
-                dist_x = 0
-                dist_y = 0
-                dist_z = self.ceiling[pos_x,pos_y] - self.position[2]
+            other_boundaries = [self.position[0]*self.render_ratio, (self.size_x - self.position[0])*self.render_ratio, self.position[1]*self.render_ratio, (self.size_y - self.position[1])*self.render_ratio, self.dist_to_ceiling()] - distance
+            case = np.argmin(other_boundaries)
+            value = other_boundaries[case]
+            if value <= 0:
+                if case == 0:
+                    dist_x = self.position[0]
+                    dist_y = 0
+                    dist_z = 0
+                if case == 1:
+                    dist_x = (self.size_x - self.position[0])
+                    dist_y = 0
+                    dist_z = 0
+                if case == 2:
+                    dist_x = 0
+                    dist_y = self.position[1]
+                    dist_z = 0
+                if case == 3:
+                    dist_x = 0
+                    dist_y = (self.size_y - self.position[1])
+                    dist_z = 0
+                if case == 4:
+                    dist_x = 0
+                    dist_y = 0
+                    dist_z = self.dist_to_ceiling()
+        else:
+            dist_x = 0
+            dist_y = 0
+            dist_z = 0
+
         return np.array([dist_x, dist_y, dist_z])
 
     def hight_above_ground(self):

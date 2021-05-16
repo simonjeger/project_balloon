@@ -29,7 +29,7 @@ ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).z
 
 with ag.agent.eval_mode():
     for i in range(yaml_p['num_epochs_test']):
-        log = ag.run_epoch(True)
+        log = ag.run_epoch(False)
         print('epoch: ' + str(i) + ' reward: ' + str(log))
 
 # analyse
