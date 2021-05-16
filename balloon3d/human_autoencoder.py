@@ -33,7 +33,12 @@ class HAE():
         self.window_size_total = 2*self.window_size + 1
         self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
-        self.bottleneck_wind = int(self.size_z/self.box_size)*2 #because wind in x and y direction
+        if yaml_p['autoencoder'] == 'HAE_avg':
+            self.bottleneck_wind = int(self.size_z/self.box_size)*2 #because wind in x and y direction
+        elif yaml_p['autoencoder'] == 'HAE_patch':
+            self.bottleneck_wind = 2*2 #because we mainly look at wind in x direction
+        else:
+            print('ERROR: please choose one of the available HAE')
         self.bottleneck = self.bottleneck_wind
 
     def window(self, data, position):
@@ -59,7 +64,10 @@ class HAE():
 
     def compress(self, data, position):
         window = self.window(data, position)
-        wind = self.compress_wind_avg(window)
+        if yaml_p['autoencoder'] == 'HAE_avg':
+            wind = self.compress_wind_avg(window)
+        elif yaml_p['autoencoder'] == 'HAE_patch':
+            wind = self.compress_wind_patch(window,position)
         return wind
 
     def compress_wind_avg(self, data):
@@ -68,16 +76,12 @@ class HAE():
         loc_y = len(data[0,0,:,0])
         loc_z = len(data[0,0,0,:])
 
-        corrected_data = np.zeros((len(data), loc_x, loc_y, loc_z))
+        corrected_data = data
         for i in range(loc_x):
             for j in range(loc_y):
-                for k in range(loc_z):
-                    if k < data[0,i,j,0]:
-                        corrected_data[1:,i,j,0:k] = np.nan
-                    else:
-                        corrected_data[:,i,j,k] = data[:,i,j,k]
+                k = int(data[0,i,j,0])
+                corrected_data[1:,i,j,0:k] = 0
 
-        corrected_data = torch.tensor(corrected_data)
         corrected_data = corrected_data.detach()
 
         mean_x = corrected_data[-4,:,:]
@@ -101,6 +105,43 @@ class HAE():
 
         pred = torch.tensor(np.nan_to_num(pred,0))
         return pred
+
+    def compress_wind_patch(self, data, position):
+        loc_x = int(self.window_size)
+        loc_y = int(self.window_size)
+        loc_z = int(np.clip(position[2],0,self.size_z-1))
+
+        # top border / bottom border
+        sign_loc_x = np.sign(data[-4,loc_x,loc_y,loc_z])
+        sign_loc_y = np.sign(data[-3,loc_x,loc_y,loc_z])
+        sign_wind_x = np.sign(data[-4,loc_x,loc_y,:])
+        sign_wind_y = np.sign(data[-3,loc_x,loc_y,:])
+
+        dist_border_x = np.zeros(self.size_z)
+        for i in range(self.size_z):
+            if sign_wind_x[i] != sign_loc_x:
+                dist_border_x[i] = 1/(i - loc_z)
+        idx_bottom_x = np.argmin(dist_border_x)
+        idx_top_x = np.argmax(dist_border_x)
+        if dist_border_x[idx_bottom_x] == 0:
+            idx_bottom_x = 0
+        if dist_border_x[idx_top_x] == 0:
+            idx_top_x = self.size_z
+
+        dist_border_y = np.zeros(self.size_z)
+        for i in range(self.size_z):
+            if sign_wind_y[i] != sign_loc_y:
+                dist_border_y[i] = 1/(i - loc_z)
+        idx_bottom_y = np.argmin(dist_border_y)
+        idx_top_y = np.argmax(dist_border_y)
+        if dist_border_y[idx_bottom_y] == 0:
+            idx_bottom_y = 0
+        if dist_border_y[idx_top_y] == 0:
+            idx_top_y = self.size_z
+
+        closest_border = np.array([idx_bottom_x - loc_z, idx_top_x - loc_z, idx_bottom_y - loc_z, idx_top_y - loc_z])
+        return closest_border
+
 
 def load_tensor(path):
     name_list = os.listdir(path)

@@ -58,16 +58,16 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     t_residual = myfont.render('residual: ' + str(np.round(np.multiply(character.state[0:3],[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),4)), False, pygame.Color('LightGray'))
     if yaml_p['physics']:
         t_velocity = myfont.render('velocity: ' + str(np.round(np.multiply(character.state[3:6],[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
-        t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[6:9],[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
-        t_border_x = myfont.render('border_x: ' + str(np.round(character.state[9]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-        t_border_y = myfont.render('border_y: ' + str(np.round(character.state[10]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-        t_border_z = myfont.render('border_z: ' + str(np.round(character.state[11]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
-        t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[12:],1)), False, pygame.Color('LightGray'))
-    else:
-        t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[3:6],[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
         t_border_x = myfont.render('border_x: ' + str(np.round(character.state[6]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
         t_border_y = myfont.render('border_y: ' + str(np.round(character.state[7]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
         t_border_z = myfont.render('border_z: ' + str(np.round(character.state[8]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
+        t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[9:12],[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+        t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[12:],1)), False, pygame.Color('LightGray'))
+    else:
+        t_border_x = myfont.render('border_x: ' + str(np.round(character.state[3]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+        t_border_y = myfont.render('border_y: ' + str(np.round(character.state[4]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+        t_border_z = myfont.render('border_z: ' + str(np.round(character.state[5]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
+        t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[6:9],[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
         t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[9:],1)), False, pygame.Color('LightGray'))
 
     start_text = 2*size_z*res
@@ -77,10 +77,10 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     screen.blit(t_residual,(space_text,start_text+4*space_text))
     if yaml_p['physics']:
         screen.blit(t_velocity,(space_text,start_text+5*space_text))
-    screen.blit(t_measurement,(space_text,start_text+6*space_text))
-    screen.blit(t_border_x,(space_text,start_text+7*space_text))
-    screen.blit(t_border_y,(space_text,start_text+8*space_text))
-    screen.blit(t_border_z,(space_text,start_text+9*space_text))
+    screen.blit(t_border_x,(space_text,start_text+6*space_text))
+    screen.blit(t_border_y,(space_text,start_text+7*space_text))
+    screen.blit(t_border_z,(space_text,start_text+8*space_text))
+    screen.blit(t_measurement,(space_text,start_text+9*space_text))
     screen.blit(t_world_compressed,(space_text,start_text+10*space_text))
 
     # updating the window

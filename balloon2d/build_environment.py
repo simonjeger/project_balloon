@@ -32,7 +32,7 @@ class balloon2d(Env):
         self.radius_z = radius_z
 
         # initialize autoencoder object
-        if yaml_p['autoencoder'] == 'HAE':
+        if yaml_p['autoencoder'][0:3] == 'HAE':
             self.ae = HAE()
         if yaml_p['autoencoder'] == 'VAE':
             self.ae = VAE()

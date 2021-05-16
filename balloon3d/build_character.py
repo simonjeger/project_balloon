@@ -43,6 +43,7 @@ class character():
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
         y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
+
         self.f_terrain = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
 
         self.set_ceiling()
@@ -53,9 +54,9 @@ class character():
         self.terrain = self.compress_terrain(True)
 
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -79,9 +80,9 @@ class character():
         self.measurement = self.interpolate_wind()[0:3] - self.velocity
         self.terrain = self.compress_terrain(in_bounds)
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         if yaml_p['short_sighted']:
@@ -150,7 +151,8 @@ class character():
             indices = []
             res = 3
 
-            options = [self.hight_above_ground(),self.dist_to_ceiling()]
+            options = [self.hight_above_ground(),self.dist_to_ceiling(), 20]
+
             init_guess = min(options)
             bottom_or_top = np.argmin(options)
 
@@ -165,6 +167,8 @@ class character():
                     distances.append(-init_guess)
                 if bottom_or_top == 1:
                     distances.append(init_guess)
+                if bottom_or_top == 2:
+                    distances.append(-self.hight_above_ground())
                 indices.append([int(self.position[0]*res),int(self.position[1]*res)])
 
             ind_x = indices[np.argmin(distances)][0]/res

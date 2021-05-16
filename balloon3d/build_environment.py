@@ -33,7 +33,7 @@ class balloon2d(Env):
         self.radius_z = radius_z
 
         # initialize autoencoder object
-        if yaml_p['autoencoder'] == 'HAE':
+        if yaml_p['autoencoder'][0:3] == 'HAE':
             self.ae = HAE()
         if yaml_p['autoencoder'] == 'VAE':
             self.ae = VAE()
@@ -83,6 +83,7 @@ class balloon2d(Env):
         # move character
         in_bounds = self.character.update(action, self.world_compressed)
         done = self.cost(in_bounds)
+
         if not roll_out:
             # logger
             if self.writer is not None:
@@ -187,7 +188,6 @@ class balloon2d(Env):
         pos_y = int(np.clip(self.character.position[1],0,self.size_y - 1))
         if self.character.ceiling[pos_x,pos_y] - self.world[0,pos_x,pos_y,0] < min_space:
             self.reset()
-
         return self.character.state
 
     def load_new_world(self):

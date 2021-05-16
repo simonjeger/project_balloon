@@ -46,9 +46,9 @@ class character():
         self.terrain = self.compress_terrain()
 
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -71,9 +71,10 @@ class character():
         self.measurement = self.interpolate_wind()[0:2] - self.velocity
         self.terrain = self.compress_terrain()
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), self.measurement.flatten(), self.terrain.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
+        self.state = self.state.astype(np.float32)
 
         if yaml_p['short_sighted']:
             self.become_short_sighted()

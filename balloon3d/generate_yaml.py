@@ -10,7 +10,7 @@ def write(process_nr, time, autoencoder, window_size, bottleneck, num_epochs, ch
     # Write submit command
     file = open(path + '/submit.txt', "a")
     #file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
-    file.write('bsub -n 4 -W 24:00 -R "rusage[mem=4000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -n 2 -W 24:00 -R "rusage[mem=4000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -104,12 +104,12 @@ for data_path in ['"data/"']:
     for agent_type in ['"SoftActorCritic"']:
         for time in [360]:
             for min_proj_dist in [0]:
-                for autoencoder in ['"HAE"']:
+                for autoencoder in ['"HAE_avg"']:
                     for num_epochs in [20000]:
                         for cherry_pick in [0]:
-                            for short_sighted in [False, True]:
-                                for window_size in [0,1,2]:
-                                    for bottleneck in [2,3,4,8,16]:
+                            for short_sighted in [False]:
+                                for window_size in [1,2,3]:
+                                    for bottleneck in [2,3,4,6,10,20]:
                                         for buffer_size in [100000000]:
                                             for curriculum_dist in [1]:
                                                 for curriculum_rad in [1]:

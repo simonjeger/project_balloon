@@ -99,7 +99,7 @@ for data_path in ['"data/"']:
     for qfunction in [False]:
         for short_sighted in [False]:
             for min_proj_dist in [0,1]:
-                for autoencoder in ['"HAE"']:
+                for autoencoder in ['"HAE_avg"']:
                     for num_epochs in [15000]:
                         for buffer_size in [100000000]:
                             for lr in [0.0005]:

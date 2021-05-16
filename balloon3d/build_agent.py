@@ -186,9 +186,9 @@ class Agent:
                 action = 1.2
             else:
                 if yaml_p['physics']:
-                    dist = self.env.character.state[11]
-                else:
                     dist = self.env.character.state[8]
+                else:
+                    dist = self.env.character.state[5]
 
                 if abs(dist) < 15:
                     action = np.random.normal(-np.sign(dist)*0.1 + 1,0.1)
@@ -252,7 +252,6 @@ class Agent:
                 action = action
 
             obs, reward, done, _ = self.env.step(action)
-
             sum_r = sum_r + reward
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
 
