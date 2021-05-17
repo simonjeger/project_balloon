@@ -67,7 +67,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
 
     # updating the window
     pygame.display.flip()
-    clock.tick(10) #cycles per second
+    clock.tick(1) #cycles per second
 
 
 def display_movement(screen, screen_width, screen_height, size_x, size_z, render_ratio, window_size, radius_x, radius_z, res, character, world_name, train_or_test, roll_out):

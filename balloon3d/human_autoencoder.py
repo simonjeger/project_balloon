@@ -36,7 +36,7 @@ class HAE():
         if yaml_p['autoencoder'] == 'HAE_avg':
             self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 #because wind in x and y direction (and need to pass absolute hight)
         elif yaml_p['autoencoder'] == 'HAE_patch':
-            self.bottleneck_wind = 2*2 #because we mainly look at wind in x direction
+            self.bottleneck_wind = 2*2 + 2*2#because we mainly look at wind in x direction
         else:
             print('ERROR: please choose one of the available HAE')
         self.bottleneck = self.bottleneck_wind
@@ -65,12 +65,12 @@ class HAE():
     def compress(self, data, position):
         window = self.window(data, position)
         if yaml_p['autoencoder'] == 'HAE_avg':
-            wind = self.compress_wind_avg(window)
+            wind = self.compress_wind_avg(window,position)
         elif yaml_p['autoencoder'] == 'HAE_patch':
             wind = self.compress_wind_patch(window,position)
         return wind
 
-    def compress_wind_avg(self, data):
+    def compress_wind_avg(self, data, position):
         # get rid of wind data that's below the terrain
         loc_x = len(data[0,:,0,0])
         loc_y = len(data[0,0,:,0])
@@ -141,9 +141,23 @@ class HAE():
         if dist_border_y[idx_top_y] == 0:
             idx_top_y = self.size_z
 
-        closest_border = np.array([idx_bottom_x - loc_z, idx_top_x - loc_z, idx_bottom_y - loc_z, idx_top_y - loc_z])
-        return closest_border
+        # location of min / max
+        values_x = data[-4,loc_x,loc_y,:]
+        winner_min_x = np.argwhere(values_x == min(values_x)).flatten()
+        dist_min_x = winner_min_x[np.argmin(abs(winner_min_x - loc_z))] - loc_z
 
+        winner_max_x = np.argwhere(values_x == max(values_x)).flatten()
+        dist_max_x = winner_max_x[np.argmin(abs(winner_max_x - loc_z))] - loc_z
+
+        values_y = data[-3,loc_x,loc_y,:]
+        winner_min_y = np.argwhere(values_y == min(values_y)).flatten()
+        dist_min_y = winner_min_y[np.argmin(abs(winner_min_y - loc_z))] - loc_z
+
+        winner_max_y = np.argwhere(values_y == max(values_y)).flatten()
+        dist_max_y = winner_max_y[np.argmin(abs(winner_max_y - loc_z))] - loc_z
+
+        pred = np.array([idx_bottom_x - loc_z, idx_top_x - loc_z, idx_bottom_y - loc_z, idx_top_y - loc_z, dist_min_x, dist_max_x, dist_min_y, dist_max_y])
+        return pred
 
 def load_tensor(path):
     name_list = os.listdir(path)

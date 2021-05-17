@@ -48,9 +48,13 @@ epi_n = 0
 step_n = 0
 
 for r in range(yaml_p['curriculum_rad']):
-    x = r/(yaml_p['curriculum_rad']-1)
-    radius_xy = yaml_p['radius_start_xy'] - (yaml_p['radius_start_xy'] - yaml_p['radius_stop_xy'])*x
-    radius_z = radius_xy*(1+(1-x)*(yaml_p['radius_start_ratio']-1))
+    if yaml_p['curriculum_rad'] == 1:
+        radius_xy = yaml_p['radius_stop_xy']
+        radius_z = yaml_p['radius_stop_xy']
+    else:
+        x = r/(yaml_p['curriculum_rad']-1)
+        radius_xy = yaml_p['radius_start_xy'] - (yaml_p['radius_start_xy'] - yaml_p['radius_stop_xy'])*x
+        radius_z = radius_xy*(1+(1-x)*(yaml_p['radius_start_ratio']-1))
 
     env = balloon2d(epi_n,step_n,'train',writer,radius_xy, radius_z)
     ag = Agent(epi_n,step_n,'train',env,writer)

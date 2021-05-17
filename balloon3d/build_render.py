@@ -85,7 +85,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
 
     # updating the window
     pygame.display.flip()
-    clock.tick(10) #cycles per second
+    clock.tick(1) #cycles per second
 
 def display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_y, size_z, render_ratio, window_size, radius_xy, radius_z, res, character, roll_out):
     if dim == 'xz':
