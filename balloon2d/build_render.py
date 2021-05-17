@@ -12,7 +12,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def build_render(character, reward_step, reward_epi, world_name, window_size, radius_z, train_or_test, roll_out):
+def build_render(character, reward_step, reward_epi, world_name, window_size, radius_x, radius_z, train_or_test, roll_out):
     render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
     size_x = character.size_x
@@ -35,7 +35,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
             pygame.quit()
             sys.exit()
 
-    display_movement(screen, int(screen_width), int(screen_height), size_x, size_z, render_ratio, window_size, radius_z, res, character, world_name, train_or_test, roll_out)
+    display_movement(screen, int(screen_width), int(screen_height), size_x, size_z, render_ratio, window_size, radius_x, radius_z, res, character, world_name, train_or_test, roll_out)
 
     # text
     myfont = pygame.font.SysFont('Arial', 10, bold = False)
@@ -70,7 +70,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     clock.tick(10) #cycles per second
 
 
-def display_movement(screen, screen_width, screen_height, size_x, size_z, render_ratio, window_size, radius_z, res, character, world_name, train_or_test, roll_out):
+def display_movement(screen, screen_width, screen_height, size_x, size_z, render_ratio, window_size, radius_x, radius_z, res, character, world_name, train_or_test, roll_out):
     # for this 2d case I only look at xz
     i1 = 0
     i2 = 1
@@ -186,7 +186,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
     # draw target (dense and transparent)
     pygame.draw.ellipse(screen, c_target_center, rec_target)
 
-    r_x = yaml_p['radius_x']*res
+    r_x = radius_x*res
     r_z = radius_z*res
 
     target_rect = pygame.Rect((pos_target), (0, 0)).inflate((r_x * 2, r_z * 2))

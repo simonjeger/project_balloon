@@ -26,10 +26,11 @@ with open(args.yaml_file, 'rt') as fh:
 
 
 class balloon2d(Env):
-    def __init__(self, epi_n, step_n, train_or_test, writer=None, radius_z=yaml_p['radius_xy']):
+    def __init__(self, epi_n, step_n, train_or_test, writer=None, radius_xy=yaml_p['radius_stop_xy'], radius_z=yaml_p['radius_stop_xy']):
         # which data to use
         self.train_or_test = train_or_test
         self.writer = writer
+        self.radius_xy = radius_xy
         self.radius_z = radius_z
 
         # initialize autoencoder object
@@ -121,7 +122,7 @@ class balloon2d(Env):
         return self.character.state, self.reward_step, done, info
 
     def cost(self, in_bounds):
-        init_proj_min = np.sqrt(((self.character.target[0] - self.character.start[0])*self.render_ratio/yaml_p['radius_xy'])**2 + ((self.character.target[1] - self.character.start[1])*self.render_ratio/yaml_p['radius_xy'])**2 + ((self.character.target[2] - self.character.start[2])/self.radius_z)**2)
+        init_proj_min = np.sqrt(((self.character.target[0] - self.character.start[0])*self.render_ratio/self.radius_xy)**2 + ((self.character.target[1] - self.character.start[1])*self.render_ratio/self.radius_xy)**2 + ((self.character.target[2] - self.character.start[2])/self.radius_z)**2)
 
         if in_bounds:
             # calculate reward
@@ -146,7 +147,7 @@ class balloon2d(Env):
         return done
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.radius_z, self.train_or_test, self.path_roll_out)
+        build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
 
     def reset(self, roll_out=False):
         # load new world
@@ -180,7 +181,7 @@ class balloon2d(Env):
         # Initial compressed wind map
         self.world_compressed = self.ae.compress(self.world, start)
 
-        self.character = character(self.size_x, self.size_y, self.size_z, start, target, self.radius_z, self.T, self.world, self.world_compressed)
+        self.character = character(self.size_x, self.size_y, self.size_z, start, target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
 
         # avoid impossible szenarios
         min_space = self.size_z/5

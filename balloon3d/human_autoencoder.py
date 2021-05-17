@@ -34,7 +34,7 @@ class HAE():
         self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
         if yaml_p['autoencoder'] == 'HAE_avg':
-            self.bottleneck_wind = int(self.size_z/self.box_size)*2 #because wind in x and y direction
+            self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 #because wind in x and y direction (and need to pass absolute hight)
         elif yaml_p['autoencoder'] == 'HAE_patch':
             self.bottleneck_wind = 2*2 #because we mainly look at wind in x direction
         else:
@@ -92,7 +92,7 @@ class HAE():
         idx = np.arange(0,self.size_z, self.box_size)
         if self.size_z%self.box_size != 0:
             idx = idx[:-1]
-        pred = np.zeros((len(idx)*2)) # two different wind directions
+        pred = np.zeros((len(idx)*2) + 1) # two different wind directions
 
         # wind
         for i in range(len(idx)):
@@ -102,6 +102,8 @@ class HAE():
                 pred[0*len(idx)+i] = np.nanmean(mean_x[:,:,idx[i]:idx[i] + self.box_size])
                 pred[1*len(idx)+i] = np.nanmean(mean_y[:,:,idx[i]:idx[i] + self.box_size])
                 #pred[2*len(idx)+i] = torch.mean(mean_z[:,:,idx[i]:idx[i] + self.box_size])
+
+        pred[-1] = position[2]
 
         pred = torch.tensor(np.nan_to_num(pred,0))
         return pred

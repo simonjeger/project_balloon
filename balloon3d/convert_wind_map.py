@@ -40,6 +40,10 @@ def convert_map():
 
     center_lat = 46.803198
     center_lon = 8.18615665
+
+    #center_lat = 46.5
+    #center_lon = 6
+
     step_x = size_x/2*yaml_p['unit_xy']
     step_y = size_y/2*yaml_p['unit_xy']
 
@@ -233,5 +237,5 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map()
+convert_map()
 #build_set(10, 'train')

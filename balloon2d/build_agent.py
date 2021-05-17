@@ -205,8 +205,8 @@ class Agent:
             _, _, done, _ = self.env.step(action, roll_out=True)
 
             sucess = False
-            # dist_to_start does not change with radius_z
-            dist_to_start = np.sqrt(((self.env.character.position[0] - self.env.character.start[0])*self.render_ratio/yaml_p['radius_x'])**2 + ((self.env.character.position[1] - self.env.character.start[1])*self.render_ratio/yaml_p['radius_x'])**2)
+            # dist_to_start does not change with curriculum learning
+            dist_to_start = np.sqrt(((self.env.character.position[0] - self.env.character.start[0])*self.render_ratio/yaml_p['radius_stop_x'])**2 + ((self.env.character.position[1] - self.env.character.start[1])*self.render_ratio/yaml_p['radius_stop_x'])**2)
             if done & (dist_to_start > 2):
                 break
             elif done:

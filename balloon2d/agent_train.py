@@ -48,9 +48,11 @@ epi_n = 0
 step_n = 0
 
 for r in range(yaml_p['curriculum_rad']):
-    radius_z = yaml_p['radius_z'] - (yaml_p['radius_z'] - yaml_p['radius_x'])*(r+1)/yaml_p['curriculum_rad']
+    x = r/(yaml_p['curriculum_rad']-1)
+    radius_x = yaml_p['radius_start_x'] - (yaml_p['radius_start_x'] - yaml_p['radius_stop_x'])*x
+    radius_z = radius_x*(1+(1-x)*(yaml_p['radius_start_ratio']-1))
 
-    env = balloon2d(epi_n,step_n,'train',writer,radius_z)
+    env = balloon2d(epi_n,step_n,'train',writer,radius_x,radius_z)
     ag = Agent(epi_n,step_n,'train',env,writer)
     if r > 0:
         ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
@@ -68,7 +70,7 @@ for r in range(yaml_p['curriculum_rad']):
         # save weights
         if yaml_p['cherry_pick'] > 0:
             if i%yaml_p['cherry_pick'] == 0:
-                env_val = balloon2d(epi_n,step_n,'val',radius_z=radius_z)
+                env_val = balloon2d(epi_n,step_n,'val',radius_x,radius_z)
                 ag_val = Agent(epi_n,step_n,'val',env_val)
                 ag_val.load_stash()
                 with ag_val.agent.eval_mode():

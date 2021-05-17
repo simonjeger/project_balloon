@@ -68,8 +68,9 @@ def write(process_nr, time, autoencoder, window_size, bottleneck, num_epochs, ch
     text = text + 'start_test: [7,6,0]' + '\n'
     text = text + 'target_train: "random"' + '\n'
     text = text + 'target_test: "random"' + '\n'
-    text = text + 'radius_xy: 10' + '\n'
-    text = text + 'radius_z: 30' + '\n'
+    text = text + 'radius_start_xy: 20' + '\n'
+    text = text + 'radius_stop_xy: 10' + '\n'
+    text = text + 'radius_start_ratio: 2' + '\n'
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
     text = text + 'curriculum_rad: ' + str(curriculum_rad) + '\n'
     text = text + 'hit: 1' + '\n'
@@ -99,7 +100,7 @@ step = -0.01
 action = -0.03
 lr = 0.0005
 
-process_nr = 970
+process_nr = 1020
 for data_path in ['"data/"']:
     for agent_type in ['"SoftActorCritic"']:
         for time in [360]:
@@ -108,15 +109,15 @@ for data_path in ['"data/"']:
                     for num_epochs in [20000]:
                         for cherry_pick in [0]:
                             for short_sighted in [False]:
-                                for window_size in [1,2,3]:
-                                    for bottleneck in [2,3,4,6,10,20]:
+                                for window_size in [2,3]:
+                                    for bottleneck in [2,4,8]:
                                         for buffer_size in [100000000]:
-                                            for curriculum_dist in [1]:
-                                                for curriculum_rad in [1]:
+                                            for curriculum_dist in [1,100000, 200000]:
+                                                for curriculum_rad in [1,3,5]:
                                                     for epsi_low in [0.1]:
                                                         for decay in [300000]:
                                                             for update_interval in [300]:
-                                                                for minibatch_size in [100]:
+                                                                for minibatch_size in [800]:
                                                                     for n_times_update in [100]:
                                                                         for repeat in range(2):
                                                                             for replay_start_size in [1000]:

@@ -15,7 +15,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def build_render(character, reward_step, reward_epi, world_name, window_size, radius_z, train_or_test, roll_out):
+def build_render(character, reward_step, reward_epi, world_name, window_size, radius_xy, radius_z, train_or_test, roll_out):
     render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
     size_x = character.size_x*render_ratio
@@ -49,7 +49,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     visualize_world(world, character.position)
 
     for dim in ['xy', 'xz', 'yz']:
-        display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_y, size_z, render_ratio, window_size, radius_z, res, character, roll_out)
+        display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_y, size_z, render_ratio, window_size, radius_xy, radius_z, res, character, roll_out)
 
     # text
     myfont = pygame.font.SysFont('Arial', 10, bold=False)
@@ -87,7 +87,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     pygame.display.flip()
     clock.tick(10) #cycles per second
 
-def display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_y, size_z, render_ratio, window_size, radius_z, res, character, roll_out):
+def display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_y, size_z, render_ratio, window_size, radius_xy, radius_z, res, character, roll_out):
     if dim == 'xz':
         i1 = 0
         i2 = 2
@@ -260,11 +260,11 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
     pygame.draw.ellipse(screen, c_target_center, rec_target)
 
     if dim != 'xy':
-        r_1 = yaml_p['radius_xy']*res
+        r_1 = radius_xy*res
         r_2 = radius_z*res
     else:
-        r_1 = yaml_p['radius_xy']*res
-        r_2 = yaml_p['radius_xy']*res
+        r_1 = radius_xy*res
+        r_2 = radius_xy*res
 
     target_rect = pygame.Rect((pos_target), (0, 0)).inflate((r_1*2, r_2*2))
     shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
