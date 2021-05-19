@@ -81,6 +81,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + 'physics: True' + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
+    text = text + 'boundaries: "short"' + '\n'
     text = text + 'short_sighted: ' + str(short_sighted) + '\n'
 
     text = text + '\n' + '# logger' + '\n'

@@ -52,12 +52,24 @@ class character():
         self.residual = self.target - self.position
         self.velocity = np.array([0,0,0])
         self.measurement = self.interpolate_wind()[0:3] - self.velocity
-        self.terrain = self.compress_terrain(True)
+
+        if yaml_p['boundaries'] == 'short':
+            self.boundaries = self.compress_terrain(True)
+            self.bottleneck = len(self.boundaries)
+        elif yaml_p['boundaries'] == 'long':
+            min_x = self.position[0]
+            max_x = self.size_x - self.position[0]
+            min_y = self.position[1]
+            max_y = self.size_y - self.position[1]
+            min_z = self.position[2]
+            max_z = self.dist_to_ceiling()
+            self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.hight_above_ground()])
+            self.bottleneck = len(self.boundaries)
 
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.boundaries.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.boundaries.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -79,11 +91,24 @@ class character():
         # update state
         self.residual = self.target - self.position
         self.measurement = self.interpolate_wind()[0:3] - self.velocity
-        self.terrain = self.compress_terrain(in_bounds)
+
+        if yaml_p['boundaries'] == 'short':
+            self.boundaries = self.compress_terrain(in_bounds)
+            self.bottleneck = len(self.boundaries)
+        elif yaml_p['boundaries'] == 'long':
+            min_x = self.position[0]
+            max_x = self.size_x - self.position[0]
+            min_y = self.position[1]
+            max_y = self.size_y - self.position[1]
+            min_z = self.position[2]
+            max_z = self.dist_to_ceiling()
+            self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.hight_above_ground()])
+            self.bottleneck = len(self.boundaries)
+
         if yaml_p['physics']:
-            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.boundaries.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         else:
-            self.state = np.concatenate((self.residual.flatten(), self.terrain.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
+            self.state = np.concatenate((self.residual.flatten(), self.boundaries.flatten(), self.measurement.flatten(), world_compressed.flatten()), axis=0)
         self.state = self.state.astype(np.float32)
 
         if yaml_p['short_sighted']:

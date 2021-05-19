@@ -51,13 +51,16 @@ class balloon2d(Env):
         # set maximal duration of flight
         self.T = yaml_p['T']
 
+        self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+        self.reset()
+
         # location array in x and z
         if yaml_p['physics']:
-            regular_state_space_low = np.array([-self.size_x,-self.size_z,-np.inf,-np.inf,-np.inf,-np.inf,-self.size_x,-self.size_z]) #residual to target, velocity, measurement, distance to border
-            regular_state_space_high = np.array([self.size_x,self.size_z,np.inf,np.inf,np.inf,np.inf,self.size_x,self.size_z])
+            regular_state_space_low = np.array(np.concatenate(([-self.size_x,-self.size_z,-np.inf,-np.inf],[-np.inf]*self.character.bottleneck,[-np.inf]*2))) #residual to target, velocity, measurement, distance to border
+            regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_z,np.inf,np.inf],[np.inf]*self.character.bottleneck,[np.inf]*2)))
         else:
-            regular_state_space_low = np.array([-self.size_x,-self.size_z,-np.inf,-np.inf,-self.size_x,-self.size_z]) #residual to target, measurement, distance to border
-            regular_state_space_high = np.array([self.size_x,self.size_z,np.inf,np.inf,self.size_x,self.size_z])
+            regular_state_space_low = np.array(np.concatenate(([-self.size_x,-self.size_z],[-np.inf]*self.character.bottleneck,[-np.inf]*2))) #residual to target, measurement, distance to border
+            regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_z],[np.inf]*self.character.bottleneck,[np.inf]*2)))
         world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
         world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
@@ -67,11 +70,7 @@ class balloon2d(Env):
         self.epi_n = epi_n
         self.step_n = step_n
 
-        self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
-
         self.path_roll_out = None
-
-        self.reset()
 
     def step(self, action, roll_out=False):
         # Update compressed wind map

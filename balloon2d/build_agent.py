@@ -185,15 +185,32 @@ class Agent:
             if self.env.character.t == yaml_p['T']:
                 action = 1.2
             else:
-                if yaml_p['physics']:
-                    dist = self.env.character.state[5]
-                else:
-                    dist = self.env.character.state[3]
+                if yaml_p['boundaries'] == 'short':
+                    if yaml_p['physics']:
+                        dist = self.env.character.state[5]
+                    else:
+                        dist = self.env.character.state[3]
 
-                if abs(dist) < 15:
-                    action = np.random.normal(-np.sign(dist)*0.1 + 1,0.1)
-                else:
-                    action = np.random.normal(1,0.1)
+                    if abs(dist) < 15:
+                        action = np.random.normal(-np.sign(dist)*0.1 + 1,0.1)
+                    else:
+                        action = np.random.normal(1,0.1)
+
+                if yaml_p['boundaries'] == 'long':
+                    if yaml_p['physics']:
+                        dist_bottom = self.env.character.state[8]
+                        dist_top = self.env.character.state[7]
+                    else:
+                        dist_bottom = self.env.character.state[6]
+                        dist_top = self.env.character.state[5]
+
+                    if dist_bottom < 15:
+                        action = np.random.normal(1.1,0.1)
+                    elif dist_top < 15:
+                        action = np.random.normal(0.9,0.1)
+                    else:
+                        action = np.random.normal(1,0.1)
+
                 action = np.clip(action,0,2)
 
             # actions are not in the same range in discrete / continuous cases

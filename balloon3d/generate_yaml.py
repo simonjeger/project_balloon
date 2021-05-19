@@ -82,6 +82,7 @@ def write(process_nr, time, autoencoder, window_size, bottleneck, num_epochs, ch
     text = text + 'physics: True' + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
+    text = text + 'boundaries: "short"'+ '\n'
     text = text + 'short_sighted: ' + str(short_sighted) + '\n'
 
     text = text + '\n' + '# logger' + '\n'
