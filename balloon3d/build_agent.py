@@ -179,38 +179,23 @@ class Agent:
             curr = curr_end
 
         round = 0
+        rel_set = np.random.uniform(0.1,0.9)
         while True:
             self.env.character.target = [-10,-10,-10] #set target outside map
 
-            if self.env.character.t == yaml_p['T']:
-                action = 1.2
+            dist_bottom = self.env.character.height_above_ground()
+            dist_top = self.env.character.dist_to_ceiling()
+            if yaml_p['physics']:
+                velocity = self.env.character.state[3]
             else:
-                if yaml_p['boundaries'] == 'short':
-                    if yaml_p['physics']:
-                        dist = self.env.character.state[8]
-                    else:
-                        dist = self.env.character.state[5]
+                velocity = 0
 
-                    if abs(dist) < 15:
-                        action = np.random.normal(-np.sign(dist)*0.1 + 1,0.1)
-                    else:
-                        action = np.random.normal(1,0.1)
+            rel_pos = dist_bottom / (dist_top + dist_bottom)
+            if np.random.uniform() < 0.2:
+                rel_set = np.random.uniform(0.1,0.9)
 
-                if yaml_p['boundaries'] == 'long':
-                    if yaml_p['physics']:
-                        dist_bottom = self.env.character.state[12]
-                        dist_top = self.env.character.state[11]
-                    else:
-                        dist_bottom = self.env.character.state[9]
-                        dist_top = self.env.character.state[8]
-
-                    if dist_bottom < 15:
-                        action = np.random.normal(1.1,0.1)
-                    elif dist_top < 15:
-                        action = np.random.normal(0.9,0.1)
-                    else:
-                        action = np.random.normal(1,0.1)
-                action = np.clip(action,0,2)
+            action = self.ll_controller(rel_set, rel_pos, velocity)
+            action = np.clip(action,0,2)
 
             # actions are not in the same range in discrete / continuous cases
             if yaml_p['continuous']:
@@ -247,6 +232,14 @@ class Agent:
 
         self.env.reset(roll_out=True)
         self.env.character.target = target
+
+    def ll_controller(self,set,position,velocity):
+        error = set - position
+        velocity = - velocity
+        k_p = 0.2
+        k_d = 5
+        u = k_p*error + k_d*velocity
+        return u + 1
 
     def run_epoch(self, render):
         obs = self.env.reset()

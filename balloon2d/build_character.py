@@ -53,7 +53,7 @@ class character():
             max_x = self.size_x - self.position[0]
             min_z = self.position[1]
             max_z = self.dist_to_ceiling()
-            self.boundaries = np.array([min_x, max_x, min_z, max_z, self.hight_above_ground()])
+            self.boundaries = np.array([min_x, max_x, min_z, max_z, self.height_above_ground()])
             self.bottleneck = len(self.boundaries)
 
         if yaml_p['physics']:
@@ -72,7 +72,7 @@ class character():
         self.action = action
 
         in_bounds = self.move_particle(100)
-        if self.hight_above_ground() < 0: # check if crashed into terrain
+        if self.height_above_ground() < 0: # check if crashed into terrain
             in_bounds = False
         if self.dist_to_ceiling() < 0: # check if crashed into terrain
             in_bounds = False
@@ -89,7 +89,7 @@ class character():
             max_x = self.size_x - self.position[0]
             min_z = self.position[1]
             max_z = self.dist_to_ceiling()
-            self.boundaries = np.array([min_x, max_x, min_z, max_z, self.hight_above_ground()])
+            self.boundaries = np.array([min_x, max_x, min_z, max_z, self.height_above_ground()])
             self.bottleneck = 5
 
         if yaml_p['physics']:
@@ -176,7 +176,7 @@ class character():
 
         return np.array([dist_x, dist_z])
 
-    def hight_above_ground(self):
+    def height_above_ground(self):
         x = np.linspace(0,self.size_x,len(self.world[0,:,0]))
         return self.position[1] - np.interp(self.position[0],x,self.world[0,:,0])
 

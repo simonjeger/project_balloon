@@ -63,7 +63,7 @@ class character():
             max_y = self.size_y - self.position[1]
             min_z = self.position[2]
             max_z = self.dist_to_ceiling()
-            self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.hight_above_ground()])
+            self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.height_above_ground()])
             self.bottleneck = len(self.boundaries)
 
         if yaml_p['physics']:
@@ -83,7 +83,7 @@ class character():
         self.action = action
 
         in_bounds = self.move_particle(100)
-        if self.hight_above_ground() < 0: # check if crashed into terrain
+        if self.height_above_ground() < 0: # check if crashed into terrain
             in_bounds = False
         if self.dist_to_ceiling() < 0: # check if crashed into terrain
             in_bounds = False
@@ -102,7 +102,7 @@ class character():
             max_y = self.size_y - self.position[1]
             min_z = self.position[2]
             max_z = self.dist_to_ceiling()
-            self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.hight_above_ground()])
+            self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.height_above_ground()])
             self.bottleneck = len(self.boundaries)
 
         if yaml_p['physics']:
@@ -177,7 +177,7 @@ class character():
             indices = []
             res = 3
 
-            options = [self.hight_above_ground(),self.dist_to_ceiling(), 20]
+            options = [self.height_above_ground(),self.dist_to_ceiling(), 20]
 
             init_guess = min(options)
             bottom_or_top = np.argmin(options)
@@ -194,7 +194,7 @@ class character():
                 if bottom_or_top == 1:
                     distances.append(init_guess)
                 if bottom_or_top == 2:
-                    distances.append(-self.hight_above_ground())
+                    distances.append(-self.height_above_ground())
                 indices.append([int(self.position[0]*res),int(self.position[1]*res)])
 
             ind_x = indices[np.argmin(distances)][0]/res
@@ -236,7 +236,7 @@ class character():
 
         return np.array([dist_x, dist_y, dist_z])
 
-    def hight_above_ground(self):
+    def height_above_ground(self):
         return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
 
     def set_ceiling(self):
