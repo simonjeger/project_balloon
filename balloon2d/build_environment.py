@@ -55,15 +55,28 @@ class balloon2d(Env):
         self.reset()
 
         # location array in x and z
-        if yaml_p['physics']:
-            regular_state_space_low = np.array(np.concatenate(([-self.size_x,-self.size_z,-np.inf,-np.inf],[-np.inf]*self.character.bottleneck,[-np.inf]*2))) #residual to target, velocity, measurement, distance to border
-            regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_z,np.inf,np.inf],[np.inf]*self.character.bottleneck,[np.inf]*2)))
-        else:
-            regular_state_space_low = np.array(np.concatenate(([-self.size_x,-self.size_z],[-np.inf]*self.character.bottleneck,[-np.inf]*2))) #residual to target, measurement, distance to border
-            regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_z],[np.inf]*self.character.bottleneck,[np.inf]*2)))
-        world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
-        world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
-        self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
+        if yaml_p['type'] == 'regular':
+            if yaml_p['physics']:
+                regular_state_space_low = np.array(np.concatenate(([0,0,-np.inf,-np.inf],[-np.inf]*2,[-np.inf]*self.character.bottleneck))) #residual to target, velocity, measurement, distance to border
+                regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_z,np.inf,np.inf],[np.inf]*2,[np.inf]*self.character.bottleneck)))
+            else:
+                regular_state_space_low = np.array(np.concatenate(([0,0],[-np.inf]*2,[-np.inf]*self.character.bottleneck))) #residual to target, measurement, distance to border
+                regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_z],[np.inf]*2,[np.inf]*self.character.bottleneck)))
+            world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
+            world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
+            self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
+
+        if yaml_p['type'] == 'squished':
+            if yaml_p['physics']:
+                regular_state_space_low = np.array(np.concatenate(([0,0,-np.inf,-np.inf],[-np.inf]*2))) #residual to target, velocity, measurement
+                regular_state_space_high = np.array(np.concatenate(([self.size_x,1,np.inf,np.inf],[np.inf]*2)))
+            else:
+                regular_state_space_low = np.array(np.concatenate(([0,0],[-np.inf]*2))) #residual to target, measurement
+                regular_state_space_high = np.array(np.concatenate(([self.size_x,1],[np.inf]*2)))
+            world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
+            world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
+            self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
+
 
         # initialize state and time
         self.success_n = 0
@@ -74,7 +87,7 @@ class balloon2d(Env):
 
     def step(self, action, roll_out=False):
         # Update compressed wind map
-        self.world_compressed = self.ae.compress(self.world, self.character.position)
+        self.world_compressed = self.ae.compress(self.world, self.character.position, self.character.ceiling)
 
         coord = [int(i) for i in np.round(self.character.position)] #convert position into int so I can use it as index
         done = False
@@ -125,7 +138,10 @@ class balloon2d(Env):
                 self.success_n += 1
                 done = True
             else:
-                self.reward_step = yaml_p['step'] + abs(self.character.action - 1)*yaml_p['action']
+                if yaml_p['type'] == 'regular':
+                    self.reward_step = yaml_p['step'] + abs(self.character.action - 1)*yaml_p['action']
+                if yaml_p['type'] == 'squished':
+                    self.reward_step = yaml_p['step'] + abs(self.character.U)*yaml_p['action']
                 done = False
 
             if self.character.t <= 0:
@@ -170,7 +186,7 @@ class balloon2d(Env):
             target[1] = np.interp(target[0],x,self.world[0,:,0]) + above_ground_target
 
         # Initial compressed wind map
-        self.world_compressed = self.ae.compress(self.world, start)
+        self.world_compressed = self.ae.compress(self.world, start, [self.size_z]*self.size_x)
 
         self.character = character(self.size_x, self.size_z, start, target, self.radius_x, self.radius_z, self.T, self.world, self.world_compressed)
 
@@ -239,7 +255,7 @@ class balloon2d(Env):
         return target
 
     def character_v(self, position):
-        world_compressed = self.ae.compress(self.world, self.character.position)
+        world_compressed = self.ae.compress(self.world, self.character.position, self.character.ceiling)
         character_v = character(self.size_x, self.size_z, position, self.character.target, self.T, self.world, world_compressed)
         v_x = self.world[-3][int(position[0]), int(position[1])] #approximate current velocity as velocity of world_map
         v_z = self.world[-2][int(position[0]), int(position[1])]

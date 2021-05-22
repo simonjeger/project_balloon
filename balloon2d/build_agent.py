@@ -10,6 +10,8 @@ import shutil
 from distutils.dir_util import copy_tree
 import copy
 
+from lowlevel_controller import ll_pd
+
 import yaml
 import argparse
 
@@ -179,23 +181,12 @@ class Agent:
             curr = curr_end
 
         round = 0
-        rel_set = np.random.uniform(0.1,0.9)
+        action = np.random.uniform(0.1,0.9)
         while True:
             self.env.character.target = [-10,-10] #set target outside map
 
-            dist_bottom = self.env.character.height_above_ground()
-            dist_top = self.env.character.dist_to_ceiling()
-            if yaml_p['physics']:
-                velocity = self.env.character.state[3]
-            else:
-                velocity = 0
-
-            rel_pos = dist_bottom / (dist_top + dist_bottom)
             if np.random.uniform() < 0.2:
-                rel_set = np.random.uniform(0.1,0.9)
-
-            action = self.ll_controller(rel_set, rel_pos, velocity)
-            action = np.clip(action,0,2)
+                action = np.random.uniform(0.1,0.9)
 
             # actions are not in the same range in discrete / continuous cases
             if yaml_p['continuous']:
@@ -233,14 +224,6 @@ class Agent:
         self.env.reset(roll_out=True)
         self.env.character.target = target
 
-    def ll_controller(self,set,position,velocity):
-        error = set - position
-        velocity = - velocity
-        k_p = 0.2
-        k_d = 5
-        u = k_p*error + k_d*velocity
-        return u + 1
-
     def run_epoch(self, render):
         obs = self.env.reset()
         sum_r = 0
@@ -252,10 +235,14 @@ class Agent:
             action = self.agent.act(obs) #uses self.agent.model to decide next step
 
             # actions are not in the same range in discrete / continuous cases
-            if yaml_p['continuous']:
-                action = action[0]+1
-            else:
-                action = action
+            if yaml_p['type'] == 'regular':
+                if yaml_p['continuous']:
+                    action = action[0]+1
+                else:
+                    action = action
+
+            if yaml_p['type'] == 'squished':
+                action = (action[0]+1)/2
 
             obs, reward, done, _ = self.env.step(action)
 

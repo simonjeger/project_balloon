@@ -31,12 +31,15 @@ class HAE():
         self.window_size_total = 2*self.window_size + 1
         self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
-        if yaml_p['autoencoder'] == 'HAE_avg':
-            self.bottleneck_wind = int(self.size_z/self.box_size)*1 + 1#because we mainly look at wind in x direction (and need to pass absolute hight)
-        elif yaml_p['autoencoder'] == 'HAE_patch':
-            self.bottleneck_wind = 2*1 + 2*1 #because we mainly look at wind in x direction
-        else:
-            print('ERROR: please choose one of the available HAE')
+        if yaml_p['type'] == 'regular':
+            if yaml_p['autoencoder'] == 'HAE_avg':
+                self.bottleneck_wind = int(self.size_z/self.box_size)*1 + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
+            elif yaml_p['autoencoder'] == 'HAE_patch':
+                self.bottleneck_wind = 2*1 + 2*1 #because we mainly look at wind in x direction
+            else:
+                print('ERROR: please choose one of the available HAE')
+        if yaml_p['type'] == 'squished':
+            self.bottleneck_wind = int(self.size_z/self.box_size)*1 + 1 + 1 #because we mainly look at wind in x direction
         self.bottleneck = self.bottleneck_wind
 
     def window(self, data, center):
@@ -48,19 +51,56 @@ class HAE():
             data_padded[:,i,:] = data_padded[:,self.window_size,:]
             data_padded[:,-(i+1),:] = data_padded[:,-(self.window_size+1),:]
 
-        start_x = int(center)
-        end_x = int(center + self.window_size_total)
+        start_x = int(center - self.window_size)
+        end_x = int(start_x + self.window_size_total)
 
         window = data_padded[:,start_x:end_x,:]
         window = torch.tensor(window)
         return window
 
-    def compress(self, data, position):
-        window = self.window(data, position[0])
-        if yaml_p['autoencoder'] == 'HAE_avg':
+    def window_squished(self, data, center, ceiling):
+        res = self.size_z
+        data_squished = np.zeros((len(data),self.size_x,res))
+        for i in range(self.size_x):
+            bottom = data[0,i,0]
+            top = ceiling[i]
+
+            x_old = np.arange(0,self.size_z,1)
+            x_new = np.linspace(bottom,top,res)
+            for j in range(len(data)):
+                data_squished[j,i,:] = np.interp(x_new,x_old,data[j,i,:])
+
+        window = np.zeros((len(data_squished),self.window_size_total,res))
+        data_padded = np.zeros((len(data_squished),self.size_x+2*self.window_size,res))
+        data_padded[:,self.window_size:-self.window_size,:] = data_squished
+
+        for i in range(self.window_size):
+            data_padded[:,i,:] = data_padded[:,self.window_size,:]
+            data_padded[:,-(i+1),:] = data_padded[:,-(self.window_size+1),:]
+
+        start_x = int(center - self.window_size)
+        end_x = int(start_x + self.window_size_total)
+
+        window = data_padded[:,start_x:end_x,:]
+        window = torch.tensor(window)
+        return window
+
+    def compress(self, data, position, ceiling):
+        if yaml_p['type'] == 'regular':
+            window = self.window(data, position[0])
+            if yaml_p['autoencoder'] == 'HAE_avg':
+                wind = self.compress_wind_avg(window,position)
+            elif yaml_p['autoencoder'] == 'HAE_patch':
+                wind = self.compress_wind_patch(window,position)
+
+        if yaml_p['type'] == 'squished':
+            pos_x = np.clip(int(position[0]),0,self.size_x-1)
+            window = self.window_squished(data, position[0], ceiling)
             wind = self.compress_wind_avg(window,position)
-        elif yaml_p['autoencoder'] == 'HAE_patch':
-            wind = self.compress_wind_patch(window,position)
+            size = (ceiling[pos_x] - data[0,pos_x,0])/self.size_z
+            wind[-1] = size
+            rel_pos = torch.tensor([(position[1]-data[0,pos_x,0]) / (ceiling[pos_x] - data[0,pos_x,0])])
+            wind = torch.cat((wind,rel_pos),0)
         return wind
 
     def compress_wind_avg(self, data, position):
