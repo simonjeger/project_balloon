@@ -66,7 +66,7 @@ class balloon2d(Env):
             world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
             self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
 
-        if yaml_p['type'] == 'squished':
+        elif yaml_p['type'] == 'squished':
             if yaml_p['physics']:
                 regular_state_space_low = np.array(np.concatenate(([0,0,-np.inf,-np.inf],[-np.inf]*2))) #residual to target, velocity, measurement
                 regular_state_space_high = np.array(np.concatenate(([self.size_x,1,np.inf,np.inf],[np.inf]*2)))
@@ -140,7 +140,7 @@ class balloon2d(Env):
             else:
                 if yaml_p['type'] == 'regular':
                     self.reward_step = yaml_p['step'] + abs(self.character.action - 1)*yaml_p['action']
-                if yaml_p['type'] == 'squished':
+                elif yaml_p['type'] == 'squished':
                     self.reward_step = yaml_p['step'] + abs(self.character.U)*yaml_p['action']
                 done = False
 

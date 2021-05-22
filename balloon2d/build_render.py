@@ -66,7 +66,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
                 t_border_z = myfont.render('border_z: ' + str(np.round(character.state[4:7]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
                 t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[7:9],[yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
                 t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[9:],1)), False, pygame.Color('LightGray'))
-    if yaml_p['type'] == 'squished':
+    elif yaml_p['type'] == 'squished':
         t_residual = myfont.render('residual: ' + str(np.round(np.multiply(character.state[0:2],[yaml_p['unit_xy'], 1]),2)), False, pygame.Color('LightGray'))
         if yaml_p['physics']:
             t_velocity = myfont.render('velocity: ' + str(np.round(np.multiply(character.state[2:4],[yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
@@ -209,7 +209,7 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
                 pygame.draw.ellipse(screen, c_stay, rec_balloon)
             if character.action == 0:
                 pygame.draw.ellipse(screen, c_down, rec_balloon)
-    if yaml_p['type'] == 'squished':
+    elif yaml_p['type'] == 'squished':
         cv = 100
         colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
         #action = (np.sign(character.action-0.5)*(abs((character.action-0.5)*2)**0.5) + 1)/2 #rescale the color map to make change more visible
