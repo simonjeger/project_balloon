@@ -93,7 +93,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
 
     # updating the window
     pygame.display.flip()
-    clock.tick(10) #cycles per second
+    clock.tick(1) #cycles per second
 
 
 def display_movement(screen, screen_width, screen_height, size_x, size_z, render_ratio, window_size, radius_x, radius_z, res, character, world_name, train_or_test, roll_out):
@@ -212,7 +212,6 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
     elif yaml_p['type'] == 'squished':
         cv = 100
         colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
-        #action = (np.sign(character.action-0.5)*(abs((character.action-0.5)*2)**0.5) + 1)/2 #rescale the color map to make change more visible
         action = character.action
         color = colors[int(action*cv)]*255
         pygame.draw.ellipse(screen, color, rec_balloon)

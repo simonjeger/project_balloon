@@ -9,6 +9,8 @@ from pathlib import Path
 import shutil
 from distutils.dir_util import copy_tree
 
+from lowlevel_controller import ll_pd
+
 import yaml
 import argparse
 
@@ -179,29 +181,40 @@ class Agent:
             curr = curr_end
 
         round = 0
+        action = np.random.uniform(0.1,0.9)
         rel_set = np.random.uniform(0.1,0.9)
         while True:
             self.env.character.target = [-10,-10,-10] #set target outside map
 
-            dist_bottom = self.env.character.height_above_ground()
-            dist_top = self.env.character.dist_to_ceiling()
-            if yaml_p['physics']:
-                velocity = self.env.character.state[3]
-            else:
-                velocity = 0
+            if yaml_p['type'] == 'regular':
+                dist_bottom = self.env.character.height_above_ground()
+                dist_top = self.env.character.dist_to_ceiling()
+                if yaml_p['physics']:
+                    velocity = self.env.character.state[5]
+                else:
+                    velocity = 0
 
-            rel_pos = dist_bottom / (dist_top + dist_bottom)
-            if np.random.uniform() < 0.2:
-                rel_set = np.random.uniform(0.1,0.9)
+                rel_pos = dist_bottom / (dist_top + dist_bottom)
+                if np.random.uniform() < 0.3:
+                    rel_set = np.random.uniform(0.1,0.9)
 
-            action = self.ll_controller(rel_set, rel_pos, velocity)
-            action = np.clip(action,0,2)
+                action = ll_pd(rel_set, rel_pos, velocity) + 1 #because the ll_controller gives values between -1,1
 
-            # actions are not in the same range in discrete / continuous cases
-            if yaml_p['continuous']:
-                action = action
-            else:
-                action = np.round(action,0)
+                # actions are not in the same range in discrete / continuous cases
+                if yaml_p['continuous']:
+                    action = action
+                else:
+                    action = np.round(action,0)
+
+            elif yaml_p['type'] == 'squished':
+                if np.random.uniform() < 0.3:
+                    action = np.random.uniform(0.1,0.9)
+
+                # actions are not in the same range in discrete / continuous cases
+                if yaml_p['continuous']:
+                    action = action
+                else:
+                    action = np.round(action,0)
 
             _, _, done, _ = self.env.step(action, roll_out=True)
 
@@ -233,14 +246,6 @@ class Agent:
         self.env.reset(roll_out=True)
         self.env.character.target = target
 
-    def ll_controller(self,set,position,velocity):
-        error = set - position
-        velocity = - velocity
-        k_p = 0.2
-        k_d = 5
-        u = k_p*error + k_d*velocity
-        return u + 1
-
     def run_epoch(self, render):
         obs = self.env.reset()
         sum_r = 0
@@ -248,18 +253,18 @@ class Agent:
         if yaml_p['curriculum_dist'] > 0: #reset target to something reachable if that flag is set
             self.set_reachable_target()
 
-        if render:
-            self.env.render(mode=True) #render initial state
-
         while True:
             action = self.agent.act(obs) #uses self.agent.model to decide next step
 
             # actions are not in the same range in discrete / continuous cases
-            if yaml_p['continuous']:
-                action = action[0]+1
-            else:
-                action = action
+            if yaml_p['type'] == 'regular':
+                if yaml_p['continuous']:
+                    action = action[0]+1
+                else:
+                    action = action
 
+            elif yaml_p['type'] == 'squished':
+                action = (action[0]+1)/2
             obs, reward, done, _ = self.env.step(action)
             sum_r = sum_r + reward
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment

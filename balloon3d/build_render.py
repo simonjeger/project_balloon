@@ -56,33 +56,49 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     t_reward_step = myfont.render('reward_step: ' + str(np.round(reward_step,3)), False, pygame.Color('LightGray'))
     t_reward_epi = myfont.render('reward_epi: ' + str(np.round(reward_epi,3)), False, pygame.Color('LightGray'))
     t_residual = myfont.render('residual: ' + str(np.round(np.multiply(character.state[0:3],[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),4)), False, pygame.Color('LightGray'))
-    if yaml_p['physics']:
-        t_velocity = myfont.render('velocity: ' + str(np.round(np.multiply(character.state[3:6],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
-        if yaml_p['boundaries'] == 'short':
-            t_border_x = myfont.render('border_x: ' + str(np.round(character.state[6]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-            t_border_y = myfont.render('border_y: ' + str(np.round(character.state[7]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-            t_border_z = myfont.render('border_z: ' + str(np.round(character.state[8]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
-            t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[9:12],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[12:],1)), False, pygame.Color('LightGray'))
-        if yaml_p['boundaries'] == 'long':
-            t_border_x = myfont.render('border_x: ' + str(np.round(character.state[6:8]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-            t_border_y = myfont.render('border_y: ' + str(np.round(character.state[8:10]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-            t_border_z = myfont.render('border_z: ' + str(np.round(character.state[10:13]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
-            t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[13:16],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[16:],1)), False, pygame.Color('LightGray'))
-    else:
-        if yaml_p['boundaries'] == 'short':
-            t_border_x = myfont.render('border_x: ' + str(np.round(character.state[3]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-            t_border_y = myfont.render('border_y: ' + str(np.round(character.state[4]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-            t_border_z = myfont.render('border_z: ' + str(np.round(character.state[5]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
-            t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[6:9],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+    if yaml_p['type'] == 'regular':
+        if yaml_p['physics']:
+            t_velocity = myfont.render('velocity: ' + str(np.round(np.multiply(character.state[3:6],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+            if yaml_p['boundaries'] == 'short':
+                t_border_x = myfont.render('border_x: ' + str(np.round(character.state[6]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+                t_border_y = myfont.render('border_y: ' + str(np.round(character.state[7]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+                t_border_z = myfont.render('border_z: ' + str(np.round(character.state[8]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
+                t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[9:12],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+                t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[12:],1)), False, pygame.Color('LightGray'))
+            if yaml_p['boundaries'] == 'long':
+                t_border_x = myfont.render('border_x: ' + str(np.round(character.state[6:8]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+                t_border_y = myfont.render('border_y: ' + str(np.round(character.state[8:10]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+                t_border_z = myfont.render('border_z: ' + str(np.round(character.state[10:13]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
+                t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[13:16],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+                t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[16:],1)), False, pygame.Color('LightGray'))
+        else:
+            if yaml_p['boundaries'] == 'short':
+                t_border_x = myfont.render('border_x: ' + str(np.round(character.state[3]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+                t_border_y = myfont.render('border_y: ' + str(np.round(character.state[4]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+                t_border_z = myfont.render('border_z: ' + str(np.round(character.state[5]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
+                t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[6:9],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+                t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[9:],1)), False, pygame.Color('LightGray'))
+            if yaml_p['boundaries'] == 'long':
+                t_border_x = myfont.render('border_x: ' + str(np.round(character.state[3:5]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+                t_border_y = myfont.render('border_y: ' + str(np.round(character.state[5:7]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
+                t_border_z = myfont.render('border_z: ' + str(np.round(character.state[7:9]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
+                t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[9:12],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+                t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[12:],1)), False, pygame.Color('LightGray'))
+    elif yaml_p['type'] == 'squished':
+        t_residual = myfont.render('residual: ' + str(np.round(np.multiply(character.state[0:3],[yaml_p['unit_xy'],yaml_p['unit_xy'],1]),2)), False, pygame.Color('LightGray'))
+        if yaml_p['physics']:
+            t_velocity = myfont.render('velocity: ' + str(np.round(np.multiply(character.state[3:6],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+            t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[6:9],[yaml_p['unit_xy'],yaml_p['unit_xy'], yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
             t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[9:],1)), False, pygame.Color('LightGray'))
-        if yaml_p['boundaries'] == 'long':
-            t_border_x = myfont.render('border_x: ' + str(np.round(character.state[3:5]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-            t_border_y = myfont.render('border_y: ' + str(np.round(character.state[5:7]*yaml_p['unit_xy'],1)), False, pygame.Color('LightGray'))
-            t_border_z = myfont.render('border_z: ' + str(np.round(character.state[7:9]*yaml_p['unit_z'],1)), False, pygame.Color('LightGray'))
-            t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[9:12],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[12:],1)), False, pygame.Color('LightGray'))
+            t_border_x = myfont.render(' ', False, pygame.Color('LightGray'))
+            t_border_y = myfont.render(' ', False, pygame.Color('LightGray'))
+            t_border_z = myfont.render(' ', False, pygame.Color('LightGray'))
+        else:
+            t_measurement = myfont.render('measurement: ' + str(np.round(np.multiply(character.state[3:6],[yaml_p['unit_xy'],yaml_p['unit_xy'],yaml_p['unit_z']]),1)), False, pygame.Color('LightGray'))
+            t_world_compressed = myfont.render('world_compressed: ' + str(np.round(character.state[6:],1)), False, pygame.Color('LightGray'))
+            t_border_x = myfont.render(' ', False, pygame.Color('LightGray'))
+            t_border_y = myfont.render(' ', False, pygame.Color('LightGray'))
+            t_border_z = myfont.render(' ', False, pygame.Color('LightGray'))
 
     start_text = 2*size_z*res
     space_text = 15
@@ -255,20 +271,26 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         pygame.draw.lines(screen, c_path, False, path, 1)
 
     # balloon
-    if yaml_p['continuous']:
+    if yaml_p['type'] == 'regular':
+        if yaml_p['continuous']:
+            cv = 100
+            colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
+            action = np.sign(character.action-1)*(abs(character.action - 1)**0.5 + 1)/2 #rescale the color map to make change more visible
+            color = colors[int(action*cv)]*255
+            pygame.draw.ellipse(screen, color, rec_balloon)
+        else:
+            if character.action == 2:
+                pygame.draw.ellipse(screen, c_up, rec_balloon)
+            if character.action == 1:
+                pygame.draw.ellipse(screen, c_stay, rec_balloon)
+            if character.action == 0:
+                pygame.draw.ellipse(screen, c_down, rec_balloon)
+    elif yaml_p['type'] == 'squished':
         cv = 100
         colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
-        action = np.sign(character.action-1)*(abs(character.action - 1)**0.5 + 1)/2 #rescale the color map to make change more visible
+        action = character.action
         color = colors[int(action*cv)]*255
         pygame.draw.ellipse(screen, color, rec_balloon)
-    else:
-        if character.action == 2:
-            pygame.draw.ellipse(screen, c_up, rec_balloon)
-        if character.action == 1:
-            pygame.draw.ellipse(screen, c_stay, rec_balloon)
-        if character.action == 0:
-            pygame.draw.ellipse(screen, c_down, rec_balloon)
-
 
     # draw target (dense and transparent)
     pygame.draw.ellipse(screen, c_target_center, rec_target)

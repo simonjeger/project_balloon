@@ -32,6 +32,7 @@ def write(process_nr, time, autoencoder, window_size, bottleneck, num_epochs, ch
     text = text + 'unit_xy: 1100' + '\n'
     text = text + 'unit_z: 30.48' + '\n'
     text = text + 'time: ' + str(time) + '\n'
+    text = text + 'type: "squished"' + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
@@ -105,7 +106,7 @@ start_train = [7,6,0]
 process_nr = 1040
 for data_path in ['"data/"']:
     for agent_type in ['"SoftActorCritic"']:
-        for time in [360]:
+        for time in [1000]:
             for min_proj_dist in [0]:
                 for autoencoder in ['"HAE_avg"']:
                     for num_epochs in [20000]:

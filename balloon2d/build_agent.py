@@ -195,7 +195,7 @@ class Agent:
                     velocity = 0
 
                 rel_pos = dist_bottom / (dist_top + dist_bottom)
-                if np.random.uniform() < 0.2:
+                if np.random.uniform() < 0.3:
                     rel_set = np.random.uniform(0.1,0.9)
 
                 action = ll_pd(rel_set, rel_pos, velocity) + 1 #because the ll_controller gives values between -1,1
@@ -207,7 +207,7 @@ class Agent:
                     action = np.round(action,0)
 
             elif yaml_p['type'] == 'squished':
-                if np.random.uniform() < 0.2:
+                if np.random.uniform() < 0.3:
                     action = np.random.uniform(0.1,0.9)
 
                 # actions are not in the same range in discrete / continuous cases
@@ -267,7 +267,6 @@ class Agent:
                 action = (action[0]+1)/2
 
             obs, reward, done, _ = self.env.step(action)
-
             sum_r = sum_r + reward
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
 
@@ -287,10 +286,6 @@ class Agent:
                             self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
                         if len(self.agent.loss_record) != 0:
                             self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
-                        """
-                        for i in range(len(self.agent.loss_record)):
-                            self.writer.add_scalar('local_loss_qfunction', self.agent.loss_record[i], self.step_n-1 + i/len(self.agent.loss_record))
-                        """
                 self.epi_n += 1
                 break
 

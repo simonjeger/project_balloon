@@ -33,12 +33,17 @@ class HAE():
         self.window_size_total = 2*self.window_size + 1
         self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
-        if yaml_p['autoencoder'] == 'HAE_avg':
-            self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 #because wind in x and y direction (and need to pass absolute hight)
-        elif yaml_p['autoencoder'] == 'HAE_patch':
-            self.bottleneck_wind = 2*2 + 2*2#because we mainly look at wind in x direction
-        else:
-            print('ERROR: please choose one of the available HAE')
+        if yaml_p['type'] == 'regular':
+            if yaml_p['autoencoder'] == 'HAE_avg':
+                self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 #because wind in x and y direction (and need to pass absolute hight)
+            elif yaml_p['autoencoder'] == 'HAE_patch':
+                self.bottleneck_wind = 2*2 + 2*2#because we mainly look at wind in x direction
+            else:
+                print('ERROR: please choose one of the available HAE')
+
+        elif yaml_p['type'] == 'squished':
+            self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 + 1 #because we mainly look at wind in x direction
+
         self.bottleneck = self.bottleneck_wind
 
     def window(self, data, position):
@@ -62,12 +67,52 @@ class HAE():
         window = torch.tensor(window)
         return window
 
-    def compress(self, data, position):
-        window = self.window(data, position)
-        if yaml_p['autoencoder'] == 'HAE_avg':
-            wind = self.compress_wind_avg(window,position)
-        elif yaml_p['autoencoder'] == 'HAE_patch':
-            wind = self.compress_wind_patch(window,position)
+    def window_squished(self, data, position, ceiling):
+        res = self.size_z
+        data_squished = np.zeros((len(data),self.size_x,self.size_y,res))
+        for i in range(self.size_x):
+            for j in range(self.size_y):
+                bottom = data[0,i,j,0]
+                top = ceiling[i,j]
+
+                x_old = np.arange(0,self.size_z,1)
+                x_new = np.linspace(bottom,top,res)
+                data_squished[0,:,:,:] = data[0,:,:,:] #terrain stays the same
+
+                for k in range(1,len(data)):
+                    data_squished[k,i,j,:] = np.interp(x_new,x_old,data[k,i,j,:])
+
+        data_padded = np.zeros((len(data_squished),self.size_x+2*self.window_size,self.size_y+2*self.window_size,self.size_z))
+
+        data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data_squished
+
+        for i in range(self.window_size):
+            data_padded[:,i,:,:] = data_padded[:,self.window_size,:,:]
+            data_padded[:,:,i,:] = data_padded[:,:,self.window_size,:]
+            data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
+            data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
+
+        start_x = int(position[0])
+        start_y = int(position[1])
+        end_x = int(start_x + self.window_size_total)
+        end_y = int(start_y + self.window_size_total)
+
+        window = data_padded[:,start_x:end_x,start_y:end_y,:]
+        window = torch.tensor(window)
+        return window
+
+    def compress(self, data, position, ceiling):
+        if yaml_p['type'] == 'regular':
+            window = self.window(data, position)
+            if yaml_p['autoencoder'] == 'HAE_avg':
+                wind = self.compress_wind_avg(window,position)
+            elif yaml_p['autoencoder'] == 'HAE_patch':
+                wind = self.compress_wind_patch(window,position)
+
+        elif yaml_p['type'] == 'squished':
+            pos_x = np.clip(int(position[0]),0,self.size_x-1)
+            window = self.window_squished(data, position, ceiling)
+            wind = self.compress_wind_squished(window,position,ceiling)
         return wind
 
     def compress_wind_avg(self, data, position):
@@ -157,6 +202,37 @@ class HAE():
         dist_max_y = winner_max_y[np.argmin(abs(winner_max_y - loc_z))] - loc_z
 
         pred = np.array([idx_bottom_x - loc_z, idx_top_x - loc_z, idx_bottom_y - loc_z, idx_top_y - loc_z, dist_min_x, dist_max_x, dist_min_y, dist_max_y])
+        return pred
+
+    def compress_wind_squished(self, data, position,ceiling):
+        mean_x = data[-4,:,:]
+        mean_y = data[-3,:,:]
+        mean_z = data[-2,:,:]
+        sig_xz = data[-1,:,:]
+
+        idx = np.arange(0,self.size_z, self.box_size)
+        if self.size_z%self.box_size != 0:
+            idx = idx[:-1]
+        pred = np.zeros((len(idx)*2) + 1 + 1) # two different wind directions
+
+        # wind
+        for i in range(len(idx)):
+            with warnings.catch_warnings(): #I expect to see RuntimeWarnings in this block
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+
+                pred[0*len(idx)+i] = np.nanmean(mean_x[:,:,idx[i]:idx[i] + self.box_size])
+                pred[1*len(idx)+i] = np.nanmean(mean_y[:,:,idx[i]:idx[i] + self.box_size])
+                #pred[2*len(idx)+i] = torch.mean(mean_z[:,:,idx[i]:idx[i] + self.box_size])
+
+        pos_x = np.clip(int(position[0]),0,self.size_x - 1)
+        pos_y = np.clip(int(position[1]),0,self.size_y - 1)
+
+        rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])])
+        size = (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])/self.size_z
+        pred[-2] = rel_pos
+        pred[-1] = size
+
+        pred = torch.tensor(np.nan_to_num(pred,0))
         return pred
 
 def load_tensor(path):

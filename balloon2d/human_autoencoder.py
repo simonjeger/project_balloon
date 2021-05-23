@@ -38,11 +38,9 @@ class HAE():
                 self.bottleneck_wind = 2*1 + 2*1 #because we mainly look at wind in x direction
             else:
                 print('ERROR: please choose one of the available HAE')
+
         elif yaml_p['type'] == 'squished':
-            if yaml_p['autoencoder'] == 'HAE_avg':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*1 + 1 + 1 #because we mainly look at wind in x direction
-            else:
-                print('ERROR: please choose one of the available HAE')
+            self.bottleneck_wind = int(self.size_z/self.box_size)*1 + 1 + 1 #because we mainly look at wind in x direction
 
         self.bottleneck = self.bottleneck_wind
 
@@ -76,7 +74,6 @@ class HAE():
             for j in range(1,len(data)):
                 data_squished[j,i,:] = np.interp(x_new,x_old,data[j,i,:])
 
-        window = np.zeros((len(data_squished),self.window_size_total,res))
         data_padded = np.zeros((len(data_squished),self.size_x+2*self.window_size,res))
         data_padded[:,self.window_size:-self.window_size,:] = data_squished
 
@@ -190,8 +187,9 @@ class HAE():
                 #pred[len(idx)+i] = torch.mean(mean_z[:,idx[i]:idx[i] + self.box_size])
 
         pos_x = np.clip(int(position[0]),0,self.size_x - 1)
-        rel_pos = torch.tensor([(position[1]-data[0,self.window_size+1,0]) / (ceiling[pos_x] - data[0,self.window_size+1,0])])
-        size = (ceiling[pos_x] - data[0,self.window_size+1,0])/self.size_z
+        rel_pos = torch.tensor([(position[1]-data[0,self.window_size,0]) / (ceiling[pos_x] - data[0,self.window_size,0])])
+        size = (ceiling[pos_x] - data[0,self.window_size,0])/self.size_z
+
         pred[-2] = rel_pos
         pred[-1] = size
 
