@@ -30,7 +30,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + 'size_z: 105' + '\n'
     text = text + 'unit_xy: 1100' + '\n'
     text = text + 'unit_z: 30.48' + '\n'
-    text = text + 'time: 1000' + '\n'
+    text = text + 'time: 1200' + '\n'
     text = text + 'type: "squished"' + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'

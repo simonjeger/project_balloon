@@ -172,7 +172,7 @@ class Agent:
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
 
     def set_reachable_target(self):
-        curr_start = 0.2
+        curr_start = 0.35
         curr_window = 0.2
         curr_end = 1 - curr_window
         if self.train_or_test == 'train':
