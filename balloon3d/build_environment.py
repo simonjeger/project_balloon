@@ -143,9 +143,9 @@ class balloon2d(Env):
                 done = True
             else:
                 if yaml_p['type'] == 'regular':
-                    self.reward_step = yaml_p['step'] + abs(self.character.action - 1)*yaml_p['action']
+                    self.reward_step = yaml_p['step']*yaml_p['time'] + abs(self.character.action - 1)*yaml_p['action']
                 elif yaml_p['type'] == 'squished':
-                    self.reward_step = yaml_p['step'] + abs(self.character.U)*yaml_p['action']
+                    self.reward_step = yaml_p['step']*yaml_p['time'] + abs(self.character.U)*yaml_p['action']
                 done = False
 
             if self.character.t <= 0:

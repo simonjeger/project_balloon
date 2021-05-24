@@ -68,7 +68,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + 'start_test: [7,0]' + '\n'
     text = text + 'target_train: "random"' + '\n'
     text = text + 'target_test: "random"' + '\n'
-    text = text + 'radius_start_x: 10' + '\n'
+    text = text + 'radius_start_x: 15' + '\n'
     text = text + 'radius_stop_x: 10' + '\n'
     text = text + 'radius_start_ratio: 2' + '\n'
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
@@ -115,7 +115,7 @@ for data_path in ['"data/"']:
                                                         for update_interval in [300]:
                                                             for minibatch_size in [100]:
                                                                 for n_times_update in [100]:
-                                                                    for step in [-0.01]:
+                                                                    for step in [-0.00003]:
                                                                         for action in [-0.03]:
                                                                             for repeat in range(3):
                                                                                 if agent_type == '"SoftActorCritic"':

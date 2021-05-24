@@ -111,12 +111,26 @@ class character():
                 self.state = np.concatenate((self.residual.flatten(), self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
 
         elif yaml_p['type'] == 'squished':
+            if yaml_p['boundaries'] == 'short':
+                self.boundaries = np.array([])
+                self.bottleneck = 0
+
+            elif yaml_p['boundaries'] == 'long':
+                min_x = self.position[0]
+                max_x = self.size_x - self.position[0]
+                min_y = self.position[1]
+                max_y = self.size_y - self.position[1]
+                min_z = self.position[2]
+                max_z = self.dist_to_ceiling()
+                self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z])
+                self.bottleneck = len(self.boundaries)
+
             self.res_z_squished = (self.target[2]-self.world[0,int(self.target[0]),int(self.target[1]),0])/(self.ceiling[int(self.target[0]),int(self.target[1])] - self.world[0,int(self.target[0]),int(self.target[1]),0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
             if yaml_p['physics']:
-                self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.velocity.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
+                self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.velocity.flatten(), self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
             else:
-                self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
+                self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
 
         self.state = self.state.astype(np.float32)
 
