@@ -69,11 +69,11 @@ class balloon2d(Env):
 
         elif yaml_p['type'] == 'squished':
             if yaml_p['physics']:
-                regular_state_space_low = np.array(np.concatenate(([0,0,0,-np.inf,-np.inf,-np.inf],[-np.inf]*3))) #residual to target, velocity, measurement
-                regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_y,1,np.inf,np.inf,np.inf],[np.inf]*3)))
+                regular_state_space_low = np.array(np.concatenate(([0,0,0,-np.inf,-np.inf,-np.inf],[-np.inf]*self.character.bottleneck,[-np.inf]*3))) #residual to target, velocity, measurement
+                regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_y,1,np.inf,np.inf,np.inf],[np.inf]*self.character.bottleneck,[np.inf]*3)))
             else:
-                regular_state_space_low = np.array(np.concatenate(([0,0,0],[-np.inf]*3))) #residual to target, measurement
-                regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_y,1],[np.inf]*3)))
+                regular_state_space_low = np.array(np.concatenate(([0,0,0],[-np.inf]*self.character.bottleneck,[-np.inf]*3))) #residual to target, measurement
+                regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_y,1],[np.inf]*self.character.bottleneck,[np.inf]*3)))
             world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
             world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
             self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]

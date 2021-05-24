@@ -113,7 +113,7 @@ class character():
         elif yaml_p['type'] == 'squished':
             if yaml_p['boundaries'] == 'short':
                 self.boundaries = np.array([])
-                self.bottleneck = 0
+                self.bottleneck = len(self.boundaries)
 
             elif yaml_p['boundaries'] == 'long':
                 min_x = self.position[0]
