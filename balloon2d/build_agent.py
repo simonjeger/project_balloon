@@ -195,7 +195,7 @@ class Agent:
                     velocity = 0
 
                 rel_pos = dist_bottom / (dist_top + dist_bottom)
-                if np.random.uniform() < 1/1000*yaml_p['time']:
+                if np.random.uniform() < 1/4000*yaml_p['time']:
                     rel_set = np.random.uniform(0.1,0.9)
 
                 action = ll_pd(rel_set, rel_pos, velocity) + 1 #because the ll_controller gives values between -1,1
@@ -207,7 +207,7 @@ class Agent:
                     action = np.round(action,0)
 
             elif yaml_p['type'] == 'squished':
-                if np.random.uniform() < 0.3:
+                if np.random.uniform() < 1/4000*yaml_p['time']:
                     action = np.random.uniform(0.1,0.9)
 
                 # actions are not in the same range in discrete / continuous cases

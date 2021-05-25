@@ -69,8 +69,8 @@ class balloon2d(Env):
 
         elif yaml_p['type'] == 'squished':
             if yaml_p['physics']:
-                regular_state_space_low = np.array(np.concatenate(([0,0,0,-np.inf,-np.inf,-np.inf],[-np.inf]*self.character.bottleneck,[-np.inf]*3))) #residual to target, velocity, measurement
-                regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_y,1,np.inf,np.inf,np.inf],[np.inf]*self.character.bottleneck,[np.inf]*3)))
+                regular_state_space_low = np.array(np.concatenate(([0,0,0,-np.inf,-np.inf,-np.inf],[-np.inf]*self.character.bottleneck,[-np.inf]*3,[-np.inf,-np.inf,-np.inf]))) #residual to target, velocity, measurement
+                regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_y,1,np.inf,np.inf,np.inf],[np.inf]*self.character.bottleneck,[np.inf]*3,[np.inf,np.inf,np.inf])))
             else:
                 regular_state_space_low = np.array(np.concatenate(([0,0,0],[-np.inf]*self.character.bottleneck,[-np.inf]*3))) #residual to target, measurement
                 regular_state_space_high = np.array(np.concatenate(([self.size_x,self.size_y,1],[np.inf]*self.character.bottleneck,[np.inf]*3)))

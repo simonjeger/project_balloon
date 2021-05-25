@@ -10,14 +10,25 @@ from torchvision import datasets, transforms
 import matplotlib
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
+import seaborn as sns
 
 from utils.import_data import custom_data, wind_data
 from  visualize_world import visualize_world
 
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
+
 car = False
 
 class VAE(nn.Module):
-    def __init__(self, writer='no_writer'):
+    def __init__(self, writer=None):
         super(VAE, self).__init__()
         # logger
         self.writer = writer
@@ -25,9 +36,9 @@ class VAE(nn.Module):
         # variables
         self.bottleneck_terrain = 2
         self.bottleneck_wind = 5
-        self.bottleneck = self.bottleneck_terrain + 2*self.bottleneck_wind
+        self.bottleneck = self.bottleneck_terrain + self.bottleneck_wind
 
-        self.window_size = 3
+        self.window_size = 1
         self.window_size_total = 2*self.window_size + 1
         self.batch_size = 10
 
@@ -70,18 +81,18 @@ class VAE(nn.Module):
         )
 
         self.encoder_wind = nn.Sequential( # kernel_size = H_in - H_out - 1 #for basic case with padding=0, stride=1, dialation=1
-            nn.Conv2d(nc, ndf, (3,55), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
+            nn.Conv2d(nc, ndf, (3,53), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf, ndf * 2, (2,48), bias=False),
+            nn.Conv2d(ndf, ndf * 2, (1,33), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf * 2, ndf * 4, 4, bias=False),
+            nn.Conv2d(ndf * 2, ndf * 4, (1,15), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf * 4, 1024, 1, bias=False),
+            nn.Conv2d(ndf * 4, 1024, (1,7), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
-        )
+            )
 
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(1024, ngf * 4, 3, bias=False),
@@ -125,16 +136,16 @@ class VAE(nn.Module):
             )
 
         self.decoder_wind = nn.Sequential(
-            nn.ConvTranspose2d(1024, ngf * 4, 1, bias=False),
+            nn.ConvTranspose2d(1024, ngf * 4, (1,6), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose2d(ngf * 4, ngf * 2, 2, bias=False),
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, (2,16), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose2d(ngf * 2, ngf, 3, bias=False),
+            nn.ConvTranspose2d(ngf * 2, ngf, (2,34), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose2d(ngf, nc, (4,7), bias=False),
+            nn.ConvTranspose2d(ngf, nc, (1,52), bias=False),
             )
 
         self.fc1 = nn.Linear(1024, 512)
@@ -150,6 +161,7 @@ class VAE(nn.Module):
         self.optimizer = optim.Adam(self.parameters(), lr=1e-4) #used to be 1e-3
 
     def encode(self, x):
+        #print("initial size", x.size())
         if car:
             conv = self.encoder(x);
         else:
@@ -174,12 +186,12 @@ class VAE(nn.Module):
     def decode(self, z):
         h3 = self.relu(self.fc3(z))
         deconv_input = self.fc4(h3)
-        #print("deconv_input", deconv_input.size())
         deconv_input = deconv_input.view(len(deconv_input),-1,1,1)
         #print("deconv_input", deconv_input.size())
         if car:
             return self.decoder(deconv_input)
         else:
+            #print("deconv_output", self.decoder_wind(deconv_input).size())
             return self.decoder_wind(deconv_input)
         #return self.fake_decoder(deconv_input).view(len(deconv_input),3, 30, 30)
 
@@ -253,7 +265,7 @@ class VAE(nn.Module):
         print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(self.train_loader.dataset)))
 
         # logger
-        if type(self.writer) is not str:
+        if type(self.writer) is not None:
             self.writer.add_scalar('autoencoder training loss', train_loss / len(self.train_loader.dataset) , epoch * len(self.train_loader.dataset))
 
         if car:
@@ -338,22 +350,19 @@ class VAE(nn.Module):
         size_z = len(mean_x[0])
 
         z,x = np.meshgrid(np.arange(0, size_z, 1),np.arange(0, size_x, 1))
-        fig, ax = plt.subplots(frameon=False, figsize=(size_x,size_z))
+        fig, ax = plt.subplots(frameon=False)
+        render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
+
+        #cmap = sns.diverging_palette(220, 20, as_cmap=True)
+        cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+        ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+
+        #cmap = sns.diverging_palette(145, 300, s=60, as_cmap=True)
+        cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
+        ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+
         ax.set_axis_off()
-        ax.set_aspect(1)
-
-        # standardise color map for sig value
-        floor = 0
-        ceil = 1
-        sig_xz = np.maximum(sig_xz, floor)
-        sig_xz = np.minimum(sig_xz, ceil)
-        sig_xz -= floor
-        sig_xz /= ceil
-        cm = matplotlib.cm.viridis
-        colors = cm(sig_xz).reshape(size_x*size_z,4)
-
-        # generate quiver
-        q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=1, scale_units='inches')
+        ax.set_aspect(1/render_ratio)
         plt.savefig(path)
         plt.close()
 
@@ -361,7 +370,7 @@ class VAE(nn.Module):
         data = self.window(data, position[0]) #to keep naming convention
 
         # terrain
-        terrain = self.compress_terrain(data, position)
+        #terrain = self.compress_terrain(data, position)
 
         # wind
         data = data[-3::,:,:] #we only autoencode wind
@@ -373,7 +382,8 @@ class VAE(nn.Module):
         data = Variable(data, volatile=True)
         recon_batch, mu, logvar = self(data)
 
-        comp = np.concatenate([terrain, mu[0].detach().numpy(), logvar[0].detach().numpy()])
+        #comp = np.concatenate([terrain, mu[0].detach().numpy(), logvar[0].detach().numpy()])
+        comp = np.concatenate([mu[0].detach().numpy()])
         return comp
 
     def compress_terrain(self, data, position):

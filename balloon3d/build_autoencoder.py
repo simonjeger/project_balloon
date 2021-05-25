@@ -10,131 +10,77 @@ from torchvision import datasets, transforms
 import matplotlib
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
+import seaborn as sns
 
 from utils.import_data import custom_data, wind_data
 from  visualize_world import visualize_world
 
-car = False
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
 
 class VAE(nn.Module):
-    def __init__(self, writer='no_writer'):
+    def __init__(self, writer=None):
         super(VAE, self).__init__()
         # logger
         self.writer = writer
 
         # variables
         self.bottleneck_terrain = 2
-        self.bottleneck_wind = 5
-        self.bottleneck = self.bottleneck_terrain + 2*self.bottleneck_wind
+        self.bottleneck_wind = 10
+        self.bottleneck = self.bottleneck_terrain + self.bottleneck_wind
 
-        self.window_size = 3
+        self.window_size = 1
         self.window_size_total = 2*self.window_size + 1
         self.batch_size = 10
 
         #read in data
-        if car:
-            train_dataset = custom_data('data_cars/train/')
-            test_dataset = custom_data('data_cars/test/')
-        else:
-            train_dataset = wind_data('data/train/tensor/')
-            test_dataset = wind_data('data/test/tensor/')
+        train_dataset = wind_data('data/train/tensor/')
+        test_dataset = wind_data('data/test/tensor/')
 
         self.size_c = len(train_dataset[0])
         self.size_x = len(train_dataset[0][0])
-        self.size_z = len(train_dataset[0][0][0])
+        self.size_y = len(train_dataset[0][0][0])
+        self.size_z = len(train_dataset[0][0][0][0])
 
-        if car:
-            self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size) # I'll build my own batches through the window function
-            self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size)
-        else:
-            self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=1) # I'll build my own batches through the window function
-            self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=1)
+        self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=1) # I'll build my own batches through the window function
+        self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=1)
 
         ngf = 64 #64
         ndf = 64 #64
         nc = self.size_c
         # encoder
-
-        self.encoder = nn.Sequential( # kernel_size = H_in - H_out - 1 #for basic case with padding=0, stride=1, dialation=1
-            nn.Conv2d(nc, ndf, 19, bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
-            nn.LeakyReLU(0.2, inplace=True),
-
-            nn.Conv2d(ndf, ndf * 2, 17, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-
-            nn.Conv2d(ndf * 2, ndf * 4, 13, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-
-            nn.Conv2d(ndf * 4, 1024, 4, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-        )
-
         self.encoder_wind = nn.Sequential( # kernel_size = H_in - H_out - 1 #for basic case with padding=0, stride=1, dialation=1
-            nn.Conv2d(nc, ndf, (3,5), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
+            nn.Conv3d(nc, ndf, (3,3,53), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf, ndf * 2, (2,3), bias=False),
+            nn.Conv3d(ndf, ndf * 2, (1,1,33), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf * 2, ndf * 4, 4, bias=False),
+            nn.Conv3d(ndf * 2, ndf * 4, (1,1,15), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(ndf * 4, 1024, 1, bias=False),
+            nn.Conv3d(ndf * 4, 1024, (1,1,7), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
         )
-
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(1024, ngf * 4, 3, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-
-            nn.ConvTranspose2d(ngf * 4, ngf * 2, 12, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-
-            nn.ConvTranspose2d(ngf * 2, ngf, 18, bias=False),
-            nn.LeakyReLU(0.2, inplace=True),
-
-            nn.ConvTranspose2d(ngf, nc, 20, bias=False),
-            nn.Sigmoid()
-            )
-
-
-        self.decoder_conv = nn.Sequential(
-            #nn.Conv2d(1024, ngf * 8, 1, bias=False),
-            nn.ConvTranspose2d(1024, ngf * 8, 1, bias=False),
-            nn.ReLU(True),
-            nn.Upsample([4, 4]),
-
-            #nn.Conv2d(ngf * 8, ngf * 4, 4, bias=False),
-            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, bias=False),
-            nn.ReLU(True),
-            nn.Upsample([8, 8]),
-
-            #nn.Conv2d(ngf * 4, ngf * 2, 4, bias=False),
-            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, bias=False),
-            nn.ReLU(True),
-            nn.Upsample([16, 16]),
-
-            #nn.Conv2d(ngf * 2, ngf, 4, bias=False),
-            nn.ConvTranspose2d(ngf * 2, ngf, 4, bias=False),
-            nn.ReLU(True),
-            nn.Upsample([self.size_x, self.size_z]),
-
-            #nn.Conv2d(ngf, nc, 1, bias=False),
-            nn.ConvTranspose2d(ngf, nc, 1, bias=False),
-            nn.Sigmoid()
-            )
 
         self.decoder_wind = nn.Sequential(
-            nn.ConvTranspose2d(1024, ngf * 4, 1, bias=False),
+            nn.ConvTranspose3d(1024, ngf * 4, (1,1,6), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose2d(ngf * 4, ngf * 2, 2, bias=False),
+            nn.ConvTranspose3d(ngf * 4, ngf * 2, (2,2,16), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose2d(ngf * 2, ngf, 3, bias=False),
+            nn.ConvTranspose3d(ngf * 2, ngf, (2,2,34), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose2d(ngf, nc, (4,7), bias=False),
+            nn.ConvTranspose3d(ngf, nc, (1,1,52), bias=False),
             )
 
         self.fc1 = nn.Linear(1024, 512)
@@ -150,10 +96,8 @@ class VAE(nn.Module):
         self.optimizer = optim.Adam(self.parameters(), lr=1e-4) #used to be 1e-3
 
     def encode(self, x):
-        if car:
-            conv = self.encoder(x);
-        else:
-            conv = self.encoder_wind(x);
+        #print("initial size", x.size())
+        conv = self.encoder_wind(x);
         #print("encode conv", conv.size())
         h1 = self.fc1(conv.view(len(conv), -1))
         #print("encode h1", h1.size())
@@ -174,13 +118,10 @@ class VAE(nn.Module):
     def decode(self, z):
         h3 = self.relu(self.fc3(z))
         deconv_input = self.fc4(h3)
+        deconv_input = deconv_input.view(len(deconv_input),-1,1,1,1)
         #print("deconv_input", deconv_input.size())
-        deconv_input = deconv_input.view(len(deconv_input),-1,1,1)
-        #print("deconv_input", deconv_input.size())
-        if car:
-            return self.decoder(deconv_input)
-        else:
-            return self.decoder_wind(deconv_input)
+        #print("deconv_output", self.decoder_wind(deconv_input).size())
+        return self.decoder_wind(deconv_input)
         #return self.fake_decoder(deconv_input).view(len(deconv_input),3, 30, 30)
 
     def reparametrize(self, mu, logvar):
@@ -205,14 +146,11 @@ class VAE(nn.Module):
 
     def loss_function(self, recon_x, x, mu, logvar):
         # how well do input x and output recon_x agree?
-        if car:
-            BCE = F.binary_cross_entropy(recon_x, x)
-        else:
-            BCE = nn.functional.mse_loss(recon_x, x)
+        BCE = nn.functional.mse_loss(recon_x, x)
 
         # how close is the distribution to mean = 0, std = 1?
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        KLD /= len(x)*self.size_x*self.size_z*self.size_c #normalise by same number of elements as in reconstruction
+        KLD /= len(x)*self.size_x*self.size_y*self.size_z*self.size_c #normalise by same number of elements as in reconstruction
 
         return BCE + KLD
 
@@ -224,12 +162,13 @@ class VAE(nn.Module):
         for batch_idx, data in enumerate(self.train_loader):
             data = data.type(torch.FloatTensor) #numpy uses doubles, so just to be save
 
-            if not car:
-                data_window = torch.zeros([self.batch_size, self.size_c, self.window_size_total, self.size_z])
-                for i in range(self.batch_size): #number of samples we take from the same world
-                    center = np.random.randint(0,self.size_x)
-                    data_window[i,:,:,:] = self.window(data[0], center)
-                data = data_window #to keep naming convention
+            data_window = torch.zeros([self.batch_size, self.size_c, self.window_size_total, self.window_size_total, self.size_z])
+            for i in range(self.batch_size): #number of samples we take from the same world
+                center_x = np.random.randint(0,self.size_x)
+                center_y = np.random.randint(0,self.size_y)
+                center_z = np.random.randint(0,self.size_z)
+                data_window[i,:,:,:,:] = self.window(data[0], [center_x, center_y, center_z])
+            data = data_window #to keep naming convention
 
             data = Variable(data)
             self.optimizer.zero_grad()
@@ -253,20 +192,13 @@ class VAE(nn.Module):
         print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(self.train_loader.dataset)))
 
         # logger
-        if type(self.writer) is not str:
+        if type(self.writer) is not None:
             self.writer.add_scalar('autoencoder training loss', train_loss / len(self.train_loader.dataset) , epoch * len(self.train_loader.dataset))
 
-        if car:
-            # visualization of latent space
-            sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
-            sample = self.decode(sample).cpu()
+        sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
+        sample = self.decode(sample).cpu()
 
-            save_image(sample.data.view(self.batch_size, self.size_c, self.size_x, self.size_z), 'autoencoder/results/sample.png')
-        else:
-            sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
-            sample = self.decode(sample).cpu()
-
-            self.visualize(sample, 'autoencoder/results/sample.png')
+        self.visualize(sample, 'autoencoder/results/sample_')
 
     def model_test(self, epoch):
         # toggle model to test / inference mode
@@ -277,29 +209,19 @@ class VAE(nn.Module):
         for i, data in enumerate(self.test_loader):
             data = data.type(torch.FloatTensor) #numpy uses doubles, so just to be save
 
-            if not car:
-                data_window = torch.zeros([self.batch_size, self.size_c, self.window_size_total, self.size_z])
-                for j in range(self.batch_size): #number of samples we take from the same world
-                    center = np.random.randint(0,self.size_x)
-                    data_window[j,:,:,:] = self.window(data[0], center)
-                data = data_window #to keep naming convention
+            data_window = torch.zeros([self.batch_size, self.size_c, self.window_size_total, self.size_z])
+            for j in range(self.batch_size): #number of samples we take from the same world
+                center = np.random.randint(0,self.size_x)
+                data_window[j,:,:,:] = self.window(data[0], center)
+            data = data_window #to keep naming convention
 
             # we're only going to infer, so no autograd at all required: volatile=True
             data = Variable(data, volatile=True)
             recon_batch, mu, logvar = self(data)
             test_loss += self.loss_function(recon_batch, data, mu, logvar).data.item()
 
-            if car:
-                if i == 0:
-                    n = min(data.size(0), 8)
-
-                    comparison = torch.cat([data[:n], recon_batch[:n]])
-
-                    save_image(comparison.data.cpu(), 'autoencoder/results/reconstruction.png', nrow=n)
-
-            else:
-                self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real.png')
-                self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon.png')
+            self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real_')
+            self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon_')
 
         test_loss /= len(self.test_loader.dataset)
         print('====> Test set loss: {:.4f}'.format(test_loss))
@@ -311,57 +233,63 @@ class VAE(nn.Module):
         self.load_state_dict(torch.load(path + '/model.pt'))
         self.eval()
 
-    def window(self, data, center):
+    def window(self, data, position):
         window = np.zeros((len(data),self.window_size_total,self.size_z))
-        data_padded = np.zeros((len(data),self.size_x+2*self.window_size,self.size_z))
-        data_padded[:,self.window_size:-self.window_size,:] = data
+        data_padded = np.zeros((len(data),self.size_x+2*self.window_size,self.size_y+2*self.window_size,self.size_z))
+
+        data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data
 
         for i in range(self.window_size):
-            data_padded[:,i,:] = data_padded[:,self.window_size,:]
-            data_padded[:,-(i+1),:] = data_padded[:,-(self.window_size+1),:]
+            data_padded[:,i,:,:] = data_padded[:,self.window_size,:,:]
+            data_padded[:,:,i,:] = data_padded[:,:,self.window_size,:]
+            data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
+            data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
 
-        start_x = int(center)
-        end_x = int(center + self.window_size_total)
+        start_x = int(position[0])
+        start_y = int(position[1])
+        end_x = int(position[0] + self.window_size_total)
+        end_y = int(position[1] + self.window_size_total)
 
-        window = data_padded[:,start_x:end_x,:]
+        window = data_padded[:,start_x:end_x,start_y:end_y,:]
         window = torch.tensor(window)
         return window
 
-
     def visualize(self, data, path):
         n = 0 #which port of the batch should be visualized
-        mean_x = data[n][-3,:,:].detach().numpy()
-        mean_z = data[n][-2,:,:].detach().numpy()
-        sig_xz = data[n][-1,:,:].detach().numpy()
 
-        size_x = len(mean_x)
-        size_z = len(mean_x[0])
+        for dim in ['xz', 'yz']:
+            if dim == 'xz':
+                mean_1 = data[n][-4,:,self.window_size,:].detach().numpy()
+                mean_2 = data[n][-2,:,self.window_size,:].detach().numpy()
+            if dim == 'yz':
+                mean_1 = data[n][-4,self.window_size,:,:].detach().numpy()
+                mean_2 = data[n][-2,self.window_size,:,:].detach().numpy()
 
-        z,x = np.meshgrid(np.arange(0, size_z, 1),np.arange(0, size_x, 1))
-        fig, ax = plt.subplots(frameon=False, figsize=(size_x,size_z))
-        ax.set_axis_off()
-        ax.set_aspect(1)
+            size_1 = len(mean_1)
+            size_2 = len(mean_1[0])
 
-        # standardise color map for sig value
-        floor = 0
-        ceil = 1
-        sig_xz = np.maximum(sig_xz, floor)
-        sig_xz = np.minimum(sig_xz, ceil)
-        sig_xz -= floor
-        sig_xz /= ceil
-        cm = matplotlib.cm.viridis
-        colors = cm(sig_xz).reshape(size_x*size_z,4)
+            z,x = np.meshgrid(np.arange(0, size_2, 1),np.arange(0, size_1, 1))
+            fig, ax = plt.subplots(frameon=False)
+            render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
-        # generate quiver
-        q = ax.quiver(x, z, mean_x, mean_z, color=colors, scale=1, scale_units='inches')
-        plt.savefig(path)
-        plt.close()
+            #cmap = sns.diverging_palette(220, 20, as_cmap=True)
+            cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+            ax.imshow(mean_1.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+
+            #cmap = sns.diverging_palette(145, 300, s=60, as_cmap=True)
+            cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
+            ax.imshow(mean_2.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+
+            ax.set_axis_off()
+            ax.set_aspect(1/render_ratio)
+            plt.savefig(path + dim + '.png')
+            plt.close()
 
     def compress(self, data, position):
-        data = self.window(data, position[0]) #to keep naming convention
+        data = self.window(data, position) #to keep naming convention
 
         # terrain
-        terrain = self.compress_terrain(data, position)
+        #terrain = self.compress_terrain(data, position)
 
         # wind
         data = data[-3::,:,:] #we only autoencode wind
@@ -373,7 +301,8 @@ class VAE(nn.Module):
         data = Variable(data, volatile=True)
         recon_batch, mu, logvar = self(data)
 
-        comp = np.concatenate([terrain, mu[0].detach().numpy(), logvar[0].detach().numpy()])
+        #comp = np.concatenate([terrain, mu[0].detach().numpy(), logvar[0].detach().numpy()])
+        comp = np.concatenate([mu[0].detach().numpy()])
         return comp
 
     def compress_terrain(self, data, position):

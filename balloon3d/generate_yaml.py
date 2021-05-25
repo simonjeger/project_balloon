@@ -64,7 +64,7 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
     text = text + 'continuous: ' + str(continuous) + '\n'
-    text = text + 'T: 50' + '\n'
+    text = text + 'T: 100' + '\n'
     text = text + 'start_train: ' + str(start_train) + '\n'
     text = text + 'start_test: [7,6,0]' + '\n'
     text = text + 'target_train: "random"' + '\n'
@@ -100,11 +100,10 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
 
 time = 360
 step = -0.00003
-action = -0.03
-lr = 0.0005
+action = -0.25
 start_train = [7,6,0]
 
-process_nr = 1390
+process_nr = 1490
 for data_path in ['"data/"']:
     for type in ['"regular"', '"squished"']:
         for boundaries in ['"short"', '"long"']:
@@ -112,22 +111,23 @@ for data_path in ['"data/"']:
                 num_epochs = 20000
             if type == '"squished"':
                 num_epochs = 10000
-            for min_proj_dist in [0]:
+            for min_proj_dist in [0,1]:
                 for autoencoder in ['"HAE_avg"']:
                     for cherry_pick in [0]:
                         for short_sighted in [False]:
                             for window_size in [1]:
-                                for bottleneck in [1,3,8]:
+                                for bottleneck in [3]:
                                     for buffer_size in [100000000]:
-                                        for curriculum_dist in [1,100000]:
-                                            for curriculum_rad in [1,3]:
+                                        for curriculum_dist in [1,10000]:
+                                            for curriculum_rad in [1]:
                                                 for epsi_low in [0.1]:
                                                     for decay in [300000]:
-                                                        for minibatch_size in [100]:
-                                                            for n_times_update in [800]:
-                                                                for repeat in range(2):
-                                                                    for replay_start_size in [1000]:
-                                                                        continuous = True
+                                                        for minibatch_size in [100,800]:
+                                                            for n_times_update in [100]:
+                                                                for lr in [0.005,0.0005,0.00005]:
+                                                                    for repeat in range(2):
+                                                                        for replay_start_size in [1000]:
+                                                                            continuous = True
 
-                                                                        write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, boundaries, short_sighted)
-                                                                        process_nr += 1
+                                                                            write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, boundaries, short_sighted)
+                                                                            process_nr += 1

@@ -69,6 +69,8 @@ class Agent:
                 torch.nn.ReLU(),
                 torch.nn.Linear(256, 256),
                 torch.nn.ReLU(),
+                torch.nn.Linear(256, 256),
+                torch.nn.ReLU(),
                 torch.nn.Linear(256, action_size * 2),
                 pfrl.nn.lmbda.Lambda(squashed_diagonal_gaussian_head),
             )
@@ -76,6 +78,7 @@ class Agent:
             torch.nn.init.xavier_uniform_(policy[0].weight)
             torch.nn.init.xavier_uniform_(policy[2].weight)
             torch.nn.init.xavier_uniform_(policy[4].weight)
+            torch.nn.init.xavier_uniform_(policy[6].weight)
             policy_optimizer = torch.optim.Adam(policy.parameters(), lr=3e-4)
 
             def make_q_func_with_optimizer():
@@ -85,11 +88,14 @@ class Agent:
                     torch.nn.ReLU(),
                     torch.nn.Linear(256, 256),
                     torch.nn.ReLU(),
+                    torch.nn.Linear(256, 256),
+                    torch.nn.ReLU(),
                     torch.nn.Linear(256, 1),
                 )
                 torch.nn.init.xavier_uniform_(q_func[1].weight)
                 torch.nn.init.xavier_uniform_(q_func[3].weight)
                 torch.nn.init.xavier_uniform_(q_func[5].weight)
+                torch.nn.init.xavier_uniform_(q_func[7].weight)
                 q_func_optimizer = torch.optim.Adam(q_func.parameters(), lr=3e-4)
                 return q_func, q_func_optimizer
 
@@ -195,7 +201,7 @@ class Agent:
                     velocity = 0
 
                 rel_pos = dist_bottom / (dist_top + dist_bottom)
-                if np.random.uniform() < 1/1000*yaml_p['time']:
+                if np.random.uniform() < 1/4000*yaml_p['time']:
                     rel_set = np.random.uniform(0.1,0.9)
 
                 action = ll_pd(rel_set, rel_pos, velocity) + 1 #because the ll_controller gives values between -1,1
@@ -207,7 +213,7 @@ class Agent:
                     action = np.round(action,0)
 
             elif yaml_p['type'] == 'squished':
-                if np.random.uniform() < 0.3:
+                if np.random.uniform() < 1/4000*yaml_p['time']:
                     action = np.random.uniform(0.1,0.9)
 
                 # actions are not in the same range in discrete / continuous cases

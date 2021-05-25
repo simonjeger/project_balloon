@@ -45,6 +45,7 @@ class character():
 
         self.position = copy.copy(self.start)
         self.velocity = np.array([0,0,0])
+        self.old_position = self.start
 
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
@@ -128,7 +129,9 @@ class character():
             self.res_z_squished = (self.target[2]-self.world[0,int(self.target[0]),int(self.target[1]),0])/(self.ceiling[int(self.target[0]),int(self.target[1])] - self.world[0,int(self.target[0]),int(self.target[1]),0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
             if yaml_p['physics']:
-                self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.velocity.flatten(), self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
+                self.vel_squished = self.position - self.old_position
+                self.old_position = self.position
+                self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.velocity.flatten(), self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten(),self.vel_squished.flatten()), axis=0)
             else:
                 self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
 
