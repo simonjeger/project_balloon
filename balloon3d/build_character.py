@@ -67,11 +67,11 @@ class character():
         if yaml_p['short_sighted']:
             self.become_short_sighted()
 
-    def update(self, action, world_compressed):
+    def update(self, action, world_compressed, roll_out=False):
         self.action = action
         self.world_compressed = world_compressed
 
-        in_bounds = self.move_particle(100)
+        in_bounds = self.move_particle(100, roll_out)
         if self.height_above_ground() < 0: # check if crashed into terrain
             in_bounds = False
         if self.dist_to_ceiling() < 0: # check if crashed into terrain
@@ -137,7 +137,7 @@ class character():
 
         self.state = self.state.astype(np.float32)
 
-    def move_particle(self, n):
+    def move_particle(self, n, roll_out):
         c = self.area*self.rho*self.c_w/(2*self.mass)
         delta_t = yaml_p['time']/n
 
@@ -147,10 +147,10 @@ class character():
 
         self.U = 0
         for _ in range(n):
-            if yaml_p['type'] == 'regular':
+            if (yaml_p['type'] == 'regular') & (not roll_out):
                 b = (self.action - 1)*self.force/yaml_p['unit_z']/self.mass
 
-            elif yaml_p['type'] == 'squished':
+            else:
                 dist_bottom = self.height_above_ground()
                 dist_top = self.dist_to_ceiling()
                 rel_pos = dist_bottom / (dist_top + dist_bottom)

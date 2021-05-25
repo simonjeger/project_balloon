@@ -93,7 +93,7 @@ class balloon2d(Env):
         done = False
 
         # move character
-        in_bounds = self.character.update(action, self.world_compressed)
+        in_bounds = self.character.update(action, self.world_compressed, roll_out)
         done = self.cost(in_bounds)
 
         if not roll_out:

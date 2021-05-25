@@ -116,7 +116,7 @@ for data_path in ['"data/"']:
                                                             for minibatch_size in [100]:
                                                                 for n_times_update in [100]:
                                                                     for step in [-0.00003]:
-                                                                        for action in [-0.03]:
+                                                                        for action in [-0.05]:
                                                                             for repeat in range(3):
                                                                                 if agent_type == '"SoftActorCritic"':
                                                                                     continuous = True

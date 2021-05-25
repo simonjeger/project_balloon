@@ -192,35 +192,14 @@ class Agent:
         while True:
             self.env.character.target = [-10,-10,-10] #set target outside map
 
-            if yaml_p['type'] == 'regular':
-                dist_bottom = self.env.character.height_above_ground()
-                dist_top = self.env.character.dist_to_ceiling()
-                if yaml_p['physics']:
-                    velocity = self.env.character.state[5]
-                else:
-                    velocity = 0
+            if np.random.uniform() < 1/4000*yaml_p['time']:
+                action = np.random.uniform(0.1,0.9)
 
-                rel_pos = dist_bottom / (dist_top + dist_bottom)
-                if np.random.uniform() < 1/4000*yaml_p['time']:
-                    rel_set = np.random.uniform(0.1,0.9)
-
-                action = ll_pd(rel_set, rel_pos, velocity) + 1 #because the ll_controller gives values between -1,1
-
-                # actions are not in the same range in discrete / continuous cases
-                if yaml_p['continuous']:
-                    action = action
-                else:
-                    action = np.round(action,0)
-
-            elif yaml_p['type'] == 'squished':
-                if np.random.uniform() < 1/4000*yaml_p['time']:
-                    action = np.random.uniform(0.1,0.9)
-
-                # actions are not in the same range in discrete / continuous cases
-                if yaml_p['continuous']:
-                    action = action
-                else:
-                    action = np.round(action,0)
+            # actions are not in the same range in discrete / continuous cases
+            if yaml_p['continuous']:
+                action = action
+            else:
+                action = np.round(action,0)
 
             _, _, done, _ = self.env.step(action, roll_out=True)
 

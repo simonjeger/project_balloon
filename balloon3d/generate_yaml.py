@@ -100,31 +100,31 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
 
 time = 360
 step = -0.00003
-action = -0.25
+action = -0.05
 start_train = [7,6,0]
 
 process_nr = 1490
-for data_path in ['"data/"']:
+for data_path in ['"data/"', '"data_small/"', '"data_constant/"']:
     for type in ['"regular"', '"squished"']:
         for boundaries in ['"short"', '"long"']:
             if type == '"regular"':
                 num_epochs = 20000
             if type == '"squished"':
                 num_epochs = 10000
-            for min_proj_dist in [0,1]:
+            for min_proj_dist in [1]:
                 for autoencoder in ['"HAE_avg"']:
                     for cherry_pick in [0]:
                         for short_sighted in [False]:
                             for window_size in [1]:
-                                for bottleneck in [3]:
+                                for bottleneck in [1,4]:
                                     for buffer_size in [100000000]:
                                         for curriculum_dist in [1,10000]:
                                             for curriculum_rad in [1]:
                                                 for epsi_low in [0.1]:
                                                     for decay in [300000]:
-                                                        for minibatch_size in [100,800]:
+                                                        for minibatch_size in [800]:
                                                             for n_times_update in [100]:
-                                                                for lr in [0.005,0.0005,0.00005]:
+                                                                for lr in [0.0005]:
                                                                     for repeat in range(2):
                                                                         for replay_start_size in [1000]:
                                                                             continuous = True

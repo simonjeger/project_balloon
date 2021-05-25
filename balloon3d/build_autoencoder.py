@@ -209,10 +209,12 @@ class VAE(nn.Module):
         for i, data in enumerate(self.test_loader):
             data = data.type(torch.FloatTensor) #numpy uses doubles, so just to be save
 
-            data_window = torch.zeros([self.batch_size, self.size_c, self.window_size_total, self.size_z])
+            data_window = torch.zeros([self.batch_size, self.size_c, self.window_size_total, self.window_size_total, self.size_z])
             for j in range(self.batch_size): #number of samples we take from the same world
-                center = np.random.randint(0,self.size_x)
-                data_window[j,:,:,:] = self.window(data[0], center)
+                center_x = np.random.randint(0,self.size_x)
+                center_y = np.random.randint(0,self.size_y)
+                center_z = np.random.randint(0,self.size_z)
+                data_window[j,:,:,:,:] = self.window(data[0], [center_x, center_y, center_z])
             data = data_window #to keep naming convention
 
             # we're only going to infer, so no autograd at all required: volatile=True
