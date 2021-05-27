@@ -36,8 +36,6 @@ class HAE():
         if yaml_p['type'] == 'regular':
             if yaml_p['autoencoder'] == 'HAE_avg':
                 self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 #because wind in x and y direction (and need to pass absolute hight)
-            elif yaml_p['autoencoder'] == 'HAE_ext':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
             elif yaml_p['autoencoder'] == 'HAE_patch':
                 self.bottleneck_wind = 2*2 + 2*2#because we mainly look at wind in x direction
             else:
@@ -46,8 +44,6 @@ class HAE():
         elif yaml_p['type'] == 'squished':
             if yaml_p['autoencoder'] == 'HAE_avg':
                 self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 + 1 #because we mainly look at wind in x direction
-            elif yaml_p['autoencoder'] == 'HAE_ext':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
             else:
                 print('ERROR: please choose one of the available HAE')
 
@@ -113,8 +109,6 @@ class HAE():
             window = self.window(data, position)
             if yaml_p['autoencoder'] == 'HAE_avg':
                 wind = self.compress_wind_avg(window,position)
-            elif yaml_p['autoencoder'] == 'HAE_ext':
-                wind = self.compress_wind_ext(window,position)
             elif yaml_p['autoencoder'] == 'HAE_patch':
                 wind = self.compress_wind_patch(window,position)
 
@@ -122,8 +116,6 @@ class HAE():
             window = self.window_squished(data, position, ceiling)
             if yaml_p['autoencoder'] == 'HAE_avg':
                 wind = self.compress_wind_avg_squished(window, position, ceiling)
-            elif yaml_p['autoencoder'] == 'HAE_ext':
-                wind = self.compress_wind_ext_squished(window, position, ceiling)
         return wind
 
     def compress_wind_avg(self, data, position):
@@ -158,50 +150,6 @@ class HAE():
                 pred[0*len(idx)+i] = np.nanmean(mean_x[:,:,idx[i]:idx[i] + self.box_size])
                 pred[1*len(idx)+i] = np.nanmean(mean_y[:,:,idx[i]:idx[i] + self.box_size])
                 #pred[2*len(idx)+i] = torch.mean(mean_z[:,:,idx[i]:idx[i] + self.box_size])
-
-        pred[-1] = position[2]
-
-        pred = torch.tensor(np.nan_to_num(pred,0))
-        return pred
-
-    def compress_wind_ext(self, data, position):
-        N = 5
-        if yaml_p['window_size'] != 6:
-            print('ERROR: compress_wind_ext requires window_size = 6')
-
-        # get rid of wind data that's below the terrain
-        loc_x = len(data[0,:,0,0])
-        loc_y = len(data[0,0,:,0])
-        loc_z = len(data[0,0,0,:])
-
-        corrected_data = data
-        for i in range(loc_x):
-            for j in range(loc_y):
-                k = int(data[0,i,j,0])
-                corrected_data[1:,i,j,0:k] = 0
-
-        corrected_data = corrected_data.detach()
-
-        mean_x = corrected_data[-4,:,:]
-        mean_y = corrected_data[-3,:,:]
-        mean_z = corrected_data[-2,:,:]
-        sig_xz = corrected_data[-1,:,:]
-
-        idx_x = [0,4,6,7,9,13]
-        idx_z = np.arange(0,self.size_z, self.box_size)
-        if self.size_z%self.box_size != 0:
-            idx_z = idx_z[:-1]
-        pred = np.zeros((len(idx_z)*2) + 1) # two different wind directions
-
-        # wind
-        for j in range(N):
-            for i in range(len(idx_z)):
-                with warnings.catch_warnings(): #I expect to see RuntimeWarnings in this block
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
-
-                    pred[0*len(idx_z)+i] = np.nanmean(mean_x[:,:,idx_z[i]:idx_z[i] + self.box_size])
-                    pred[1*len(idx_z)+i] = np.nanmean(mean_y[:,:,idx_z[i]:idx_z[i] + self.box_size])
-                    #pred[2*len(idx_z)+i] = torch.mean(mean_z[:,:,idx_z[i]:idx_Z[i] + self.box_size])
 
         pred[-1] = position[2]
 
@@ -259,7 +207,7 @@ class HAE():
         pred = np.array([idx_bottom_x - loc_z, idx_top_x - loc_z, idx_bottom_y - loc_z, idx_top_y - loc_z, dist_min_x, dist_max_x, dist_min_y, dist_max_y])
         return pred
 
-    def compress_wind_squished(self, data, position,ceiling):
+    def compress_wind_avg_squished(self, data, position,ceiling):
         mean_x = data[-4,:,:]
         mean_y = data[-3,:,:]
         mean_z = data[-2,:,:]

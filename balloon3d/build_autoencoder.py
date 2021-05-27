@@ -235,7 +235,7 @@ class VAE(nn.Module):
         sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
         sample = self.decode(sample).cpu()
 
-        self.visualize(sample, 'autoencoder/results/sample_')
+        self.visualize(sample, 'autoencoder/results/sample_' + str(yaml_p['process_nr']) + '_')
 
     def model_test(self, epoch):
         # toggle model to test / inference mode
@@ -261,7 +261,7 @@ class VAE(nn.Module):
 
             self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real_')
             self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon_')
-            self.visualize(abs(data-recon_batch), 'autoencoder/results/' + str(i).zfill(5) + '_error.png')
+            self.visualize(abs(data-recon_batch), 'autoencoder/results/' + str(i).zfill(5) + '_error_')
 
         test_loss /= len(self.test_loader.dataset)
         print('====> Test set loss: {:.4f}'.format(test_loss))

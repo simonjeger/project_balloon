@@ -20,7 +20,6 @@ with open(args.yaml_file, 'rt') as fh:
 
 # Build folder structure if it doesn't exist yet
 Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5)).mkdir(parents=True, exist_ok=True)
-Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_autoencoder').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_agent').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train').mkdir(parents=True, exist_ok=True)
