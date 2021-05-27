@@ -180,7 +180,7 @@ class VAE(nn.Module):
         self.lrelu = nn.LeakyReLU()
         self.relu = nn.ReLU()
 
-        self.optimizer = optim.Adam(self.parameters(), lr=1e-4) #used to be 1e-3
+        self.optimizer = optim.Adam(self.parameters(), lr=1e-5) #used to be 1e-3
 
         self.step_n = 0
 
@@ -310,7 +310,7 @@ class VAE(nn.Module):
             sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
             sample = self.decode(sample).cpu()
 
-            self.visualize(sample, 'autoencoder/results/sample' + str(yaml_p['process_nr']) + '.png')
+            self.visualize(sample, 'autoencoder/results/sample_' + str(yaml_p['process_nr']) + '.png')
 
     def model_test(self, epoch):
         # toggle model to test / inference mode

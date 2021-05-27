@@ -110,7 +110,8 @@ class character():
                 self.boundaries = np.array([min_x, max_x, min_z, max_z])
                 self.bottleneck = len(self.boundaries)
 
-            self.res_z_squished = (self.target[1]-self.world[0,int(self.target[0]),0])/(self.ceiling[int(self.target[0])] - self.world[0,int(self.target[0]),0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
+            tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
+            self.res_z_squished = (self.target[1]-self.world[0,tar_x,0])/(self.ceiling[tar_x] - self.world[0,tar_x,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
             if yaml_p['physics']:
                 self.state = np.concatenate(([self.residual[0],self.res_z_squished], self.velocity.flatten(), self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
