@@ -34,7 +34,7 @@ class VAE(nn.Module):
         # variables
         self.bottleneck_terrain = 2
         self.bottleneck_wind = yaml_p['bottleneck']
-        self.bottleneck = self.bottleneck_terrain + self.bottleneck_wind
+        self.bottleneck = self.bottleneck_terrain
 
         self.window_size = yaml_p['window_size']
         self.window_size_total = 2*self.window_size + 1
@@ -44,13 +44,13 @@ class VAE(nn.Module):
         train_dataset = wind_data('data/train/tensor/')
         test_dataset = wind_data('data/test/tensor/')
 
-        self.size_c = len(train_dataset[0])
+        self.size_c = 3
         self.size_x = len(train_dataset[0][0])
         self.size_y = len(train_dataset[0][0][0])
         self.size_z = len(train_dataset[0][0][0][0])
 
-        self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=1) # I'll build my own batches through the window function
-        self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=1)
+        self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size) # I'll build my own batches through the window function
+        self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size)
 
         ngf = 30 #64
         ndf = 30 #64
@@ -116,7 +116,7 @@ class VAE(nn.Module):
         self.lrelu = nn.LeakyReLU()
         self.relu = nn.ReLU()
 
-        self.optimizer = optim.Adam(self.parameters(), lr=1e-6) #used to be 1e-3
+        self.optimizer = optim.Adam(self.parameters(), lr=1e-5) #used to be 1e-3
 
         self.step_n = 0
 
@@ -197,7 +197,12 @@ class VAE(nn.Module):
                 center_x = np.random.randint(0,self.size_x)
                 center_y = np.random.randint(0,self.size_y)
                 center_z = np.random.randint(0,self.size_z)
-                data_window[i,:,:,:,:] = self.window(data[0], [center_x, center_y, center_z])
+                if yaml_p['type'] == 'regular':
+                    to_fill = self.window(data[i], [center_x, center_y, center_z])
+                elif yaml_p['type'] == 'squished':
+                    ceiling = [np.random.uniform(0.9, 1) * self.size_z]*np.ones((self.size_x, self.size_y))
+                    to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
+                data_window[i,:,:,:,:] = to_fill[-4:-1]
             data = data_window #to keep naming convention
 
             data = Variable(data)
@@ -217,10 +222,10 @@ class VAE(nn.Module):
             if type(self.writer) is not None:
                 self.writer.add_scalar('ae_training_loss', loss.data.item(), self.step_n)
 
-            log_interval = 100
+            log_interval = 10
             if batch_idx % log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, batch_idx * len(data), len(self.train_loader.dataset)*self.batch_size, #because I do the batches manually
+                    epoch, batch_idx * len(data) * self.batch_size, len(self.train_loader.dataset)*self.batch_size, #because I do the batches manually
                     100. * batch_idx / len(self.train_loader),
                     loss.data.item() / len(data)))
 
@@ -243,15 +248,20 @@ class VAE(nn.Module):
         test_loss = 0
 
         # each data is of self.batch_size (default 128) samples
-        for i, data in enumerate(self.test_loader):
+        for batch_idx, data in enumerate(self.test_loader):
             data = data.type(torch.FloatTensor) #numpy uses doubles, so just to be save
 
             data_window = torch.zeros([self.batch_size, self.size_c, self.window_size_total, self.window_size_total, self.size_z])
-            for j in range(self.batch_size): #number of samples we take from the same world
+            for i in range(self.batch_size): #number of samples we take from the same world
                 center_x = np.random.randint(0,self.size_x)
                 center_y = np.random.randint(0,self.size_y)
                 center_z = np.random.randint(0,self.size_z)
-                data_window[j,:,:,:,:] = self.window(data[0], [center_x, center_y, center_z])
+                if yaml_p['type'] == 'regular':
+                    to_fill = self.window(data[i], [center_x, center_y, center_z])
+                elif yaml_p['type'] == 'squished':
+                    ceiling = [np.random.uniform(0.9, 1) * self.size_z]*np.ones((self.size_x, self.size_y))
+                    to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
+                data_window[i,:,:,:,:] = to_fill[-4:-1]
             data = data_window #to keep naming convention
 
             # we're only going to infer, so no autograd at all required: volatile=True
@@ -294,6 +304,40 @@ class VAE(nn.Module):
         window = torch.tensor(window)
         return window
 
+    def window_squished(self, data, position, ceiling):
+        res = self.size_z
+        data_squished = np.zeros((len(data),self.size_x,self.size_y,res))
+        for i in range(self.size_x):
+            for j in range(self.size_y):
+                bottom = data[0,i,j,0]
+                top = ceiling[i,j]
+
+                x_old = np.arange(0,self.size_z,1)
+                x_new = np.linspace(bottom,top,res)
+                data_squished[0,:,:,:] = data[0,:,:,:] #terrain stays the same
+
+                for k in range(1,len(data)):
+                    data_squished[k,i,j,:] = np.interp(x_new,x_old,data[k,i,j,:])
+
+        data_padded = np.zeros((len(data_squished),self.size_x+2*self.window_size,self.size_y+2*self.window_size,self.size_z))
+
+        data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data_squished
+
+        for i in range(self.window_size):
+            data_padded[:,i,:,:] = data_padded[:,self.window_size,:,:]
+            data_padded[:,:,i,:] = data_padded[:,:,self.window_size,:]
+            data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
+            data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
+
+        start_x = int(position[0])
+        start_y = int(position[1])
+        end_x = int(start_x + self.window_size_total)
+        end_y = int(start_y + self.window_size_total)
+
+        window = data_padded[:,start_x:end_x,start_y:end_y,:]
+        window = torch.tensor(window)
+        return window
+
     def visualize(self, data, path):
         n = 0 #which port of the batch should be visualized
 
@@ -324,39 +368,21 @@ class VAE(nn.Module):
             plt.savefig(path + dim + '.png')
             plt.close()
 
-    def compress(self, data, position):
-        data = self.window(data, position) #to keep naming convention
-
-        # terrain
-        #terrain = self.compress_terrain(data, position)
+    def compress(self, data, position, ceiling):
+        if yaml_p['type'] == 'regular':
+            to_fill = self.window(data, position)
+        elif yaml_p['type'] == 'squished':
+            to_fill = self.window_squished(data, position, ceiling)
+        data = to_fill[-4:-1]
 
         # wind
-        data = data[-3::,:,:] #we only autoencode wind
-        data = data.view(1,3,self.window_size_total,self.size_z)
+        data = data.view(1,self.size_c,self.window_size_total,self.window_size_total,self.size_z)
         data = data.type(torch.FloatTensor)
         self.eval() #toggle model to test / inference mode
 
         # we're only going to infer, so no autograd at all required: volatile=True
         data = Variable(data, volatile=True)
         recon_batch, mu, logvar = self(data)
+        comp = mu[0].detach().numpy()
 
-        #comp = np.concatenate([terrain, mu[0].detach().numpy(), logvar[0].detach().numpy()])
-        comp = np.concatenate([mu[0].detach().numpy()])
         return comp
-
-    def compress_terrain(self, data, position):
-        rel_x = self.window_size + position[0] - int(position[0]) #to accound for the rounding that occured in window function
-        rel_z = position[1]
-        terrain = data[0,:,0]
-
-        x = np.linspace(0,self.window_size_total,len(terrain))
-        distances = []
-        res = 100
-        for i in range(len(terrain)*res):
-            #distances.append(np.sqrt((rel_x-i)**2 + (rel_z-terrain[i])**2))
-            distances.append(np.sqrt((rel_x-i/res)**2 + (rel_z-np.interp(i/res,x,terrain))**2))
-
-        distance = np.min(distances)
-        bearing = np.arctan2(np.argmin(distances)/res - rel_x, rel_z - np.interp(np.argmin(distances)/res,x,terrain))
-
-        return [distance, bearing]
