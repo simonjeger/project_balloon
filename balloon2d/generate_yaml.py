@@ -41,7 +41,7 @@ def write(process_nr, autoencoder, num_epochs, buffer_size, lr, explorer_type, a
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'num_epochs_train: ' + str(num_epochs) + '\n'
     text = text + 'num_epochs_test: 1000' + '\n'
-    text = text + 'phase: 50' + '\n'
+    text = text + 'phase: 5' + '\n'
     text = text + 'cherry_pick: 0' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'

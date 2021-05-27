@@ -34,7 +34,8 @@ class wind_data(Dataset):
         self.data = []
         for name in name_list:
             tensor = torch.load(path + name)
-            tensor = tensor[-3::,:,:] # don't autoencode terrain
+            #tensor = tensor[-3::,:,:] # don't autoencode terrain
+            tensor = tensor[-3:-1,:] # only encode wind in x
             self.data.append(torch.tensor(tensor).float())
 
     def __len__(self):

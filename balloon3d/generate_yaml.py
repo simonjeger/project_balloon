@@ -42,7 +42,7 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'num_epochs_train: ' + str(num_epochs) + '\n'
     text = text + 'num_epochs_test: 1000' + '\n'
-    text = text + 'phase: 50' + '\n'
+    text = text + 'phase: 5' + '\n'
     text = text + 'cherry_pick: ' + str(cherry_pick) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'

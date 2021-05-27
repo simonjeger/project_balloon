@@ -33,10 +33,10 @@ class VAE(nn.Module):
 
         # variables
         self.bottleneck_terrain = 2
-        self.bottleneck_wind = 10
+        self.bottleneck_wind = yaml_p['bottleneck']
         self.bottleneck = self.bottleneck_terrain + self.bottleneck_wind
 
-        self.window_size = 1
+        self.window_size = yaml_p['window_size']
         self.window_size_total = 2*self.window_size + 1
         self.batch_size = 10
 
@@ -52,35 +52,58 @@ class VAE(nn.Module):
         self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=1) # I'll build my own batches through the window function
         self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=1)
 
-        ngf = 64 #64
-        ndf = 64 #64
+        ngf = 30 #64
+        ndf = 30 #64
         nc = self.size_c
+
+        # set kernel size of x direction
+        if self.window_size_total == 3:
+            k_enc = [3,1,1,1]
+            k_dec = [1,2,2,1]
+        elif self.window_size_total == 5:
+            k_enc = [3,3,1,1]
+            k_dec = [1,2,3,2]
+        elif self.window_size_total == 7:
+            k_enc = [3,3,2,2]
+            k_dec = [1,3,3,3]
+        elif self.window_size_total == 9:
+            k_enc = [3,3,3,3]
+            k_dec = [2,3,3,4]
+        elif self.window_size_total == 11:
+            k_enc = [5,3,3,3]
+            k_dec = [2,4,4,4]
+        elif self.window_size_total == 13:
+            k_enc = [5,5,3,3]
+            k_dec = [4,4,4,4]
+        else:
+            print('ERROR: This window_size is not supported')
+
         # encoder
         self.encoder_wind = nn.Sequential( # kernel_size = H_in - H_out - 1 #for basic case with padding=0, stride=1, dialation=1
-            nn.Conv3d(nc, ndf, (3,3,53), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
+            nn.Conv3d(nc, ndf, (k_enc[0],k_enc[0],53), bias=False), #Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv3d(ndf, ndf * 2, (1,1,33), bias=False),
+            nn.Conv3d(ndf, ndf * 2, (k_enc[1],k_enc[1],33), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv3d(ndf * 2, ndf * 4, (1,1,15), bias=False),
+            nn.Conv3d(ndf * 2, ndf * 4, (k_enc[2],k_enc[2],15), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv3d(ndf * 4, 1024, (1,1,7), bias=False),
+            nn.Conv3d(ndf * 4, 1024, (k_enc[3],k_enc[3],7), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
         )
 
         self.decoder_wind = nn.Sequential(
-            nn.ConvTranspose3d(1024, ngf * 4, (1,1,6), bias=False),
+            nn.ConvTranspose3d(1024, ngf * 4, (k_dec[0],k_dec[0],6), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose3d(ngf * 4, ngf * 2, (2,2,16), bias=False),
+            nn.ConvTranspose3d(ngf * 4, ngf * 2, (k_dec[1],k_dec[1],16), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose3d(ngf * 2, ngf, (2,2,34), bias=False),
+            nn.ConvTranspose3d(ngf * 2, ngf, (k_dec[2],k_dec[2],34), bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.ConvTranspose3d(ngf, nc, (1,1,52), bias=False),
+            nn.ConvTranspose3d(ngf, nc, (k_dec[3],k_dec[3],52), bias=False),
             )
 
         self.fc1 = nn.Linear(1024, 512)
@@ -93,7 +116,9 @@ class VAE(nn.Module):
         self.lrelu = nn.LeakyReLU()
         self.relu = nn.ReLU()
 
-        self.optimizer = optim.Adam(self.parameters(), lr=1e-4) #used to be 1e-3
+        self.optimizer = optim.Adam(self.parameters(), lr=1e-6) #used to be 1e-3
+
+        self.step_n = 0
 
     def encode(self, x):
         #print("initial size", x.size())
@@ -152,6 +177,11 @@ class VAE(nn.Module):
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         KLD /= len(x)*self.size_x*self.size_y*self.size_z*self.size_c #normalise by same number of elements as in reconstruction
 
+        # logger
+        if self.writer is not None:
+            self.writer.add_scalar('BCE_loss', BCE, self.step_n)
+            self.writer.add_scalar('KLD_loss', KLD, self.step_n)
+
         return BCE + KLD
 
     def model_train(self, epoch):
@@ -182,12 +212,19 @@ class VAE(nn.Module):
             loss.backward()
             train_loss += loss.data.item()
             self.optimizer.step()
+
+            # logger
+            if type(self.writer) is not None:
+                self.writer.add_scalar('ae_training_loss', loss.data.item(), self.step_n)
+
             log_interval = 100
             if batch_idx % log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx * len(data), len(self.train_loader.dataset)*self.batch_size, #because I do the batches manually
                     100. * batch_idx / len(self.train_loader),
                     loss.data.item() / len(data)))
+
+            self.step_n += 1
 
         print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(self.train_loader.dataset)))
 
@@ -224,15 +261,16 @@ class VAE(nn.Module):
 
             self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real_')
             self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon_')
+            self.visualize(abs(data-recon_batch), 'autoencoder/results/' + str(i).zfill(5) + '_error.png')
 
         test_loss /= len(self.test_loader.dataset)
         print('====> Test set loss: {:.4f}'.format(test_loss))
 
     def save_weights(self, path):
-        torch.save(self.state_dict(), path + '/model.pt')
+        torch.save(self.state_dict(), path + '/model_' + str(yaml_p['process_nr']) + '.pt')
 
     def load_weights(self, path):
-        self.load_state_dict(torch.load(path + '/model.pt'))
+        self.load_state_dict(torch.load(path + '/model_' + str(yaml_p['process_nr']) + '.pt'))
         self.eval()
 
     def window(self, data, position):
@@ -261,11 +299,11 @@ class VAE(nn.Module):
 
         for dim in ['xz', 'yz']:
             if dim == 'xz':
-                mean_1 = data[n][-4,:,self.window_size,:].detach().numpy()
-                mean_2 = data[n][-2,:,self.window_size,:].detach().numpy()
+                mean_1 = data[n][-3,:,self.window_size,:].detach().numpy()
+                mean_2 = data[n][-1,:,self.window_size,:].detach().numpy()
             if dim == 'yz':
-                mean_1 = data[n][-4,self.window_size,:,:].detach().numpy()
-                mean_2 = data[n][-2,self.window_size,:,:].detach().numpy()
+                mean_1 = data[n][-2,self.window_size,:,:].detach().numpy()
+                mean_2 = data[n][-1,self.window_size,:,:].detach().numpy()
 
             size_1 = len(mean_1)
             size_2 = len(mean_1[0])
@@ -274,13 +312,12 @@ class VAE(nn.Module):
             fig, ax = plt.subplots(frameon=False)
             render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
-            #cmap = sns.diverging_palette(220, 20, as_cmap=True)
-            cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-            ax.imshow(mean_1.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
-
-            #cmap = sns.diverging_palette(145, 300, s=60, as_cmap=True)
             cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
             ax.imshow(mean_2.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+
+            cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+            map = ax.imshow(mean_1.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+            fig.colorbar(map)
 
             ax.set_axis_off()
             ax.set_aspect(1/render_ratio)
