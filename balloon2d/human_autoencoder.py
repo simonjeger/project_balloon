@@ -35,7 +35,7 @@ class HAE():
             if yaml_p['autoencoder'] == 'HAE_avg':
                 self.bottleneck_wind = int(self.size_z/self.box_size)*1 + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
             elif yaml_p['autoencoder'] == 'HAE_ext':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*self.window_size_total + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
+                self.bottleneck_wind = int(self.size_z/self.box_size)*1*self.window_size_total + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
             elif yaml_p['autoencoder'] == 'HAE_patch':
                 self.bottleneck_wind = 2*1 + 2*1 #because we mainly look at wind in x direction
             else:
@@ -45,7 +45,7 @@ class HAE():
             if yaml_p['autoencoder'] == 'HAE_avg':
                 self.bottleneck_wind = int(self.size_z/self.box_size)*1 + 1 + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
             elif yaml_p['autoencoder'] == 'HAE_ext':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*self.window_size_total + 1 + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
+                self.bottleneck_wind = int(self.size_z/self.box_size)*1*self.window_size_total + 1 + 1 #because we mainly look at wind in x direction (and need to pass absolute hight)
             else:
                 print('ERROR: please choose one of the available HAE')
 

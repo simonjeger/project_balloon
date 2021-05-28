@@ -37,7 +37,7 @@ class HAE():
             if yaml_p['autoencoder'] == 'HAE_avg':
                 self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 #because wind in x and y direction (and need to pass absolute hight)
             elif yaml_p['autoencoder'] == 'HAE_ext':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*self.window_size_total**2 + 1
+                self.bottleneck_wind = int(self.size_z/self.box_size)*2*self.window_size_total**2 + 1
             elif yaml_p['autoencoder'] == 'HAE_patch':
                 self.bottleneck_wind = 2*2 + 2*2 #because we mainly look at wind in x direction
             else:
@@ -47,7 +47,7 @@ class HAE():
             if yaml_p['autoencoder'] == 'HAE_avg':
                 self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 + 1 #because we mainly look at wind in x direction
             elif yaml_p['autoencoder'] == 'HAE_ext':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*self.window_size_total**2 + 1 + 1
+                self.bottleneck_wind = int(self.size_z/self.box_size)*2*self.window_size_total**2 + 1 + 1
             else:
                 print('ERROR: please choose one of the available HAE')
 
@@ -318,7 +318,7 @@ class HAE():
 
         pred = np.concatenate((pred_x.flatten(), pred_y.flatten(), [rel_pos, size]))
         pred = torch.tensor(np.nan_to_num(pred,0))
-        
+
         return pred
 
 def load_tensor(path):
