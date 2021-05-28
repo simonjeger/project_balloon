@@ -250,8 +250,7 @@ class VAE(nn.Module):
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         KLD /= len(x)*self.size_x*self.size_z*self.size_c #normalise by same number of elements as in reconstruction
 
-        # logger
-        if self.writer is not None:
+        if type(self.writer) is not None:
             self.writer.add_scalar('BCE_loss', BCE, self.step_n)
             self.writer.add_scalar('KLD_loss', KLD, self.step_n)
 

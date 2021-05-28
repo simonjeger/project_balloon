@@ -52,8 +52,8 @@ class VAE(nn.Module):
         self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size) # I'll build my own batches through the window function
         self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size)
 
-        ngf = 30 #64
-        ndf = 30 #64
+        ngf = 64 #64
+        ndf = 64 #64
         nc = self.size_c
 
         # set kernel size of x direction
@@ -177,8 +177,7 @@ class VAE(nn.Module):
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         KLD /= len(x)*self.size_x*self.size_y*self.size_z*self.size_c #normalise by same number of elements as in reconstruction
 
-        # logger
-        if self.writer is not None:
+        if type(self.writer) is not None:
             self.writer.add_scalar('BCE_loss', BCE, self.step_n)
             self.writer.add_scalar('KLD_loss', KLD, self.step_n)
 
@@ -232,10 +231,6 @@ class VAE(nn.Module):
             self.step_n += 1
 
         print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(self.train_loader.dataset)))
-
-        # logger
-        if type(self.writer) is not None:
-            self.writer.add_scalar('autoencoder training loss', train_loss / len(self.train_loader.dataset) , epoch * len(self.train_loader.dataset))
 
         sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
         sample = self.decode(sample).cpu()

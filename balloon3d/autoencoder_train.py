@@ -23,7 +23,7 @@ writer = SummaryWriter('autoencoder/logger_' + str(yaml_p['process_nr']))
 
 model = VAE(writer)
 
-EPOCHS = 300
+EPOCHS = 10000
 for epoch in range(1, EPOCHS + 1):
     model.model_train(epoch)
     model.save_weights('autoencoder')
