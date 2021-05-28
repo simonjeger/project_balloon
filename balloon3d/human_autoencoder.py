@@ -36,14 +36,18 @@ class HAE():
         if yaml_p['type'] == 'regular':
             if yaml_p['autoencoder'] == 'HAE_avg':
                 self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 #because wind in x and y direction (and need to pass absolute hight)
+            elif yaml_p['autoencoder'] == 'HAE_ext':
+                self.bottleneck_wind = int(self.size_z/self.box_size)*self.window_size_total**2 + 1
             elif yaml_p['autoencoder'] == 'HAE_patch':
-                self.bottleneck_wind = 2*2 + 2*2#because we mainly look at wind in x direction
+                self.bottleneck_wind = 2*2 + 2*2 #because we mainly look at wind in x direction
             else:
                 print('ERROR: please choose one of the available HAE')
 
         elif yaml_p['type'] == 'squished':
             if yaml_p['autoencoder'] == 'HAE_avg':
                 self.bottleneck_wind = int(self.size_z/self.box_size)*2 + 1 + 1 #because we mainly look at wind in x direction
+            elif yaml_p['autoencoder'] == 'HAE_ext':
+                self.bottleneck_wind = int(self.size_z/self.box_size)*self.window_size_total**2 + 1 + 1
             else:
                 print('ERROR: please choose one of the available HAE')
 
@@ -61,8 +65,8 @@ class HAE():
             data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
             data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
 
-        start_x = int(position[0])
-        start_y = int(position[1])
+        start_x = int(np.clip(position[0],0,self.size_x-1))
+        start_y = int(np.clip(position[1],0,self.size_y-1))
         end_x = int(position[0] + self.window_size_total)
         end_y = int(position[1] + self.window_size_total)
 
@@ -95,8 +99,8 @@ class HAE():
             data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
             data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
 
-        start_x = int(position[0])
-        start_y = int(position[1])
+        start_x = int(np.clip(position[0],0,self.size_x-1))
+        start_y = int(np.clip(position[1],0,self.size_y-1))
         end_x = int(start_x + self.window_size_total)
         end_y = int(start_y + self.window_size_total)
 
@@ -109,6 +113,8 @@ class HAE():
             window = self.window(data, position)
             if yaml_p['autoencoder'] == 'HAE_avg':
                 wind = self.compress_wind_avg(window,position)
+            elif yaml_p['autoencoder'] == 'HAE_ext':
+                wind = self.compress_wind_ext(window, position)
             elif yaml_p['autoencoder'] == 'HAE_patch':
                 wind = self.compress_wind_patch(window,position)
 
@@ -116,6 +122,8 @@ class HAE():
             window = self.window_squished(data, position, ceiling)
             if yaml_p['autoencoder'] == 'HAE_avg':
                 wind = self.compress_wind_avg_squished(window, position, ceiling)
+            elif yaml_p['autoencoder'] == 'HAE_ext':
+                wind = self.compress_wind_ext_squished(window, position, ceiling)
         return wind
 
     def compress_wind_avg(self, data, position):
@@ -154,6 +162,47 @@ class HAE():
         pred[-1] = position[2]
 
         pred = torch.tensor(np.nan_to_num(pred,0))
+        return pred
+
+    def compress_wind_ext(self, data, position):
+        # get rid of wind data that's below the terrain
+        loc_x = len(data[0,:,0,0])
+        loc_y = len(data[0,0,:,0])
+        loc_z = len(data[0,0,0,:])
+
+        corrected_data = data
+        for i in range(loc_x):
+            for j in range(loc_y):
+                k = int(data[0,i,j,0])
+                corrected_data[1:,i,j,0:k] = 0
+
+        corrected_data = corrected_data.detach()
+
+        mean_x = corrected_data[-4,:,:]
+        mean_y = corrected_data[-3,:,:]
+        mean_z = corrected_data[-2,:,:]
+        sig_xz = corrected_data[-1,:,:]
+
+        idx = np.arange(0,self.size_z, self.box_size)
+        if self.size_z%self.box_size != 0:
+            idx = idx[:-1]
+
+        pred_x = np.zeros((len(idx),self.window_size_total, self.window_size_total))
+        pred_y = np.zeros((len(idx),self.window_size_total, self.window_size_total))
+
+        # wind
+        for i in range(len(idx)):
+            for j in range(self.window_size_total):
+                for k in range(self.window_size_total):
+                    with warnings.catch_warnings(): #I expect to see RuntimeWarnings in this block
+                        warnings.simplefilter("ignore", category=RuntimeWarning)
+
+                        pred_x[i,j,k] = np.nanmean(mean_x[j,k,idx[i]:idx[i] + self.box_size])
+                        pred_y[i,j,k] = np.nanmean(mean_x[j,k,idx[i]:idx[i] + self.box_size])
+
+        pred = np.concatenate((pred_x.flatten(), pred_y.flatten(), [position[2]]))
+        pred = torch.tensor(np.nan_to_num(pred,0))
+
         return pred
 
     def compress_wind_patch(self, data, position):
@@ -236,6 +285,40 @@ class HAE():
         pred[-1] = size
 
         pred = torch.tensor(np.nan_to_num(pred,0))
+        return pred
+
+    def compress_wind_ext_squished(self, data, position,ceiling):
+        mean_x = data[-4,:,:]
+        mean_y = data[-3,:,:]
+        mean_z = data[-2,:,:]
+        sig_xz = data[-1,:,:]
+
+        idx = np.arange(0,self.size_z, self.box_size)
+        if self.size_z%self.box_size != 0:
+            idx = idx[:-1]
+
+        pred_x = np.zeros((len(idx),self.window_size_total, self.window_size_total))
+        pred_y = np.zeros((len(idx),self.window_size_total, self.window_size_total))
+
+        # wind
+        for i in range(len(idx)):
+            for j in range(self.window_size_total):
+                for k in range(self.window_size_total):
+                    with warnings.catch_warnings(): #I expect to see RuntimeWarnings in this block
+                        warnings.simplefilter("ignore", category=RuntimeWarning)
+
+                        pred_x[i,j,k] = np.nanmean(mean_x[j,k,idx[i]:idx[i] + self.box_size])
+                        pred_y[i,j,k] = np.nanmean(mean_x[j,k,idx[i]:idx[i] + self.box_size])
+
+        pos_x = np.clip(int(position[0]),0,self.size_x - 1)
+        pos_y = np.clip(int(position[1]),0,self.size_y - 1)
+
+        rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])])
+        size = (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])/self.size_z
+
+        pred = np.concatenate((pred_x.flatten(), pred_y.flatten(), [rel_pos, size]))
+        pred = torch.tensor(np.nan_to_num(pred,0))
+        
         return pred
 
 def load_tensor(path):

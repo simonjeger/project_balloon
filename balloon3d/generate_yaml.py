@@ -103,20 +103,20 @@ step = -0.00003
 action = -0.05
 start_train = [7,6,0]
 
-process_nr = 1590
-for data_path in ['"data_small/"', '"data_constant/"']:
-    for type in ['"regular"', '"squished"']:
-        for boundaries in ['"short"', '"long"']:
+process_nr = 1630
+for data_path in ['"data_small/"']:
+    for type in ['"squished"']:
+        for boundaries in ['"short"']:
             if type == '"regular"':
                 num_epochs = 15000
             if type == '"squished"':
                 num_epochs = 8000
             for min_proj_dist in [1]:
-                for autoencoder in ['"HAE_avg"']:
+                for autoencoder in ['"HAE_avg"', '"HAE_ext"']:
                     for cherry_pick in [0]:
                         for short_sighted in [False]:
-                            for window_size in [1]:
-                                for bottleneck in [1,4]:
+                            for window_size in [1,2,3]:
+                                for bottleneck in [1,2,4]:
                                     for buffer_size in [100000000]:
                                         for curriculum_dist in [1]:
                                             for curriculum_rad in [1]:
