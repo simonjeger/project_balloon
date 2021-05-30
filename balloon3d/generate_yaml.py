@@ -121,17 +121,17 @@ for data_path in ['"data_small/"']:
                                     bottleneck = 4
                                 elif autoencoder == '"VAE"':
                                     bottleneck = 50
-                                    for buffer_size in [100000000]:
-                                        for curriculum_dist in [1,100000]:
-                                            for curriculum_rad in [1,2]:
-                                                for epsi_low in [0.1]:
-                                                    for decay in [300000]:
-                                                        for minibatch_size in [800]:
-                                                            for n_times_update in [100]:
-                                                                for lr in [0.0005]:
-                                                                    for repeat in range(2):
-                                                                        for replay_start_size in [1000]:
-                                                                            continuous = True
+                                for buffer_size in [100000000]:
+                                    for curriculum_dist in [1,100000]:
+                                        for curriculum_rad in [1,2]:
+                                            for epsi_low in [0.1]:
+                                                for decay in [300000]:
+                                                    for minibatch_size in [800]:
+                                                        for n_times_update in [100]:
+                                                            for lr in [0.0005]:
+                                                                for repeat in range(2):
+                                                                    for replay_start_size in [1000]:
+                                                                        continuous = True
 
-                                                                            write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, boundaries, short_sighted)
-                                                                            process_nr += 1
+                                                                        write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, boundaries, short_sighted)
+                                                                        process_nr += 1
