@@ -38,6 +38,7 @@ class balloon2d(Env):
             self.ae = HAE()
         if yaml_p['autoencoder'] == 'VAE':
             self.ae = VAE()
+            self.ae.load_weights('autoencoder/model_' + str(yaml_p['vae_nr']) + '.pt')
 
         # load new world to get size_x, size_z
         self.load_new_world()

@@ -48,7 +48,7 @@ def generate_terrain(size_x, size_y, size_z):
 
     min_sky = size_z/10*2
     m = int(size_x)
-    magnitude = 75
+    magnitude = 100
     for i in range(m):
         pos_x = random.randint(0, size_x-1)
         pos_y = random.randint(0, size_y-1)
@@ -74,7 +74,7 @@ def generate_wind(size_x, size_y, size_z, terrain):
     mean_z = np.ones(shape=(size_x,size_y,size_z))*0
     sig = np.ones(shape=(size_x,size_y,size_z))*0.1
 
-    magnitude = 10
+    magnitude = 1
     smear_xy = max(int(size_x),1)
     smear_z = max(int(size_z/10),1)
     tunnel = size_z/10
@@ -101,10 +101,10 @@ def generate_wind(size_x, size_y, size_z, terrain):
         mean_y[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_z:pos_z+smear_z] = gauss(magnitude*seed_y,10)
         mean_z[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_xy:pos_z+smear_xy] = gauss(0,2)
         sig[pos_x, pos_y, pos_z] = abs(gauss(1,1))
-    mean_x = gaussian_filter(mean_x, sigma = 20)
-    mean_y = gaussian_filter(mean_y, sigma = 20)
-    mean_z = gaussian_filter(mean_z, sigma = 20)
-    sig = gaussian_filter(sig, sigma = 20)
+    mean_x = gaussian_filter(mean_x, sigma = 15)
+    mean_y = gaussian_filter(mean_y, sigma = 15)
+    mean_z = gaussian_filter(mean_z, sigma = 15)
+    sig = gaussian_filter(sig, sigma = 15)
 
     # for homogeneous field
     """

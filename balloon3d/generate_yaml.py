@@ -36,6 +36,7 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
 
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
+    text = text + 'vae_nr: 11111' + '\n'
     text = text + 'window_size: ' + str(window_size) + '\n'
     text = text + 'bottleneck: '+ str(bottleneck) + '\n'
 
@@ -71,7 +72,7 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
     text = text + 'target_test: "random"' + '\n'
     text = text + 'radius_start_xy: 15' + '\n'
     text = text + 'radius_stop_xy: 10' + '\n'
-    text = text + 'radius_start_ratio: 2' + '\n'
+    text = text + 'radius_start_ratio: 1' + '\n'
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
     text = text + 'curriculum_rad: ' + str(curriculum_rad) + '\n'
     text = text + 'hit: 1' + '\n'
@@ -112,14 +113,17 @@ for data_path in ['"data_small/"']:
             if type == '"squished"':
                 num_epochs = 8000
             for min_proj_dist in [1]:
-                for autoencoder in ['"HAE_avg"', '"HAE_ext"']:
+                for autoencoder in ['"HAE_avg"', '"VAE"']:
                     for cherry_pick in [0]:
                         for short_sighted in [False]:
-                            for window_size in [1,2,3]:
-                                for bottleneck in [1,2,4]:
+                            for window_size in [3]:
+                                if autoencoder == '"HAE_avg"':
+                                    bottleneck = 4
+                                elif autoencoder == '"VAE"':
+                                    bottleneck = 50
                                     for buffer_size in [100000000]:
-                                        for curriculum_dist in [1]:
-                                            for curriculum_rad in [1]:
+                                        for curriculum_dist in [1,100000]:
+                                            for curriculum_rad in [1,2]:
                                                 for epsi_low in [0.1]:
                                                     for decay in [300000]:
                                                         for minibatch_size in [800]:

@@ -34,7 +34,11 @@ class VAE(nn.Module):
         # variables
         self.bottleneck_terrain = 2
         self.bottleneck_wind = yaml_p['bottleneck']
-        self.bottleneck = self.bottleneck_terrain
+
+        if yaml_p['type'] == 'regular':
+            self.bottleneck = self.bottleneck_wind
+        elif yaml_p['type'] == 'squished':
+            self.bottleneck = self.bottleneck_wind + 2
 
         self.window_size = yaml_p['window_size']
         self.window_size_total = 2*self.window_size + 1
@@ -177,7 +181,7 @@ class VAE(nn.Module):
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         KLD /= len(x)*self.size_x*self.size_y*self.size_z*self.size_c #normalise by same number of elements as in reconstruction
 
-        if type(self.writer) is not None:
+        if self.writer is not None:
             self.writer.add_scalar('BCE_loss', BCE, self.step_n)
             self.writer.add_scalar('KLD_loss', KLD, self.step_n)
 
@@ -275,7 +279,7 @@ class VAE(nn.Module):
         torch.save(self.state_dict(), path + '/model_' + str(yaml_p['process_nr']) + '.pt')
 
     def load_weights(self, path):
-        self.load_state_dict(torch.load(path + '/model_' + str(yaml_p['process_nr']) + '.pt'))
+        self.load_state_dict(torch.load(path))
         self.eval()
 
     def window(self, data, position):
@@ -290,8 +294,8 @@ class VAE(nn.Module):
             data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
             data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
 
-        start_x = int(position[0])
-        start_y = int(position[1])
+        start_x = int(np.clip(position[0],0,self.size_x-1))
+        start_y = int(np.clip(position[1],0,self.size_y-1))
         end_x = int(position[0] + self.window_size_total)
         end_y = int(position[1] + self.window_size_total)
 
@@ -324,10 +328,10 @@ class VAE(nn.Module):
             data_padded[:,-(i+1),:,:] = data_padded[:,-(self.window_size+1),:,:]
             data_padded[:,:,-(i+1),:] = data_padded[:,:,-(self.window_size+1),:]
 
-        start_x = int(position[0])
-        start_y = int(position[1])
-        end_x = int(start_x + self.window_size_total)
-        end_y = int(start_y + self.window_size_total)
+        start_x = int(np.clip(position[0],0,self.size_x-1))
+        start_y = int(np.clip(position[1],0,self.size_y-1))
+        end_x = int(position[0] + self.window_size_total)
+        end_y = int(position[1] + self.window_size_total)
 
         window = data_padded[:,start_x:end_x,start_y:end_y,:]
         window = torch.tensor(window)
@@ -366,7 +370,14 @@ class VAE(nn.Module):
     def compress(self, data, position, ceiling):
         if yaml_p['type'] == 'regular':
             to_fill = self.window(data, position)
+
         elif yaml_p['type'] == 'squished':
+            pos_x = np.clip(int(position[0]),0,self.size_x - 1)
+            pos_y = np.clip(int(position[1]),0,self.size_y - 1)
+
+            rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])])
+            size = (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])/self.size_z
+
             to_fill = self.window_squished(data, position, ceiling)
         data = to_fill[-4:-1]
 
@@ -380,4 +391,9 @@ class VAE(nn.Module):
         recon_batch, mu, logvar = self(data)
         comp = mu[0].detach().numpy()
 
-        return comp
+        if yaml_p['type'] == 'regular':
+            result = comp
+        elif yaml_p['type'] == 'squished':
+            result = np.concatenate((comp,[rel_pos, size]))
+
+        return result
