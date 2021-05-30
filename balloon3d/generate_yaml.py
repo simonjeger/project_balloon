@@ -104,7 +104,7 @@ step = -0.00003
 action = -0.05
 start_train = [7,6,0]
 
-process_nr = 1630
+process_nr = 1700
 for data_path in ['"data_small/"']:
     for type in ['"squished"']:
         for boundaries in ['"short"']:

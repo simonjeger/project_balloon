@@ -296,8 +296,8 @@ class VAE(nn.Module):
 
         start_x = int(np.clip(position[0],0,self.size_x-1))
         start_y = int(np.clip(position[1],0,self.size_y-1))
-        end_x = int(position[0] + self.window_size_total)
-        end_y = int(position[1] + self.window_size_total)
+        end_x = int(start_x + self.window_size_total)
+        end_y = int(start_y + self.window_size_total)
 
         window = data_padded[:,start_x:end_x,start_y:end_y,:]
         window = torch.tensor(window)
@@ -330,8 +330,8 @@ class VAE(nn.Module):
 
         start_x = int(np.clip(position[0],0,self.size_x-1))
         start_y = int(np.clip(position[1],0,self.size_y-1))
-        end_x = int(position[0] + self.window_size_total)
-        end_y = int(position[1] + self.window_size_total)
+        end_x = int(start_x + self.window_size_total)
+        end_y = int(start_y + self.window_size_total)
 
         window = data_padded[:,start_x:end_x,start_y:end_y,:]
         window = torch.tensor(window)
