@@ -79,7 +79,6 @@ def write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_t
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_proj_dist: ' + str(min_proj_dist) + '\n'
     text = text + 'bounds: -1' + '\n'
-    text = text + 'physics: True' + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'boundaries: "short"' + '\n'

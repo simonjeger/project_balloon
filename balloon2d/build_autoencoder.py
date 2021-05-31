@@ -30,6 +30,12 @@ car = False
 class VAE(nn.Module):
     def __init__(self, writer=None):
         super(VAE, self).__init__()
+
+        if torch.cuda.is_available():
+            self.device = 'cuda:0'
+        else:
+            self.device = 'cpu'
+
         # logger
         self.writer = writer
 
@@ -59,11 +65,11 @@ class VAE(nn.Module):
         self.size_z = len(train_dataset[0][0][0])
 
         if car:
-            self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size) # I'll build my own batches through the window function
-            self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size)
+            self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size, drop_last=True) # I'll build my own batches through the window function
+            self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size, drop_last=True)
         else:
-            self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size) # I'll build my own batches through the window function
-            self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size)
+            self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size, drop_last=True) # I'll build my own batches through the window function
+            self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size, drop_last=True)
 
         ngf = 64 #64
         ndf = 64 #64
@@ -203,6 +209,10 @@ class VAE(nn.Module):
         if self.training:
             # multiply log variance with 0.5, then in-place exponent yielding the standard deviation
             std = logvar.mul(0.5).exp_()  # type: Variable
+            if self.device == 'cuda:0':
+                eps = torch.cuda.FloatTensor(std.size()).normal_()
+            else:
+                eps = torch.FloatTensor(std.size()).normal_()
             eps = Variable(std.data.new(std.size()).normal_())
             # sample from a normal distribution with standard deviation = std and mean = mu
             return eps.mul(std).add_(mu)
@@ -280,6 +290,7 @@ class VAE(nn.Module):
                     data_window[i,:,:,:] = to_fill[-3:-1]
                 data = data_window #to keep naming convention
 
+            data = data.to(self.device)
             data = Variable(data)
             self.optimizer.zero_grad()
 
@@ -311,11 +322,13 @@ class VAE(nn.Module):
         if car:
             # visualization of latent space
             sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
+            sample = sample.to(self.device)
             sample = self.decode(sample).cpu()
 
             save_image(sample.data.view(self.batch_size, self.size_c, self.size_x, self.size_z), 'autoencoder/results/sample.png')
         else:
             sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
+            sample = sample.to(self.device)
             sample = self.decode(sample).cpu()
 
             self.visualize(sample, 'autoencoder/results/sample_' + str(yaml_p['process_nr']) + '.png')
@@ -341,10 +354,15 @@ class VAE(nn.Module):
                     data_window[i,:,:,:] = to_fill[-3:-1]
                 data = data_window #to keep naming convention
 
+            data = data.to(self.device)
             # we're only going to infer, so no autograd at all required: volatile=True
             data = Variable(data, volatile=True)
             recon_batch, mu, logvar = self(data)
             test_loss += self.loss_function(recon_batch, data, mu, logvar).data.item()
+
+            # get data back to plot it on cpu
+            data = data.cpu()
+            recon_batch = recon_batch.cpu()
 
             if car:
                 if batch_idx == 0:

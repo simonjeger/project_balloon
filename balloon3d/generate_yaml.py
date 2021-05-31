@@ -81,7 +81,6 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_proj_dist: ' + str(min_proj_dist) + '\n'
     text = text + 'bounds: -1' + '\n'
-    text = text + 'physics: True' + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'boundaries: ' + str(boundaries) + '\n'
@@ -102,36 +101,38 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
 time = 360
 step = -0.00003
 action = -0.05
-start_train = [7,6,0]
 
-process_nr = 1700
+process_nr = 1740
 for data_path in ['"data_small/"']:
     for type in ['"squished"']:
         for boundaries in ['"short"']:
             if type == '"regular"':
                 num_epochs = 15000
             if type == '"squished"':
-                num_epochs = 8000
+                num_epochs = 7000
             for min_proj_dist in [1]:
-                for autoencoder in ['"HAE_avg"', '"VAE"']:
+                for autoencoder in ['"HAE_avg"', '"HAE_ext"', '"VAE"']:
                     for cherry_pick in [0]:
                         for short_sighted in [False]:
                             for window_size in [3]:
                                 if autoencoder == '"HAE_avg"':
                                     bottleneck = 4
+                                elif autoencoder == '"HAE_ext"':
+                                    bottleneck = 4
                                 elif autoencoder == '"VAE"':
                                     bottleneck = 50
                                 for buffer_size in [100000000]:
-                                    for curriculum_dist in [1,100000]:
-                                        for curriculum_rad in [1,2]:
-                                            for epsi_low in [0.1]:
-                                                for decay in [300000]:
-                                                    for minibatch_size in [800]:
-                                                        for n_times_update in [100]:
-                                                            for lr in [0.0005]:
-                                                                for repeat in range(2):
-                                                                    for replay_start_size in [1000]:
-                                                                        continuous = True
+                                    for start_train in [[7,6,0], "'random'"]:
+                                        for curriculum_dist in [1,100000]:
+                                            for curriculum_rad in [1,2]:
+                                                for epsi_low in [0.1]:
+                                                    for decay in [300000]:
+                                                        for minibatch_size in [800]:
+                                                            for n_times_update in [100]:
+                                                                for lr in [0.0005]:
+                                                                    for repeat in range(2):
+                                                                        for replay_start_size in [1000]:
+                                                                            continuous = True
 
-                                                                        write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, boundaries, short_sighted)
-                                                                        process_nr += 1
+                                                                            write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, boundaries, short_sighted)
+                                                                            process_nr += 1

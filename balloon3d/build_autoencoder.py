@@ -28,6 +28,12 @@ with open(args.yaml_file, 'rt') as fh:
 class VAE(nn.Module):
     def __init__(self, writer=None):
         super(VAE, self).__init__()
+
+        if torch.cuda.is_available():
+            self.device = 'cuda:0'
+        else:
+            self.device = 'cpu'
+
         # logger
         self.writer = writer
 
@@ -53,8 +59,8 @@ class VAE(nn.Module):
         self.size_y = len(train_dataset[0][0][0])
         self.size_z = len(train_dataset[0][0][0][0])
 
-        self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size) # I'll build my own batches through the window function
-        self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size)
+        self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, shuffle=True, batch_size=self.batch_size, drop_last=True) # I'll build my own batches through the window function
+        self.test_loader  = torch.utils.data.DataLoader(dataset=test_dataset, shuffle=False, batch_size=self.batch_size, drop_last=True)
 
         ngf = 64 #64
         ndf = 64 #64
@@ -155,8 +161,7 @@ class VAE(nn.Module):
 
     def reparametrize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
-        self.have_cuda = False
-        if self.have_cuda:
+        if self.device == 'cuda:0':
             eps = torch.cuda.FloatTensor(std.size()).normal_()
         else:
             eps = torch.FloatTensor(std.size()).normal_()
@@ -208,6 +213,7 @@ class VAE(nn.Module):
                 data_window[i,:,:,:,:] = to_fill[-4:-1]
             data = data_window #to keep naming convention
 
+            data = data.to(self.device)
             data = Variable(data)
             self.optimizer.zero_grad()
 
@@ -237,6 +243,7 @@ class VAE(nn.Module):
         print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(self.train_loader.dataset)))
 
         sample = Variable(torch.randn(self.batch_size, self.bottleneck_wind))
+        sample = sample.to(self.device)
         sample = self.decode(sample).cpu()
 
         self.visualize(sample, 'autoencoder/results/sample_' + str(yaml_p['process_nr']) + '_')
@@ -263,10 +270,15 @@ class VAE(nn.Module):
                 data_window[i,:,:,:,:] = to_fill[-4:-1]
             data = data_window #to keep naming convention
 
+            data = data.to(self.device)
             # we're only going to infer, so no autograd at all required: volatile=True
             data = Variable(data, volatile=True)
             recon_batch, mu, logvar = self(data)
             test_loss += self.loss_function(recon_batch, data, mu, logvar).data.item()
+
+            # get data back to plot it on cpu
+            data = data.cpu()
+            recon_batch = recon_batch.cpu()
 
             self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real_')
             self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon_')

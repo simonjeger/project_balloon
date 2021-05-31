@@ -22,10 +22,7 @@ class character():
         self.radius_xy = radius_xy
         self.radius_z = radius_z
 
-        if yaml_p['physics']:
-            self.mass = 3400 #kg
-        else:
-            self.mass = 1
+        self.mass = 3400 #kg
         self.area = 21**2/4*np.pi
         self.rho = 1.2
         self.c_w = 0.45
@@ -45,7 +42,6 @@ class character():
 
         self.position = copy.copy(self.start)
         self.velocity = np.array([0,0,0])
-        self.old_position = self.start
 
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
@@ -56,7 +52,7 @@ class character():
         self.set_ceiling()
 
         self.residual = self.target - self.position
-        self.measurement = self.interpolate_wind()[0:3] - self.velocity
+        self.measurement = self.interpolate_wind(measurement=True)[0:3]
 
         self.set_state()
 
@@ -79,7 +75,7 @@ class character():
 
         # update state
         self.residual = self.target - self.position
-        self.measurement = self.interpolate_wind()[0:3] - self.velocity
+        self.measurement = self.interpolate_wind(measurement=True)[0:3]
 
         self.set_state()
 
@@ -94,48 +90,40 @@ class character():
     def set_state(self):
         if yaml_p['type'] == 'regular':
             if yaml_p['boundaries'] == 'short':
-                self.boundaries = self.compress_terrain(True)
-                self.bottleneck = len(self.boundaries)
+                boundaries = self.compress_terrain(True)/[self.size_x, self.size_z]
+                self.bottleneck = len(boundaries)
             elif yaml_p['boundaries'] == 'long':
-                min_x = self.position[0]
-                max_x = self.size_x - self.position[0]
-                min_y = self.position[1]
-                max_y = self.size_y - self.position[1]
-                min_z = self.position[2]
-                max_z = self.dist_to_ceiling()
-                self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.height_above_ground()])
-                self.bottleneck = len(self.boundaries)
+                min_x = self.position[0]/self.size_x
+                max_x = (self.size_x - self.position[0])/self.size_x
+                min_y = self.position[1]/self.size_y
+                max_y = (self.size_y - self.position[1])/self.size_y
+                min_z = self.position[2]/self.size_z
+                max_z = self.dist_to_ceiling()/self.size_z
+                boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.height_above_ground()])
+                self.bottleneck = len(boundaries)
 
-            if yaml_p['physics']:
-                self.state = np.concatenate((self.residual.flatten(), self.velocity.flatten(), self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
-            else:
-                self.state = np.concatenate((self.residual.flatten(), self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
+            self.state = np.concatenate(((self.residual/[self.size_x,self.size_y,self.size_z]).flatten(), self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
 
         elif yaml_p['type'] == 'squished':
             if yaml_p['boundaries'] == 'short':
-                self.boundaries = np.array([])
-                self.bottleneck = len(self.boundaries)
+                boundaries = np.array([])
+                self.bottleneck = len(boundaries)
 
             elif yaml_p['boundaries'] == 'long':
-                min_x = self.position[0]
-                max_x = self.size_x - self.position[0]
-                min_y = self.position[1]
-                max_y = self.size_y - self.position[1]
-                min_z = self.position[2]
-                max_z = self.dist_to_ceiling()
-                self.boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z])
-                self.bottleneck = len(self.boundaries)
+                min_x = self.position[0]/self.size_x
+                max_x = (self.size_x - self.position[0])/self.size_x
+                min_y = self.position[1]/self.size_y
+                max_y = (self.size_y - self.position[1])/self.size_y
+                min_z = self.position[2]/self.size_z
+                max_z = self.dist_to_ceiling()/self.size_z
+                boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z])
+                self.bottleneck = len(boundaries)
 
             tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
             tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
             self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling[tar_x,tar_y] - self.world[0,tar_x,tar_y,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
-            if yaml_p['physics']:
-                self.vel_squished = self.position - self.old_position
-                self.old_position = self.position
-                self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.velocity.flatten(), self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten(),self.vel_squished.flatten()), axis=0)
-            else:
-                self.state = np.concatenate((self.residual[0:2].flatten(),[self.res_z_squished], self.boundaries.flatten(), self.measurement.flatten(), self.world_compressed.flatten()), axis=0)
+            self.state = np.concatenate(((self.residual[0:2]/[self.size_x,self.size_y]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
 
         self.state = self.state.astype(np.float32)
 
@@ -282,7 +270,7 @@ class character():
         f_ceiling = scipy.interpolate.interp2d(x,y,self.ceiling.T)
         return f_ceiling(self.position[0], self.position[1])[0] - self.position[2]
 
-    def interpolate_wind(self):
+    def interpolate_wind(self, measurement=False):
         coord_x = int(np.clip(self.position[0],0,self.size_x-1))
         coord_y = int(np.clip(self.position[1],0,self.size_y-1))
         coord_z = int(np.clip(self.position[2],0,self.size_z-1))
@@ -313,20 +301,18 @@ class character():
         wind = f_000*(1-x)*(1-y)*(1-z) + f_001*(1-x)*(1-y)*z + f_010*(1-x)*y*(1-z) + f_011*(1-x)*y*z + f_100*x*(1-y)*(1-z) + f_101*x*(1-y)*z + f_110*x*y*(1-z) + f_111*x*y*z
 
         w_x, w_y, w_z, sig_xz = wind
-        w_x /= yaml_p['unit_xy']
-        w_y /= yaml_p['unit_xy']
-        w_z /= yaml_p['unit_z']
+        if not measurement:
+            w_x /= yaml_p['unit_xy']
+            w_y /= yaml_p['unit_xy']
+            w_z /= yaml_p['unit_z']
         return np.array([w_x, w_y, w_z, sig_xz])
+
+    def normalize(self,x):
+        return x/(abs(x)+3)
 
     def become_short_sighted(self):
         sight = yaml_p['window_size']
-        if yaml_p['physics']:
-            self.state[0:2] = np.minimum(self.state[0], [sight]*len(self.state[0:2]))
-            self.state[0:2] = np.maximum(self.state[0], [-sight]*len(self.state[0:2]))
-            self.state[6:10] = np.minimum(self.state[6:10], [sight]*len(self.state[6:10]))
-            self.state[6:10] = np.maximum(self.state[6:10], [-sight]*len(self.state[6:10]))
-        else:
-            self.state[0:2] = np.minimum(self.state[0], [sight]*len(self.state[0:2]))
-            self.state[0:2] = np.maximum(self.state[0], [-sight]*len(self.state[0:2]))
-            self.state[3:7] = np.minimum(self.state[3:7], [sight]*len(self.state[3:7]))
-            self.state[3:7] = np.maximum(self.state[3:7], [-sight]*len(self.state[3:7]))
+        self.state[0:2] = np.minimum(self.state[0], [sight]*len(self.state[0:2]))
+        self.state[0:2] = np.maximum(self.state[0], [-sight]*len(self.state[0:2]))
+        self.state[6:10] = np.minimum(self.state[6:10], [sight]*len(self.state[6:10]))
+        self.state[6:10] = np.maximum(self.state[6:10], [-sight]*len(self.state[6:10]))

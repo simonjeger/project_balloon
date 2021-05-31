@@ -1,3 +1,4 @@
+import torch
 from torch import nn, optim
 from pathlib import Path
 
@@ -22,6 +23,12 @@ Path('autoencoder/results').mkdir(parents=True, exist_ok=True)
 writer = SummaryWriter('autoencoder/logger_' + str(yaml_p['process_nr']))
 
 model = VAE(writer)
+
+if torch.cuda.is_available():
+    device = 'cuda:0'
+else:
+    device = 'cpu'
+model.to(device)
 
 EPOCHS = 10000
 for epoch in range(1, EPOCHS + 1):
