@@ -397,6 +397,7 @@ class VAE(nn.Module):
         data = data.view(1,self.size_c,self.window_size_total,self.window_size_total,self.size_z)
         data = data.type(torch.FloatTensor)
         self.eval() #toggle model to test / inference mode
+        self.device = 'cpu'
 
         # we're only going to infer, so no autograd at all required: volatile=True
         data = Variable(data, volatile=True)

@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size,  minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, boundaries, short_sighted):
+def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size,  minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, boundaries, short_sighted):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -71,7 +71,7 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
     text = text + 'target_train: "random"' + '\n'
     text = text + 'target_test: "random"' + '\n'
     text = text + 'radius_start_xy: 15' + '\n'
-    text = text + 'radius_stop_xy: 10' + '\n'
+    text = text + 'radius_stop_xy: 15' + '\n'
     text = text + 'radius_start_ratio: 1' + '\n'
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
     text = text + 'curriculum_rad: ' + str(curriculum_rad) + '\n'
@@ -83,6 +83,7 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
     text = text + 'bounds: -1' + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
+    text = text + 'balloon: ' + balloon + '\n'
     text = text + 'boundaries: ' + str(boundaries) + '\n'
     text = text + 'short_sighted: ' + str(short_sighted) + '\n'
 
@@ -98,41 +99,43 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
     file.write(text)
     file.close()
 
-time = 360
 step = -0.00003
 action = -0.05
+balloon = '"big"'
 
-process_nr = 1740
-for data_path in ['"data_small/"']:
-    for type in ['"squished"']:
-        for boundaries in ['"short"']:
-            if type == '"regular"':
-                num_epochs = 15000
-            if type == '"squished"':
-                num_epochs = 7000
-            for min_proj_dist in [1]:
-                for autoencoder in ['"HAE_avg"', '"HAE_ext"', '"VAE"']:
-                    for cherry_pick in [0]:
-                        for short_sighted in [False]:
-                            for window_size in [3]:
-                                if autoencoder == '"HAE_avg"':
-                                    bottleneck = 4
-                                elif autoencoder == '"HAE_ext"':
-                                    bottleneck = 4
-                                elif autoencoder == '"VAE"':
-                                    bottleneck = 50
-                                for buffer_size in [100000000]:
-                                    for start_train in [[7,6,0], "'random'"]:
-                                        for curriculum_dist in [1,100000]:
-                                            for curriculum_rad in [1,2]:
-                                                for epsi_low in [0.1]:
-                                                    for decay in [300000]:
-                                                        for minibatch_size in [800]:
-                                                            for n_times_update in [100]:
-                                                                for lr in [0.0005]:
-                                                                    for repeat in range(2):
-                                                                        for replay_start_size in [1000]:
-                                                                            continuous = True
+process_nr = 1790
 
-                                                                            write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, boundaries, short_sighted)
-                                                                            process_nr += 1
+for data_path in ['"data_fake/"', '"data_small/"', '"data_constant"']:
+    for time in [180,360,720]:
+        for type in ['"squished"']:
+            for boundaries in ['"short"']:
+                if type == '"regular"':
+                    num_epochs = int(30000/360*time)
+                if type == '"squished"':
+                    num_epochs = int(14000/360*time)
+                for min_proj_dist in [1]:
+                    for autoencoder in ['"HAE_avg"', '"HAE_ext"', '"VAE"']:
+                        for cherry_pick in [0]:
+                            for short_sighted in [False]:
+                                for window_size in [3]:
+                                    if autoencoder == '"HAE_avg"':
+                                        bottleneck = 10
+                                    elif autoencoder == '"HAE_ext"':
+                                        bottleneck = 4
+                                    elif autoencoder == '"VAE"':
+                                        bottleneck = 50
+                                    for buffer_size in [100000000]:
+                                        for start_train in [[7,6,0]]:
+                                            for curriculum_dist in [1]:
+                                                for curriculum_rad in [1]:
+                                                    for epsi_low in [0.1]:
+                                                        for decay in [300000]:
+                                                            for minibatch_size in [800]:
+                                                                for n_times_update in [20]:
+                                                                    for lr in [0.005, 0.0005]:
+                                                                        for repeat in range(2):
+                                                                            for replay_start_size in [1000]:
+                                                                                continuous = True
+
+                                                                                write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, boundaries, short_sighted)
+                                                                                process_nr += 1

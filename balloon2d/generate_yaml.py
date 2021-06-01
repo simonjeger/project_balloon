@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, short_sighted, qfunction):
+def write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, short_sighted, qfunction):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -81,6 +81,7 @@ def write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_t
     text = text + 'bounds: -1' + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
+    text = text + 'balloon: ' + balloon + '\n'
     text = text + 'boundaries: "short"' + '\n'
     text = text + 'short_sighted: ' + str(short_sighted) + '\n'
 
@@ -96,10 +97,13 @@ def write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_t
     file.write(text)
     file.close()
 
+time = 360
 step = -0.00003
 action = -0.05
+balloon = '"big"'
 
 process_nr = 4000
+
 for data_path in ['"data/"']:
     for start_train in [[7,0],'"random"']:
         for type in ['"regular"', '"squished"']:
@@ -125,5 +129,5 @@ for data_path in ['"data/"']:
                                                                         continuous = True
                                                                         replay_start_size = 10000
 
-                                                                        write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, short_sighted, qfunction)
+                                                                        write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_type, epsi_low, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, short_sighted, qfunction)
                                                                         process_nr += 1

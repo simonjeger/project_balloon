@@ -68,7 +68,7 @@ for r in range(yaml_p['curriculum_rad']):
         else:
             ag.stash_weights()
 
-        log = ag.run_epoch(False)
+        log = ag.run_epoch(True)
         print('epoch: ' + str(i) + ' reward: ' + str(log))
 
         # save weights

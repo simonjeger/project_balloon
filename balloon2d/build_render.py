@@ -175,10 +175,10 @@ def display_movement(screen, screen_width, screen_height, size_x, size_z, render
     rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
     # path
-    if roll_out is not None:
+    if len(path_roll_out) > 1:
         pygame.draw.lines(screen, c_path_roll_out, False, path_roll_out, 1)
 
-    if len(character.path) > 1:
+    if len(path) > 1:
         pygame.draw.lines(screen, c_path, False, path, 1)
 
     # balloon

@@ -21,11 +21,20 @@ class character():
         self.radius_x = radius_x
         self.radius_z = radius_z
 
-        self.mass = 3400 #kg
-        self.area = 21**2/4*np.pi
-        self.rho = 1.2
-        self.c_w = 0.45
-        self.force = 80 #80 #N
+        if yaml_p['balloon'] == 'big':
+            self.mass = 3400 #kg
+            self.area = 21**2/4*np.pi
+            self.rho = 1.2
+            self.c_w = 0.45
+            self.force = 80 #80 #N
+        elif yaml_p['balloon'] == 'small':
+            self.mass = 3 #kg
+            self.area = 2.3**2/4*np.pi
+            self.rho = 1.2
+            self.c_w = 0.45
+            self.force = 0.2 #N
+        else:
+            print('ERROR: Please choose a balloon')
 
         self.size_x = size_x
         self.size_z = size_z
