@@ -89,39 +89,40 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
+    text = text + "reuse_weights: False" + '\n'
     text = text + "qfunction: False" + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 15' + '\n'
     text = text + 'overview: True' + '\n'
-    text = text + 'clear: True' + '\n'
+    text = text + 'clear: False' + '\n'
 
     file.write(text)
     file.close()
 
 step = -0.00003
 action = -0.05
-balloon = '"big"'
+balloon = '"small"'
 
-process_nr = 1790
+process_nr = 1870
 
-for data_path in ['"data_fake/"', '"data_small/"', '"data_constant"']:
-    for time in [180,360,720]:
+for data_path in ['"data/"']:
+    for time in [360,440,720,900]:
         for type in ['"squished"']:
             for boundaries in ['"short"']:
                 if type == '"regular"':
-                    num_epochs = int(30000/360*time)
+                    num_epochs = int(15000/360*time)
                 if type == '"squished"':
-                    num_epochs = int(14000/360*time)
+                    num_epochs = int(7000/360*time)
                 for min_proj_dist in [1]:
-                    for autoencoder in ['"HAE_avg"', '"HAE_ext"', '"VAE"']:
+                    for autoencoder in ['"HAE_avg"', '"HAE_ext"']:
                         for cherry_pick in [0]:
                             for short_sighted in [False]:
-                                for window_size in [3]:
+                                for window_size in [1,2,3]:
                                     if autoencoder == '"HAE_avg"':
                                         bottleneck = 10
                                     elif autoencoder == '"HAE_ext"':
-                                        bottleneck = 4
+                                        bottleneck = 1
                                     elif autoencoder == '"VAE"':
                                         bottleneck = 50
                                     for buffer_size in [100000000]:
@@ -132,7 +133,7 @@ for data_path in ['"data_fake/"', '"data_small/"', '"data_constant"']:
                                                         for decay in [300000]:
                                                             for minibatch_size in [800]:
                                                                 for n_times_update in [20]:
-                                                                    for lr in [0.005, 0.0005]:
+                                                                    for lr in [0.0005]:
                                                                         for repeat in range(2):
                                                                             for replay_start_size in [1000]:
                                                                                 continuous = True

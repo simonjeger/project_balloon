@@ -44,6 +44,9 @@ else:
 current_phase = [-np.inf]*phase
 best_phase = current_phase[:]
 
+if yaml_p['reuse_weights']:
+    ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
+
 epi_n = 0
 step_n = 0
 
@@ -68,7 +71,7 @@ for r in range(yaml_p['curriculum_rad']):
         else:
             ag.stash_weights()
 
-        log = ag.run_epoch(True)
+        log = ag.run_epoch(False)
         print('epoch: ' + str(i) + ' reward: ' + str(log))
 
         # save weights

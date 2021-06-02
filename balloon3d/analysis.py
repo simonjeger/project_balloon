@@ -57,11 +57,11 @@ def plot_reward():
     score = linear_regressor.score(X,Y)
 
     # plot
-    fig, axs = plt.subplots(2,1)
-    axs[0].plot(rew_epi, alpha=0.1)
-    axs[0].plot(mean_reward_epi)
-    axs[0].plot(Y_pred)
-    axs[0].plot(mean_reward_epi_big)
+    fig, ax = plt.subplots(1,1)
+    ax.plot(rew_epi, alpha=0.1)
+    ax.plot(mean_reward_epi)
+    ax.plot(Y_pred)
+    ax.plot(mean_reward_epi_big)
 
     if yaml_p['cherry_pick'] > 0:
         # validation
@@ -69,33 +69,24 @@ def plot_reward():
         N_epi_val = int(len(rew_epi)/10)
         cumsum_rew_val = np.cumsum(np.insert(rew_epi_val, 0, 0))
         mean_reward_epi_val = (cumsum_rew_val[N_epi_val:] - cumsum_rew_val[:-N_epi_val]) / float(N_epi_val)
-        axs[0].plot(mean_reward_epi_val)
+        ax.plot(mean_reward_epi_val)
 
         # save_weights
         weights_saved = np.array(df['weights_saved'].dropna())
         for w in weights_saved:
-            axs[0].axvline(w, color='black', linewidth=0.5)
+            ax.axvline(w, color='black', linewidth=0.5)
 
-    #axs[0].set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
-    axs[0].set_xlabel('episode')
-    axs[0].set_ylabel('reward')
-    axs[0].tick_params(axis='y')
+    #ax.set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
+    ax.set_xlabel('episode')
+    ax.set_ylabel('reward')
+    ax.tick_params(axis='y')
+    ax.set_yscale('log')
 
-    axs[0].legend(
+    ax.legend(
         ['reward',
         'running mean over ' + str(N_epi) + ' episodes, max: ' + str(np.round(max(mean_reward_epi),5)) + ', avg: ' + str(np.round(np.mean(rew_epi),5)),
         r'linear regression, slope $\times$ N_epi: ' + str(np.round(slope*N_epi,5)) + ', score: ' + str(np.round(score,5)),
         'running mean over ' + str(N_epi_big) + ' episodes', 'reward_val']
-        )
-
-    axs[1].plot(qloss)
-    axs[1].set_xlabel('episode')
-    axs[1].set_ylabel('loss qfunction')
-    axs[1].tick_params(axis='y')
-    axs[1].set_yscale('log')
-
-    axs[1].legend(
-        ['loss qfunction',]
         )
 
     fig.tight_layout()
