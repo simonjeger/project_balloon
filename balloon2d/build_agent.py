@@ -77,7 +77,7 @@ class Agent:
             torch.nn.init.xavier_uniform_(policy[0].weight)
             torch.nn.init.xavier_uniform_(policy[2].weight)
             torch.nn.init.xavier_uniform_(policy[4].weight)
-            policy_optimizer = torch.optim.Adam(policy.parameters(), lr=3e-4)
+            policy_optimizer = torch.optim.Adam(policy.parameters(), lr=yaml_p['lr_critic'])
 
             def make_q_func_with_optimizer():
                 q_func = torch.nn.Sequential(
@@ -91,7 +91,7 @@ class Agent:
                 torch.nn.init.xavier_uniform_(q_func[1].weight)
                 torch.nn.init.xavier_uniform_(q_func[3].weight)
                 torch.nn.init.xavier_uniform_(q_func[5].weight)
-                q_func_optimizer = torch.optim.Adam(q_func.parameters(), lr=3e-4)
+                q_func_optimizer = torch.optim.Adam(q_func.parameters(), lr=yaml_p['lr_actor'])
                 return q_func, q_func_optimizer
 
             q_func1, q_func1_optimizer = make_q_func_with_optimizer()
@@ -120,7 +120,7 @@ class Agent:
                     minibatch_size=yaml_p['minibatch_size'],
                     burnin_action_func=burnin_action_func,
                     entropy_target=-action_size,
-                    temperature_optimizer_lr=3e-4,
+                    temperature_optimizer_lr=yaml_p['lr'],
                 )
 
             else:

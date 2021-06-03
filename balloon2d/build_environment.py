@@ -86,12 +86,13 @@ class balloon2d(Env):
             # logger
             if self.writer is not None:
                 if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
-                    self.writer.add_scalar('episode', self.epi_n , self.step_n)
+                    self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
                     self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
                     self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
                     self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
                 if done:
-                    self.writer.add_scalar('episode', self.epi_n , self.step_n)
+                    self.writer.add_scalar('step_n', self.step_n , self.step_n)
+                    self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
                     self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
                     self.writer.add_scalar('position_z', self.character.position[1], self.step_n)
                     self.writer.add_scalar('reward_step', self.reward_step, self.step_n)

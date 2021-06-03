@@ -53,6 +53,8 @@ def write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_t
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: ' + str(buffer_size) + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
+    text = text + 'lr_actor: 0.0003' + '\n'
+    text = text + 'lr_critic: 0.0003' + '\n'
     text = text + 'max_grad_norm: ' + str(max_grad_norm) + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'update_interval: ' + str(update_interval) + '\n'
@@ -89,6 +91,7 @@ def write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_t
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
+    text = text + "reuse_weights: False" + '\n'
     text = text + "qfunction: " + str(qfunction) + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
@@ -102,7 +105,7 @@ def write(process_nr, type, autoencoder, num_epochs, buffer_size, lr, explorer_t
 time = 360
 step = -0.00003
 action = -0.05
-balloon = '"big"'
+balloon = '"small"'
 
 process_nr = 4000
 

@@ -25,7 +25,7 @@ render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
 
 def plot_reward():
     # read in logger file as pandas
-    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_train/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
@@ -80,7 +80,6 @@ def plot_reward():
     ax.set_xlabel('episode')
     ax.set_ylabel('reward')
     ax.tick_params(axis='y')
-    ax.set_yscale('log')
 
     ax.legend(
         ['reward',
@@ -94,7 +93,7 @@ def plot_reward():
 
 def plot_path():
     # read in logger file as pandas
-    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_train/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
@@ -102,7 +101,7 @@ def plot_path():
 
     # set up parameters to generate gif
     duration = yaml_p['duration']
-    N = df['episode'].iloc[-1]+1
+    N = df['epi_n'].iloc[-1]+1
     fps = min(int(N/duration),yaml_p['fps'])
 
     n_f = duration*fps
@@ -125,10 +124,10 @@ def plot_path():
         fig, axs = plt.subplots(4,1)
 
         idx_fra = np.arange(idx[i], idx[i+1],1)
-        df_fra = df[df['episode'].isin(idx_fra)]
+        df_fra = df[df['epi_n'].isin(idx_fra)]
 
         for j in idx_fra:
-            df_loc = df_fra[df_fra['episode'].isin([j])]
+            df_loc = df_fra[df_fra['epi_n'].isin([j])]
 
             # add legend
             legend = [-2, -1.5, -1, -0.5, 0, 0.5, 1]
@@ -271,7 +270,7 @@ def plot_qmap():
 
 def write_overview():
     # read in logger file as pandas
-    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
@@ -372,15 +371,18 @@ def disp_overview():
                 ax2.scatter(df.iloc[:,x],df['linreg_slope'], s=0.1, facecolors='none', edgecolors=color_slope, alpha=0.2)
                 """
 
+                """
                 # max
                 df_mean_max = pd.concat([df.iloc[:,x], df['rew_epi_max']], axis=1)
 
                 if df_mean_max.columns[0] != df_mean_max.columns[1]:
                     mean_rew_max = df_mean_max.groupby(df_mean_max.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_max.iloc[:,0], mean_rew_max.iloc[:,1], s=0.1, color=color_max)
-                df_mean_mean = pd.concat([df.iloc[:,x], df['rew_epi_mean']], axis=1)
+                """
 
                 # mean
+                df_mean_mean = pd.concat([df.iloc[:,x], df['rew_epi_mean']], axis=1)
+
                 if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
                     mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, color=color_mean)
@@ -411,13 +413,14 @@ def disp_overview():
                 x += 1
 
     #fig.tight_layout()
-    fig.suptitle('max reward: red     mean reward: blue     success rate: violet     linreg slope: green     linreg intercept: orange     linreg scoret: pink')
+    #fig.suptitle('max reward: red     mean reward: blue     success rate: violet     linreg slope: green     linreg intercept: orange     linreg scoret: pink')
+    fig.suptitle('mean reward: blue     success rate: violet')
     plt.subplots_adjust(wspace=0.5, hspace=1)
     plt.show()
     plt.close()
 
-def clear():
-    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger')
+def clear(train_or_test):
+    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_' + train_or_test)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)
 

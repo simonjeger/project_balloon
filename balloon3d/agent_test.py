@@ -1,5 +1,4 @@
 from analysis import plot_reward, plot_path, plot_qmap, write_overview, clear
-
 from build_environment import balloon2d
 from build_agent import Agent
 
@@ -20,8 +19,11 @@ with open(args.yaml_file, 'rt') as fh:
 
 from torch.utils.tensorboard import SummaryWriter
 
+# always clear out previous tests
+clear('test')
+
 # initialize logger
-writer = SummaryWriter(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger')
+writer = SummaryWriter(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test')
 
 env = balloon2d(0,0,'test',writer)
 ag = Agent(0,0,'test',env,writer)
@@ -38,4 +40,4 @@ if yaml_p['overview']:
 
 # Delete log files
 if yaml_p['clear']:
-    clear()
+    clear('test')

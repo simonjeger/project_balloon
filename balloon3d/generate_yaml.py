@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size,  minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, boundaries, short_sighted):
+def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, lr, lr_actor, lr_critic, replay_start_size,  minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, boundaries, short_sighted):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -50,11 +50,13 @@ def write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epoc
     text = text + 'explorer_type: LinearDecayEpsilonGreedy' + '\n'
     text = text + 'agent_type: SoftActorCritic' + '\n'
     text = text + 'epsi_high: 0.9' + '\n'
-    text = text + 'epsi_low: ' + str(epsi_low) + '\n'
-    text = text + 'decay: ' + str(decay) + '\n'
+    text = text + 'epsi_low: 0.1' + '\n'
+    text = text + 'decay: 300000' + '\n'
     text = text + 'gamma: 0.95' + '\n'
-    text = text + 'buffer_size: ' + str(buffer_size) + '\n'
+    text = text + 'buffer_size: 100000000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
+    text = text + 'lr_actor: ' + f'{lr_actor:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
+    text = text + 'lr_critic: ' + f'{lr_critic:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'max_grad_norm: 1' + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'update_interval: 20' + '\n'
@@ -104,39 +106,38 @@ step = -0.00003
 action = -0.05
 balloon = '"small"'
 
-process_nr = 1870
+process_nr = 1920
 
 for data_path in ['"data/"']:
-    for time in [360,440,720,900]:
+    for time in [600]:
         for type in ['"squished"']:
             for boundaries in ['"short"']:
                 if type == '"regular"':
-                    num_epochs = int(15000/360*time)
+                    num_epochs = int(20000/360*time)
                 if type == '"squished"':
-                    num_epochs = int(7000/360*time)
+                    num_epochs = int(12000/360*time)
                 for min_proj_dist in [1]:
-                    for autoencoder in ['"HAE_avg"', '"HAE_ext"']:
+                    for autoencoder in ['"HAE_ext"']:
                         for cherry_pick in [0]:
                             for short_sighted in [False]:
-                                for window_size in [1,2,3]:
+                                for window_size in [2]:
                                     if autoencoder == '"HAE_avg"':
                                         bottleneck = 10
                                     elif autoencoder == '"HAE_ext"':
-                                        bottleneck = 1
+                                        bottleneck = 4
                                     elif autoencoder == '"VAE"':
                                         bottleneck = 50
-                                    for buffer_size in [100000000]:
-                                        for start_train in [[7,6,0]]:
-                                            for curriculum_dist in [1]:
-                                                for curriculum_rad in [1]:
-                                                    for epsi_low in [0.1]:
-                                                        for decay in [300000]:
-                                                            for minibatch_size in [800]:
-                                                                for n_times_update in [20]:
-                                                                    for lr in [0.0005]:
-                                                                        for repeat in range(2):
-                                                                            for replay_start_size in [1000]:
-                                                                                continuous = True
+                                    for start_train in [[7,6,0]]:
+                                        for curriculum_dist in [1]:
+                                            for curriculum_rad in [1]:
+                                                for minibatch_size in [800]:
+                                                    for n_times_update in [20]:
+                                                        for lr in [0.003, 0.0003, 0.00003]:
+                                                            for lr_actor in [0.003, 0.0003, 0.00003]:
+                                                                for lr_critic in [0.003, 0.0003, 0.00003]:
+                                                                    for repeat in range(2):
+                                                                        for replay_start_size in [1000]:
+                                                                            continuous = True
 
-                                                                                write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, buffer_size, lr, epsi_low, decay, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, boundaries, short_sighted)
-                                                                                process_nr += 1
+                                                                            write(process_nr, time, type, autoencoder, window_size, bottleneck, num_epochs, cherry_pick, lr, lr_actor, lr_critic, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, boundaries, short_sighted)
+                                                                            process_nr += 1
