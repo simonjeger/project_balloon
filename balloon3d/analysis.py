@@ -101,7 +101,7 @@ def plot_path():
 
     # set up parameters to generate gif
     duration = yaml_p['duration']
-    N = df['epi_n'].iloc[-1]+1
+    N = df['epi_n'].dropna().iloc[-1]+1
     fps = min(int(N/duration),yaml_p['fps'])
 
     n_f = duration*fps
