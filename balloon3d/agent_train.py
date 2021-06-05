@@ -1,4 +1,4 @@
-from analysis import plot_reward, plot_path, plot_qmap, write_overview, clear
+from analysis import plot_reward, plot_path, write_overview, clear
 
 import yaml
 import argparse
@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import torch
 from pathlib import Path
 import os
+import time
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -32,13 +33,7 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_train')
 
 # model_train
-num_epochs = int(yaml_p['num_epochs_train']/yaml_p['curriculum_rad'])
-
-# index for log file
-duration = yaml_p['duration']
-fps = min(int(num_epochs/duration),yaml_p['fps'])
-n_f = duration*fps
-ratio = num_epochs/n_f
+init_time = time.time()
 
 if yaml_p['phase'] < yaml_p['cherry_pick']:
     print('Please choose a higher phase / lower cherr_pick')
@@ -46,8 +41,6 @@ if yaml_p['cherry_pick']:
     phase = int(yaml_p['phase']/yaml_p['cherry_pick'])
 else:
     phase = int(yaml_p['phase'])
-current_phase = [-np.inf]*phase
-best_phase = current_phase[:]
 
 # Index epi_n and step_n
 path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_train/'
@@ -80,50 +73,56 @@ for r in range(yaml_p['curriculum_rad']):
     if (r > 0) | load_prev_weights:
         ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
-    for i in range(num_epochs):
+    current_phase = [-np.inf]*phase
+    best_phase = current_phase[:]
+    dry = 0
+
+    while time.time() < init_time + yaml_p['time_train']:
         if yaml_p['cherry_pick'] > 0:
-            if i%yaml_p['cherry_pick'] == 0:
+            if epi_n%yaml_p['cherry_pick'] == 0:
                 ag.stash_weights()
         else:
             ag.stash_weights()
 
         log = ag.run_epoch(False)
-        print('epoch: ' + str(i) + ' reward: ' + str(log))
+        h = int((time.time() - init_time)/3600)
+        m = int(((time.time() - init_time) - h*3600)/60)
+        s = int((time.time() - init_time) - h*3600 - m*60)
+        print('duration: ' + str(h) + ':' + str(m) + ':' + str(s) + ' epoch: ' + str(epi_n) + ' reward: ' + str(log))
 
         # save weights
         if yaml_p['cherry_pick'] > 0:
-            if i%yaml_p['cherry_pick'] == 0:
-                env_val = balloon2d(epi_n,step_n,'val',radius_xy, radius_z)
+            if epi_n%yaml_p['cherry_pick'] == 0:
+                env_val = balloon2d(epi_n,step_n,'val')
                 ag_val = Agent(epi_n,step_n,'val',env_val)
                 ag_val.load_stash()
                 with ag_val.agent.eval_mode():
                     log_val = ag_val.run_epoch(False)
-                current_phase[int((i/yaml_p['cherry_pick'])%phase)] = log_val
+                current_phase[int((epi_n/yaml_p['cherry_pick'])%phase)] = log_val
                 writer.add_scalar('reward_epi_val', log_val, env.step_n-1)
-                print('epoch: ' + str(i) + ' reward_val: ' + str(log_val))
+                print('reward_val: ' + str(log_val))
 
                 if sum(current_phase) > sum(best_phase):
                     ag.save_weights(current_phase, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
                     best_phase = current_phase[:]
+                    dry = 0
 
-        # write in log file
-        if (np.floor(i%ratio) == 0) & yaml_p['qfunction']:
-            Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/').mkdir(parents=True, exist_ok=True)
-            Q_vis = ag.visualize_q_map()
-            torch.save(Q_vis, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap/log_qmap_' + str(i).zfill(5) + '.pt')
+            if (dry > yaml_p['curriculum_rad_dry']) & (yaml_p['curriculum_rad'] + 1 < r):
+                dry = 0
+                epi_n += 1
+                break
+                
+        dry += 1
+        epi_n += 1
+    step_n = env.step_n
 
     if yaml_p['cherry_pick'] == 0:
         ag.save_weights(current_phase, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
-
-    epi_n = env.epi_n
-    step_n = env.step_n
 
 ag.clear_stash()
 
 plot_reward()
 plot_path()
-if yaml_p['qfunction']:
-    plot_qmap()
 
 # Need to clear out for log files during testing
 if yaml_p['clear'] & (not yaml_p['reuse_weights']):

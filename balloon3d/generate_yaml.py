@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, num_epochs, cherry_pick, lr, replay_start_size,  minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, boundaries, short_sighted):
+def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, lr, replay_start_size,  minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, boundaries, short_sighted):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -41,9 +41,9 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'bottleneck: '+ str(bottleneck) + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
-    text = text + 'num_epochs_train: ' + str(num_epochs) + '\n'
+    text = text + 'time_train: ' + str(time_train) + '\n'
     text = text + 'num_epochs_test: 1000' + '\n'
-    text = text + 'phase: 5' + '\n'
+    text = text + 'phase: 50' + '\n'
     text = text + 'cherry_pick: ' + str(cherry_pick) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
@@ -75,6 +75,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'radius_start_ratio: 1' + '\n'
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
     text = text + 'curriculum_rad: ' + str(curriculum_rad) + '\n'
+    text = text + 'curriculum_rad_dry: ' + str(curriculum_rad_dry) + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: ' + f'{step:.10f}' + '\n'
     text = text + 'action: ' + f'{action:.10f}' + '\n'
@@ -89,13 +90,12 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
-    text = text + "reuse_weights: False" + '\n'
-    text = text + "qfunction: False" + '\n'
+    text = text + "reuse_weights: True" + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 15' + '\n'
     text = text + 'overview: True' + '\n'
-    text = text + 'clear: False' + '\n'
+    text = text + 'clear: True' + '\n'
 
     file.write(text)
     file.close()
@@ -103,6 +103,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
 step = -0.00003
 action = -0.05
 balloon = '"small"'
+time_train = 23*60*60
 
 process_nr = 1980
 
@@ -111,20 +112,17 @@ for data_path in ['"data/"']:
         for type in ['"squished"']:
             for boundaries in ['"short"']:
                 for min_proj_dist in [1]:
-                    for autoencoder in ['"HAE_avg"','"HAE_ext"','"VAE"']:
-                        for cherry_pick in [0]:
+                    for cherry_pick in [0,20]:
+                        for autoencoder in ['"HAE_avg"','"HAE_ext"','"VAE"']:
                             for short_sighted in [False]:
                                 for window_size in [1,2,3,4,5]:
                                     if autoencoder == '"HAE_avg"':
-                                        num_epochs = int(20000/360*time)
                                         bottleneck = 10
                                         vae_nr = 11111
                                     elif autoencoder == '"HAE_ext"':
-                                        num_epochs = int(20000/360*time*147/492)
                                         bottleneck = 10
                                         vae_nr = 11111
                                     elif autoencoder == '"VAE"':
-                                        num_epochs = int(20000/360*time*147/480)
                                         bottleneck = 15
                                         if window_size == 1:
                                             vae_nr = 11113
@@ -134,17 +132,18 @@ for data_path in ['"data/"']:
                                             vae_nr = 11133
                                         elif window_size == 4:
                                             vae_nr = 11143
-                                        elif window_size == 4:
+                                        elif window_size == 5:
                                             vae_nr = 11153
                                     for start_train in [[7,6,0]]:
                                         for curriculum_dist in [1]:
                                             for curriculum_rad in [1]:
-                                                for minibatch_size in [800]:
-                                                    for n_times_update in [20]:
-                                                        for lr in [0.0003]:
-                                                            for repeat in range(2):
-                                                                for replay_start_size in [1000]:
-                                                                    continuous = True
+                                                for curriculum_rad_dry in [1000]:
+                                                    for minibatch_size in [800]:
+                                                        for n_times_update in [20]:
+                                                            for lr in [0.0003]:
+                                                                for repeat in range(2):
+                                                                    for replay_start_size in [1000]:
+                                                                        continuous = True
 
-                                                                    write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, num_epochs, cherry_pick, lr, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, boundaries, short_sighted)
-                                                                    process_nr += 1
+                                                                        write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, lr, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, boundaries, short_sighted)
+                                                                        process_nr += 1

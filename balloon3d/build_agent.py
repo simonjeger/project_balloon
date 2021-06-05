@@ -283,7 +283,7 @@ class Agent:
         path_temp = yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
         Path(path_temp).mkdir(parents=True, exist_ok=True)
         if yaml_p['cherry_pick'] > 0:
-            self.agent.save(path_temp + 'temp_agent_' + str(int((self.epi_n//yaml_p['cherry_pick'])%yaml_p['phase'])))
+            self.agent.save(path_temp + 'temp_agent_' + str(int((self.epi_n/yaml_p['cherry_pick'])%yaml_p['phase'])))
         else:
             self.agent.save(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
 
@@ -306,37 +306,11 @@ class Agent:
 
     def load_stash(self):
         path_temp = yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/temp_w/'
-        self.agent.load(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
+        if yaml_p['cherry_pick'] > 0:
+            self.agent.save(path_temp + 'temp_agent_' + str(int((self.epi_n/yaml_p['cherry_pick'])%yaml_p['phase'])))
+        else:
+            self.agent.save(path_temp + 'temp_agent_' + str(self.epi_n%yaml_p['phase']))
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
         print('weights loaded')
-
-    def visualize_q_map(self):
-        res_x = max(10/self.env.size_x,0.1)
-        res_z = max(10/self.env.size_z,0.1)
-
-        Q_vis = np.zeros((int(self.env.size_x*res_x), int(self.env.size_z*res_z),8))
-        for i in range(int(self.env.size_x*res_x)):
-            for j in range(int(self.env.size_z*res_z)):
-                position = np.array([(i+0.5)/res_x,(j+0.5)/res_z])
-                obs = self.env.character_v(position)
-                state = torch.Tensor(obs).unsqueeze(0)
-                Q = self.agent.model.forward(state)
-                Q_tar = self.agent.target_model.forward(state)
-
-                # model
-                Q_vis[i,j,0] = Q.q_values[0][0]
-                Q_vis[i,j,1] = Q.q_values[0][1]
-                Q_vis[i,j,2] = Q.q_values[0][2]
-                Q_vis[i,j,3] = Q.greedy_actions
-
-                """
-                # target model
-                Q_vis[i,j,4] = Q_tar.q_values[0][0]
-                Q_vis[i,j,5] = Q_tar.q_values[0][1]
-                Q_vis[i,j,6] = Q_tar.q_values[0][2]
-                Q_vis[i,j,7] = Q_tar.greedy_actions
-                """
-
-        return Q_vis

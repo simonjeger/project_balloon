@@ -1,4 +1,4 @@
-from analysis import plot_reward, plot_path, plot_qmap, write_overview, clear
+from analysis import plot_reward, plot_path, write_overview, clear
 from build_environment import balloon2d
 from build_agent import Agent
 

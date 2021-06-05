@@ -5,7 +5,7 @@ from build_character import character
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from gym import Env
+from gym import Env, logger
 from gym.spaces import Discrete, Box
 import numpy as np
 import random
@@ -24,6 +24,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
+logger.set_level(40) # to avoid UserWarning about box bound precision
 
 class balloon2d(Env):
     def __init__(self, epi_n, step_n, train_or_test, writer=None, radius_xy=yaml_p['radius_stop_xy'], radius_z=yaml_p['radius_stop_xy']):
@@ -104,6 +105,10 @@ class balloon2d(Env):
                     self.writer.add_scalar('size_x', self.size_x , self.step_n)
                     self.writer.add_scalar('size_y', self.size_y , self.step_n)
                     self.writer.add_scalar('size_z', self.size_z , self.step_n)
+
+                    self.writer.add_scalar('radius_xy', self.radius_xy , self.step_n)
+                    self.writer.add_scalar('radius_z', self.radius_z , self.step_n)
+
                     self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
                     self.writer.add_scalar('target_y', self.character.target[1], self.step_n)
                     self.writer.add_scalar('target_z', self.character.target[2], self.step_n)
@@ -255,12 +260,3 @@ class balloon2d(Env):
             target = np.array(yaml_target, dtype=float)
 
         return target
-
-    def character_v(self, position):
-        world_compressed = self.ae.compress(self.world, self.character.position, self.character.ceiling)
-        character_v = character(self.size_x, self.size_z, position, self.character.target, self.T, self.world, world_compressed)
-        v_x = self.world[-3][int(position[0]), int(position[1])] #approximate current velocity as velocity of world_map
-        v_z = self.world[-2][int(position[0]), int(position[1])]
-        character_v.state[2:4] = [v_x, v_z]
-
-        return character_v.state
