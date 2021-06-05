@@ -35,6 +35,7 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
 
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
+    text = text + 'vae_nr: 11111' + '\n'
     text = text + 'window_size: 3' + '\n'
     text = text + 'bottleneck: 4' + '\n'
 
@@ -45,6 +46,7 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'cherry_pick: 20' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
+    text = text + 'rl: True' + '\n'
     text = text + 'explorer_type: ' + str(explorer_type) + '\n'
     text = text + 'agent_type: "SoftActorCritic"' + '\n'
     text = text + 'epsi_high: 0.9' + '\n'

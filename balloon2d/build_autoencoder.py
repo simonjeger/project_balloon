@@ -375,7 +375,7 @@ class VAE(nn.Module):
             else:
                 self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real.png')
                 self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon.png')
-                self.visualize(abs(data-recon_batch), 'autoencoder/results/' + str(i).zfill(5) + '_error_')
+                self.visualize(abs(data-recon_batch), 'autoencoder/results/' + str(i).zfill(5) + '_error_', error=True)
 
         test_loss /= len(self.test_loader.dataset)
         print('====> Test set loss: {:.4f}'.format(test_loss))
@@ -431,7 +431,7 @@ class VAE(nn.Module):
         window = torch.tensor(window)
         return window
 
-    def visualize(self, data, path):
+    def visualize(self, data, path, error=False):
         n = 0 #which port of the batch should be visualized
         mean_x = data[n][-2,:,:].detach().numpy()
         mean_z = data[n][-1,:,:].detach().numpy()
@@ -444,12 +444,21 @@ class VAE(nn.Module):
         fig, ax = plt.subplots(frameon=False)
         render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
-        cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
-        ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+        if error == False:
+            cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
+            ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
 
-        cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-        map = ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
-        fig.colorbar(map)
+            cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+            map = ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+            fig.colorbar(map)
+        else:
+            cmap = 'Blues'
+            map = ax.imshow(mean_z.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, interpolation='bilinear')
+            fig.colorbar(map)
+
+            cmap = 'Reds'
+            map = ax.imshow(mean_x.T, origin='lower', extent=[0, size_x, 0, size_z], cmap=cmap, alpha=0.5, interpolation='bilinear')
+            fig.colorbar(map)
 
         ax.set_aspect(1/render_ratio)
         plt.savefig(path)

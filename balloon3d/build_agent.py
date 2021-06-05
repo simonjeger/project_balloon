@@ -8,6 +8,7 @@ import copy
 from pathlib import Path
 import shutil
 from distutils.dir_util import copy_tree
+from scipy.ndimage import gaussian_filter
 
 from lowlevel_controller import ll_pd
 
@@ -239,20 +240,27 @@ class Agent:
             self.set_reachable_target()
 
         while True:
-            action = self.agent.act(obs) #uses self.agent.model to decide next step
+            if yaml_p['rl']:
+                action = self.agent.act(obs) #uses self.agent.model to decide next step
 
-            # actions are not in the same range in discrete / continuous cases
-            if yaml_p['type'] == 'regular':
-                if yaml_p['continuous']:
-                    action = action[0]+1
-                else:
-                    action = action
+                # actions are not in the same range in discrete / continuous cases
+                if yaml_p['type'] == 'regular':
+                    if yaml_p['continuous']:
+                        action = action[0]+1
+                    else:
+                        action = action
 
-            elif yaml_p['type'] == 'squished':
-                action = (action[0]+1)/2
-            obs, reward, done, _ = self.env.step(action)
-            sum_r = sum_r + reward
-            self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
+                elif yaml_p['type'] == 'squished':
+                    action = (action[0]+1)/2
+
+                obs, reward, done, _ = self.env.step(action)
+                sum_r = sum_r + reward
+                self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
+
+            else:
+                action = self.act_simple(self.env.character) #only works with type = "squished"
+                obs, reward, done, _ = self.env.step(action)
+                sum_r = sum_r + reward
 
             self.step_n += 1
 
@@ -314,3 +322,52 @@ class Agent:
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
         print('weights loaded')
+
+    def act_simple(self, character):
+        pos_x = int(np.clip(character.position[0],0,self.env.size_x-1))
+        pos_y = int(np.clip(character.position[1],0,self.env.size_y-1))
+        pos_z = int(np.clip(character.position[2],0,self.env.size_z-1))
+        tar_x = int(np.clip(character.target[0],0,self.env.size_x-1))
+        tar_y = int(np.clip(character.target[1],0,self.env.size_y-1))
+        tar_z = int(np.clip(character.target[2],0,self.env.size_z-1))
+        residual_x = character.residual[0]
+        residual_y = character.residual[1]
+        residual_z = character.residual[2]
+        tar_z_squished = (character.target[2]-character.world[0,tar_x,tar_y,0])/(character.ceiling[tar_x,tar_y] - character.world[0,tar_x,tar_y,0])
+        vel_x = character.velocity[0]
+        vel_y = character.velocity[1]
+
+        # window_squished
+        data = character.world
+        res = self.env.size_z
+        data_squished = np.zeros((len(data),self.env.size_x,self.env.size_y,res))
+        for i in range(self.env.size_x):
+            for j in range(self.env.size_y):
+                bottom = data[0,i,j,0]
+                top = character.ceiling[i,j]
+
+                x_old = np.arange(0,self.env.size_z,1)
+                x_new = np.linspace(bottom,top,res)
+                data_squished[0,:,:,:] = data[0,:,:,:] #terrain stays the same
+
+                for k in range(1,len(data)):
+                    data_squished[k,i,j,:] = np.interp(x_new,x_old,data[k,i,j,:])
+
+        wind_x = data_squished[-4,pos_x,pos_y,:]
+        wind_x = gaussian_filter(wind_x,sigma=1)
+
+        wind_y = data_squished[-3,pos_x,pos_y,:]
+        wind_y = gaussian_filter(wind_y,sigma=1)
+
+        k_1 = 10
+        k_2 = 500
+
+        p_1 = (1/abs(residual_x) + 1/abs(residual_y))*k_1
+        p_2 = np.clip(vel_x*residual_x,0,np.inf)*k_2 + np.clip(vel_y*residual_y,0,np.inf)*k_2
+        p = np.clip(p_1*p_2,0,1)
+
+        projections = residual_x*wind_x + residual_y*wind_y
+        action = np.argmax(projections)/len(projections)**(1/2)*(1-p) + tar_z_squished*p
+        action = np.clip(action,0.05,1) #avoid crashing into terrain
+
+        return action

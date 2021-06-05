@@ -47,6 +47,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'cherry_pick: ' + str(cherry_pick) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
+    text = text + 'rl: True' + '\n'
     text = text + 'explorer_type: LinearDecayEpsilonGreedy' + '\n'
     text = text + 'agent_type: SoftActorCritic' + '\n'
     text = text + 'epsi_high: 0.9' + '\n'

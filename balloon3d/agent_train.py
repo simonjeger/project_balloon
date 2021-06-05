@@ -88,7 +88,7 @@ for r in range(yaml_p['curriculum_rad']):
         h = int((time.time() - init_time)/3600)
         m = int(((time.time() - init_time) - h*3600)/60)
         s = int((time.time() - init_time) - h*3600 - m*60)
-        print('duration: ' + str(h) + ':' + str(m) + ':' + str(s) + ' epoch: ' + str(epi_n) + ' reward: ' + str(log))
+        print('runtime: ' + str(h) + ':' + str(m) + ':' + str(s) + ' epoch: ' + str(epi_n) + ' reward: ' + str(log))
 
         # save weights
         if yaml_p['cherry_pick'] > 0:
@@ -111,7 +111,7 @@ for r in range(yaml_p['curriculum_rad']):
                 dry = 0
                 epi_n += 1
                 break
-                
+
         dry += 1
         epi_n += 1
     step_n = env.step_n
