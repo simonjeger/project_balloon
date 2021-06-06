@@ -99,7 +99,7 @@ class character():
     def set_state(self):
         if yaml_p['type'] == 'regular':
             if yaml_p['boundaries'] == 'short':
-                boundaries = self.compress_terrain(True)/[self.size_x, self.size_y, self.size_z]
+                boundaries = np.concatenate((self.compress_terrain(True)/[self.size_x, self.size_y, self.size_z], [self.position[0] - np.floor(self.position[0]), self.position[1] - np.floor(self.position[1])]))
                 self.bottleneck = len(boundaries)
             elif yaml_p['boundaries'] == 'long':
                 min_x = self.position[0]/self.size_x
@@ -115,7 +115,7 @@ class character():
 
         elif yaml_p['type'] == 'squished':
             if yaml_p['boundaries'] == 'short':
-                boundaries = np.array([])
+                boundaries = np.array([self.position[0] - np.floor(self.position[0]), self.position[1] - np.floor(self.position[1])])
                 self.bottleneck = len(boundaries)
 
             elif yaml_p['boundaries'] == 'long':

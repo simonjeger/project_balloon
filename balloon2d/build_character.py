@@ -53,7 +53,6 @@ class character():
 
         self.residual = self.target - self.position
         self.measurement = self.interpolate_wind(measurement=True)[0:2]
-        self.memory = np.array([np.concatenate((self.residual, self.measurement))]*yaml_p['memory_size'])
 
         self.set_state()
 
@@ -88,11 +87,8 @@ class character():
 
     def set_state(self):
         if yaml_p['type'] == 'regular':
-            self.memory = self.memory[2+2:]
-            self.memory = np.concatenate((self.memory.flatten(), self.residual/[self.size_x, self.size_z], self.normalize(self.measurement)))
-
             if yaml_p['boundaries'] == 'short':
-                boundaries = self.compress_terrain()/[self.size_x, self.size_z]
+                boundaries = np.concatenate((self.compress_terrain()/[self.size_x, self.size_z], [self.position[0] - np.floor(self.position[0])]))
                 self.bottleneck = len(boundaries)
             elif yaml_p['boundaries'] == 'long':
                 min_x = self.position[0]/self.size_x
@@ -107,11 +103,8 @@ class character():
             tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
             self.res_z_squished = (self.target[1]-self.world[0,tar_x,0])/(self.ceiling[tar_x] - self.world[0,tar_x,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
-            self.memory = self.memory[2+2:]
-            self.memory = np.concatenate((self.memory.flatten(), [self.residual[0]/self.size_x], [self.res_z_squished], self.normalize(self.measurement)))
-
             if yaml_p['boundaries'] == 'short':
-                boundaries = np.array([])
+                boundaries = np.array([self.position[0] - np.floor(self.position[0])])
                 self.bottleneck = len(boundaries)
 
             elif yaml_p['boundaries'] == 'long':

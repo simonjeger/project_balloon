@@ -11,6 +11,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     file = open(path + '/submit.txt', "a")
     #file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.write('bsub -n 2 -W 24:00 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    #file.write('bsub -n 2 -W 24:00 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 agent_test.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -104,7 +105,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
 step = -0.00003
 action = -0.05
 balloon = '"small"'
-time_train = 23*60*60
+time_train = 20*60*60
 
 process_nr = 1980
 

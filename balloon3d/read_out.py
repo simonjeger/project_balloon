@@ -1,4 +1,4 @@
-from analysis import plot_reward, plot_path, plot_qmap, write_overview, disp_overview, clear
+from analysis import plot_reward, plot_path, write_overview, disp_overview, clear
 
 import numpy as np
 import gym
@@ -20,5 +20,4 @@ with open(args.yaml_file, 'rt') as fh:
 # analyse
 #plot_reward()
 #plot_path()
-#plot_qmap()
 disp_overview()
