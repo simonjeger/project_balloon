@@ -10,8 +10,8 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     # Write submit command
     file = open(path + '/submit.txt', "a")
     #file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
-    file.write('bsub -n 2 -W 24:00 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
-    #file.write('bsub -n 2 -W 24:00 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 agent_test.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -n 2 -W 23:55 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    #file.write('bsub -n 2 -W 23:55 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 agent_test.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -78,6 +78,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
     text = text + 'curriculum_rad: ' + str(curriculum_rad) + '\n'
     text = text + 'curriculum_rad_dry: ' + str(curriculum_rad_dry) + '\n'
+    text = text + 'min_space: 0.5' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: ' + f'{step:.10f}' + '\n'
     text = text + 'action: ' + f'{action:.10f}' + '\n'
@@ -141,7 +142,7 @@ for data_path in ['"data/"']:
                                             for curriculum_rad in [1]:
                                                 for curriculum_rad_dry in [1000]:
                                                     for minibatch_size in [800]:
-                                                        for n_times_update in [20]:
+                                                        for n_times_update in [100]:
                                                             for lr in [0.0003]:
                                                                 for repeat in range(2):
                                                                     for replay_start_size in [1000]:

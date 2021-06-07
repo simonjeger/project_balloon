@@ -78,6 +78,7 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
     text = text + 'curriculum_rad: ' + str(curriculum_rad) + '\n'
     text = text + 'curriculum_rad_dry: 1000' + '\n'
+    text = text + 'min_space: 0.5' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: ' + f'{step:.10f}' + '\n'
     text = text + 'action: ' + f'{action:.10f}' + '\n'

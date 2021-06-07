@@ -359,15 +359,19 @@ class Agent:
         wind_y = data_squished[-3,pos_x,pos_y,:]
         wind_y = gaussian_filter(wind_y,sigma=1)
 
-        k_1 = 5
-        k_2 = 100
+        k_1 = 5 #5
+        k_2 = 100 #100
 
-        p_1 = (1/abs(residual_x) + 1/abs(residual_y))*k_1
-        p_2 = np.clip(vel_x*residual_x,0,np.inf)*k_2 + np.clip(vel_y*residual_y,0,np.inf)*k_2
-        p = np.clip(p_1*p_2,0,1)
+        p_1 = 1/abs(residual_x)*k_1
+        p_2 = 1/abs(residual_y)*k_1
+        p_3 = np.clip(vel_x*residual_x*k_2,0.1,np.inf)
+        p_4 = np.clip(vel_y*residual_y*k_2,0.1,np.inf)
+        p = np.clip(p_1*p_2*p_3*p_4,0,1)
+
         p = np.round(p,0) #bang bang makes most sense here
 
-        projections = residual_x*wind_x + residual_y*wind_y
+        norm_wind = np.sqrt(wind_x**2 + wind_y**2)
+        projections = (residual_x*wind_x + residual_y*wind_y)/norm_wind
         action = np.argmax(projections)/len(projections)*(1-p) + tar_z_squished*p
         action = np.clip(action,0.05,1) #avoid crashing into terrain
 
