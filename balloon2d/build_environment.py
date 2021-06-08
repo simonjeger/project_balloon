@@ -52,7 +52,7 @@ class balloon2d(Env):
         # set maximal duration of flight
         self.T = yaml_p['T']
 
-        self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+        self.render_ratio = yaml_p['unit_x']/yaml_p['unit_z']
         self.reset()
 
         # location array in x and z

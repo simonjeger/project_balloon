@@ -170,7 +170,7 @@ class Agent:
 
         self.epi_n = epi_n
         self.step_n = step_n
-        self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
+        self.render_ratio = yaml_p['unit_x'] / yaml_p['unit_z']
 
     def set_reachable_target(self):
         curr_start = 0.35

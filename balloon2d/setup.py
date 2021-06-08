@@ -31,6 +31,7 @@ Path(yaml_p['data_path'] + 'val/tensor').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'test').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'test/image').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'test/tensor').mkdir(parents=True, exist_ok=True)
+Path('render').mkdir(parents=True, exist_ok=True)
 
 shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5))
 

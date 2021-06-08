@@ -442,7 +442,7 @@ class VAE(nn.Module):
 
         z,x = np.meshgrid(np.arange(0, size_z, 1),np.arange(0, size_x, 1))
         fig, ax = plt.subplots(frameon=False)
-        render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
+        render_ratio = int(yaml_p['unit_x'] / yaml_p['unit_z'])
 
         if error == False:
             cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)

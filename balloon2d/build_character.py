@@ -17,7 +17,7 @@ with open(args.yaml_file, 'rt') as fh:
 
 class character():
     def __init__(self, size_x, size_z, start, target, radius_x, radius_z, T, world, world_compressed):
-        self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
+        self.render_ratio = yaml_p['unit_x'] / yaml_p['unit_z']
         self.radius_x = radius_x
         self.radius_z = radius_z
 
@@ -236,7 +236,7 @@ class character():
 
         w_x, w_z, sig_xz = wind
         if not measurement:
-            w_x /= yaml_p['unit_xy']
+            w_x /= yaml_p['unit_x']
             w_z /= yaml_p['unit_z']
         return np.array([w_x, w_z, sig_xz])
 

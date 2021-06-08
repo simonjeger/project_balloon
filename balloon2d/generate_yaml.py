@@ -28,7 +28,7 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + '\n' + '# setup' + '\n'
     text = text + 'size_x: 14' + '\n'
     text = text + 'size_z: 105' + '\n'
-    text = text + 'unit_xy: 1100' + '\n'
+    text = text + 'unit_x: 1100' + '\n'
     text = text + 'unit_z: 30.48' + '\n'
     text = text + 'time: 360' + '\n'
     text = text + 'type: ' + type + '\n'

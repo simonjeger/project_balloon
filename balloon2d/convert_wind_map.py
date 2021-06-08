@@ -37,7 +37,7 @@ def convert_map():
 
     center_lat = 46.803198
     center_lon = 8.18615665
-    step_x = size_x/2*yaml_p['unit_xy']
+    step_x = size_x/2*yaml_p['unit_x']
     step_y = 0
 
     start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
