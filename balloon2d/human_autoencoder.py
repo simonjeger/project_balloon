@@ -73,7 +73,7 @@ class HAE():
         data_squished = np.zeros((len(data),self.size_x,res))
         for i in range(self.size_x):
             bottom = data[0,i,0]
-            top = ceiling[i]
+            top = ceiling
 
             x_old = np.arange(0,self.size_z,1)
             x_new = np.linspace(bottom,top,res)
@@ -234,8 +234,8 @@ class HAE():
                 #pred[len(idx)+i] = torch.mean(mean_z[:,idx[i]:idx[i] + self.box_size])
 
         pos_x = np.clip(int(position[0]),0,self.size_x - 1)
-        rel_pos = torch.tensor([(position[1]-data[0,self.window_size,0]) / (ceiling[pos_x] - data[0,self.window_size,0])])
-        size = (ceiling[pos_x] - data[0,self.window_size,0])/self.size_z
+        rel_pos = torch.tensor([(position[1]-data[0,self.window_size,0]) / (ceiling - data[0,self.window_size,0])])
+        size = (ceiling - data[0,self.window_size,0])/self.size_z
 
         pred[-2] = rel_pos
         pred[-1] = size
@@ -263,8 +263,8 @@ class HAE():
                     pred_x[i,j] = np.nanmean(mean_x[j,idx[i]:idx[i] + self.box_size])
 
         pos_x = np.clip(int(position[0]),0,self.size_x - 1)
-        rel_pos = torch.tensor([(position[1]-data[0,self.window_size,0]) / (ceiling[pos_x] - data[0,self.window_size,0])])
-        size = (ceiling[pos_x] - data[0,self.window_size,0])/self.size_z
+        rel_pos = torch.tensor([(position[1]-data[0,self.window_size,0]) / (ceiling - data[0,self.window_size,0])])
+        size = (ceiling - data[0,self.window_size,0])/self.size_z
 
         pred = np.concatenate((pred_x.flatten(), [rel_pos, size]))
         pred = torch.tensor(np.nan_to_num(pred,0))

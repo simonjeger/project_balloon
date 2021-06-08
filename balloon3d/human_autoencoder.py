@@ -80,7 +80,7 @@ class HAE():
         for i in range(self.size_x):
             for j in range(self.size_y):
                 bottom = data[0,i,j,0]
-                top = ceiling[i,j]
+                top = ceiling
 
                 x_old = np.arange(0,self.size_z,1)
                 x_new = np.linspace(bottom,top,res)
@@ -279,8 +279,8 @@ class HAE():
         pos_x = np.clip(int(position[0]),0,self.size_x - 1)
         pos_y = np.clip(int(position[1]),0,self.size_y - 1)
 
-        rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])])
-        size = (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])/self.size_z
+        rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling - data[0,self.window_size,self.window_size,0])])
+        size = (ceiling - data[0,self.window_size,self.window_size,0])/self.size_z
         pred[-2] = rel_pos
         pred[-1] = size
 
@@ -313,8 +313,8 @@ class HAE():
         pos_x = np.clip(int(position[0]),0,self.size_x - 1)
         pos_y = np.clip(int(position[1]),0,self.size_y - 1)
 
-        rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])])
-        size = (ceiling[pos_x,pos_y] - data[0,self.window_size,self.window_size,0])/self.size_z
+        rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling - data[0,self.window_size,self.window_size,0])])
+        size = (ceiling - data[0,self.window_size,self.window_size,0])/self.size_z
 
         pred = np.concatenate((pred_x.flatten(), pred_y.flatten(), [rel_pos, size]))
         pred = torch.tensor(np.nan_to_num(pred,0))

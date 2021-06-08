@@ -77,9 +77,9 @@ class character():
         self.world_compressed = world_compressed
 
         in_bounds = self.move_particle(100, roll_out)
-        if self.height_above_ground() < 0: # check if crashed into terrain
+        if self.height_above_ground() < 0: #check if crashed into terrain
             in_bounds = False
-        if self.dist_to_ceiling() < 0: # check if crashed into terrain
+        if self.dist_to_ceiling() < 0: #check if crashed into ceiling
             in_bounds = False
 
         # update state
@@ -130,7 +130,7 @@ class character():
 
             tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
             tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
-            self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling[tar_x,tar_y] - self.world[0,tar_x,tar_y,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
+            self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
             self.state = np.concatenate(((self.residual[0:2]/[self.size_x,self.size_y]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
 
@@ -270,14 +270,10 @@ class character():
         return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
 
     def set_ceiling(self):
-        max = random.uniform(0.9, 1) * self.size_z
-        self.ceiling = np.ones((self.size_x, self.size_y))*max
+        self.ceiling = random.uniform(0.9, 1) * self.size_z
 
     def dist_to_ceiling(self):
-        x = np.linspace(0,self.size_x,len(self.ceiling))
-        y = np.linspace(0,self.size_y,len(self.ceiling[0]))
-        f_ceiling = scipy.interpolate.interp2d(x,y,self.ceiling.T)
-        return f_ceiling(self.position[0], self.position[1])[0] - self.position[2]
+        return self.ceiling - self.position[2]
 
     def interpolate_wind(self, measurement=False):
         coord_x = int(np.clip(self.position[0],0,self.size_x-1))

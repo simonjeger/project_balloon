@@ -177,14 +177,14 @@ class balloon2d(Env):
             target[1] = np.interp(target[0],x,self.world[0,:,0]) + above_ground_target
 
         # Initial compressed wind map
-        self.world_compressed = self.ae.compress(self.world, start, [self.size_z]*self.size_x)
+        self.world_compressed = self.ae.compress(self.world, start, self.size_z)
 
         self.character = character(self.size_x, self.size_z, start, target, self.radius_x, self.radius_z, self.T, self.world, self.world_compressed)
 
         # avoid impossible szenarios
         min_space = self.size_z*yaml_p['min_space']
         pos_x = int(np.clip(self.character.position[0],0,self.size_x - 1))
-        if self.character.ceiling[pos_x] - self.world[0,pos_x,0] < min_space:
+        if self.character.ceiling - self.world[0,pos_x,0] < min_space:
             self.reset()
 
         self.prev_int = -1

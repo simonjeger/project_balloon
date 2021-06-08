@@ -324,7 +324,7 @@ class Agent:
         tar_z = int(np.clip(character.target[1],0,self.env.size_z-1))
         residual_x = character.residual[0]
         residual_z = character.residual[1]
-        tar_z_squished = (character.target[1]-character.world[0,tar_x,0])/(character.ceiling[tar_x] - character.world[0,tar_x,0])
+        tar_z_squished = (character.target[1]-character.world[0,tar_x,0])/(character.ceiling - character.world[0,tar_x,0])
         vel_x = character.velocity[0]
 
         # window_squished
@@ -333,7 +333,7 @@ class Agent:
         data_squished = np.zeros((len(data),self.env.size_x,res))
         for i in range(self.env.size_x):
             bottom = data[0,i,0]
-            top = character.ceiling[i]
+            top = character.ceiling
 
             x_old = np.arange(0,self.env.size_z,1)
             x_new = np.linspace(bottom,top,res)

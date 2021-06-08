@@ -113,7 +113,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         position_2 = character.position[i2]
         target_1 = character.target[i1]*render_ratio
         target_2 = character.target[i2]
-        ceiling = character.ceiling[:]
+        ceiling = character.ceiling
 
     window_size = window_size*render_ratio
 
@@ -160,19 +160,13 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
 
     if dim != 'xy':
         # draw and display ceiling
-        w_ceiling = []
-        for i in range(len(ceiling)):
-            pair = (((1+1/len(ceiling))*(i*render_ratio+offset_1)*res,(dist_to_bottom - ceiling[i])*res))
-            w_ceiling.append(pair)
-        w_ceiling.append((size_1*res, dist_to_top))
-        w_ceiling.append((0, dist_to_top))
-
-        lx, ly = zip(*w_ceiling)
-        min_x, min_y, max_x, max_y = min(lx), min(ly), max(lx), max(ly)
-        target_rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
-        shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
-        pygame.draw.polygon(shape_surf, c_ceiling, [(x - min_x, y - min_y) for x, y in w_ceiling])
-        screen.blit(shape_surf, target_rect)
+        size_ceil_x = size_1*res
+        size_ceil_y = (size_2-ceiling)*res
+        pos_ceil = [0, dist_to_top*res]
+        rec_ceil = pygame.Rect(pos_ceil[0], pos_ceil[1], size_ceil_x, size_ceil_y)
+        shape_surf = pygame.Surface(pygame.Rect(rec_ceil).size, pygame.SRCALPHA)
+        pygame.draw.rect(shape_surf, c_ceiling, shape_surf.get_rect())
+        screen.blit(shape_surf, rec_ceil)
 
     # write and display observing box
     size_obs_x = (window_size*2+1*render_ratio)*res

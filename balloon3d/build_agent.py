@@ -333,7 +333,7 @@ class Agent:
         residual_x = character.residual[0]
         residual_y = character.residual[1]
         residual_z = character.residual[2]
-        tar_z_squished = (character.target[2]-character.world[0,tar_x,tar_y,0])/(character.ceiling[tar_x,tar_y] - character.world[0,tar_x,tar_y,0])
+        tar_z_squished = (character.target[2]-character.world[0,tar_x,tar_y,0])/(character.ceiling - character.world[0,tar_x,tar_y,0])
         vel_x = character.velocity[0]
         vel_y = character.velocity[1]
 
@@ -344,7 +344,7 @@ class Agent:
         for i in range(self.env.size_x):
             for j in range(self.env.size_y):
                 bottom = data[0,i,j,0]
-                top = character.ceiling[i,j]
+                top = character.ceiling
 
                 x_old = np.arange(0,self.env.size_z,1)
                 x_new = np.linspace(bottom,top,res)

@@ -67,9 +67,9 @@ class character():
         self.world_compressed = world_compressed
 
         in_bounds = self.move_particle(100, roll_out)
-        if self.height_above_ground() < 0: # check if crashed into terrain
+        if self.height_above_ground() < 0: #check if crashed into terrain
             in_bounds = False
-        if self.dist_to_ceiling() < 0: # check if crashed into terrain
+        if self.dist_to_ceiling() < 0: #check if crashed into ceiling
             in_bounds = False
 
         self.residual = self.target - self.position
@@ -101,7 +101,7 @@ class character():
 
         elif yaml_p['type'] == 'squished':
             tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
-            self.res_z_squished = (self.target[1]-self.world[0,tar_x,0])/(self.ceiling[tar_x] - self.world[0,tar_x,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
+            self.res_z_squished = (self.target[1]-self.world[0,tar_x,0])/(self.ceiling - self.world[0,tar_x,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
             if yaml_p['boundaries'] == 'short':
                 boundaries = np.array([self.position[0] - np.floor(self.position[0])])
@@ -184,7 +184,7 @@ class character():
         dist_x = np.argmin(distances)/res - self.position[0]
         dist_z = np.interp(np.argmin(distances)/res,x,terrain) - self.position[1]
 
-        other_boundaries = [self.position[0]*self.render_ratio, (self.size_x - self.position[0])*self.render_ratio, self.ceiling[pos_x] - self.position[1]] - distance
+        other_boundaries = [self.position[0]*self.render_ratio, (self.size_x - self.position[0])*self.render_ratio, self.ceiling - self.position[1]] - distance
         case = np.argmin(other_boundaries)
         value = other_boundaries[case]
 
@@ -197,7 +197,7 @@ class character():
                 dist_z = 0
             if case == 2:
                 dist_x = 0
-                dist_z = self.ceiling[pos_x] - self.position[1]
+                dist_z = self.ceiling - self.position[1]
 
         return np.array([dist_x, dist_z])
 
@@ -206,12 +206,10 @@ class character():
         return self.position[1] - np.interp(self.position[0],x,self.world[0,:,0])
 
     def set_ceiling(self):
-        max = random.uniform(0.9, 1) * self.size_z
-        self.ceiling = [max]*self.size_x
+        self.ceiling = random.uniform(0.9, 1) * self.size_z
 
     def dist_to_ceiling(self):
-        x = np.linspace(0,self.size_x,len(self.ceiling))
-        return np.interp(self.position[0],x,self.ceiling) - self.position[1]
+        return self.ceiling - self.position[1]
 
     def interpolate_wind(self, measurement=False):
         coord_x = int(np.clip(self.position[0],0,self.size_x-1))

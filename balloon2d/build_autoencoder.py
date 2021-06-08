@@ -408,7 +408,7 @@ class VAE(nn.Module):
         data_squished = np.zeros((len(data),self.size_x,res))
         for i in range(self.size_x):
             bottom = data[0,i,0]
-            top = ceiling[i]
+            top = ceiling
 
             x_old = np.arange(0,self.size_z,1)
             x_new = np.linspace(bottom,top,res)
@@ -472,8 +472,8 @@ class VAE(nn.Module):
         elif yaml_p['type'] == 'squished':
             pos_x = np.clip(int(position[0]),0,self.size_x - 1)
 
-            rel_pos = torch.tensor([(position[1]-data[0,self.window_size,0]) / (ceiling[pos_x] - data[0,self.window_size,0])])
-            size = (ceiling[pos_x] - data[0,self.window_size,0])/self.size_z
+            rel_pos = torch.tensor([(position[1]-data[0,self.window_size,0]) / (ceiling - data[0,self.window_size,0])])
+            size = (ceiling - data[0,self.window_size,0])/self.size_z
 
             to_fill = self.window_squished(data, center, ceiling)
         data = to_fill[-3:-1]
