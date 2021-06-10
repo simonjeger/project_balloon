@@ -200,6 +200,13 @@ class balloon2d(Env):
 
         self.prev_int = [-1,-1]
 
+        """
+        # generate world_squished for rendering later
+        from preprocess_wind import preprocess
+        if yaml_p['render'] & (not roll_out):
+            preprocess(self.world, self.character.ceiling)
+        """
+
         return self.character.state
 
     def load_new_world(self):

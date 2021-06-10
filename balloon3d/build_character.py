@@ -4,6 +4,7 @@ import random
 from random import gauss
 import copy
 
+from preprocess_wind import squish
 from lowlevel_controller import ll_pd
 
 import yaml
@@ -59,6 +60,7 @@ class character():
         self.f_terrain = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
 
         self.set_ceiling()
+        self.world_squished = squish(self.world, self.ceiling)
 
         self.residual = self.target - self.position
         self.measurement = self.interpolate_wind(measurement=True)[0:3]
@@ -76,7 +78,7 @@ class character():
         self.action = action
         self.world_compressed = world_compressed
 
-        in_bounds = self.move_particle(100, roll_out)
+        in_bounds = self.move_particle(int(yaml_p['time']/6), roll_out)
         if self.height_above_ground() < 0: #check if crashed into terrain
             in_bounds = False
         if self.dist_to_ceiling() < 0: #check if crashed into ceiling
@@ -276,13 +278,16 @@ class character():
         return self.ceiling - self.position[2]
 
     def interpolate_wind(self, measurement=False):
+        world = self.world_squished
+        pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
+
         coord_x = int(np.clip(self.position[0],0,self.size_x-1))
         coord_y = int(np.clip(self.position[1],0,self.size_y-1))
-        coord_z = int(np.clip(self.position[2],0,self.size_z-1))
+        coord_z = int(np.clip(pos_z_squished,0,len(world[0,0,0,:])-1))
 
         x = self.position[0] - coord_x
         y = self.position[1] - coord_y
-        z = self.position[2] - coord_z
+        z = pos_z_squished - coord_z
 
         if coord_x == self.size_x-1:
             coord_x -= 1
@@ -294,14 +299,14 @@ class character():
             coord_z -= 1
             z = 1
 
-        f_000 = self.world[-4::,coord_x,coord_y,coord_z]
-        f_001 = self.world[-4::,coord_x,coord_y,coord_z+1]
-        f_010 = self.world[-4::,coord_x,coord_y+1,coord_z]
-        f_011 = self.world[-4::,coord_x,coord_y+1,coord_z+1]
-        f_100 = self.world[-4::,coord_x+1,coord_y,coord_z]
-        f_101 = self.world[-4::,coord_x+1,coord_y,coord_z+1]
-        f_110 = self.world[-4::,coord_x+1,coord_y+1,coord_z]
-        f_111 = self.world[-4::,coord_x+1,coord_y+1,coord_z+1]
+        f_000 = world[-4::,coord_x,coord_y,coord_z]
+        f_001 = world[-4::,coord_x,coord_y,coord_z+1]
+        f_010 = world[-4::,coord_x,coord_y+1,coord_z]
+        f_011 = world[-4::,coord_x,coord_y+1,coord_z+1]
+        f_100 = world[-4::,coord_x+1,coord_y,coord_z]
+        f_101 = world[-4::,coord_x+1,coord_y,coord_z+1]
+        f_110 = world[-4::,coord_x+1,coord_y+1,coord_z]
+        f_111 = world[-4::,coord_x+1,coord_y+1,coord_z+1]
 
         wind = f_000*(1-x)*(1-y)*(1-z) + f_001*(1-x)*(1-y)*z + f_010*(1-x)*y*(1-z) + f_011*(1-x)*y*z + f_100*x*(1-y)*(1-z) + f_101*x*(1-y)*z + f_110*x*y*(1-z) + f_111*x*y*z
 

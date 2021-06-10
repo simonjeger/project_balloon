@@ -10,6 +10,9 @@ import shutil
 from distutils.dir_util import copy_tree
 from scipy.ndimage import gaussian_filter
 
+import warnings
+warnings.simplefilter("ignore", UserWarning) #UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate warnings.warn("Detected call of `lr_scheduler.step()` before `optimizer.step()`. "
+
 from lowlevel_controller import ll_pd
 
 import yaml
@@ -65,39 +68,44 @@ class Agent:
                     base_distribution, [torch.distributions.transforms.TanhTransform(cache_size=1)]
                 )
 
-            policy = torch.nn.Sequential(
-                torch.nn.Linear(obs_size, 256),
-                torch.nn.ReLU(),
-                torch.nn.Linear(256, 256),
-                torch.nn.ReLU(),
-                torch.nn.Linear(256, 256),
-                torch.nn.ReLU(),
-                torch.nn.Linear(256, action_size * 2),
-                pfrl.nn.lmbda.Lambda(squashed_diagonal_gaussian_head),
-            )
+            width = yaml_p['width']
+            depth = yaml_p['depth']
 
-            torch.nn.init.xavier_uniform_(policy[0].weight)
-            torch.nn.init.xavier_uniform_(policy[2].weight)
-            torch.nn.init.xavier_uniform_(policy[4].weight)
-            torch.nn.init.xavier_uniform_(policy[6].weight)
+            modules = []
+            modules.append(torch.nn.Linear(obs_size, width))
+            modules.append(torch.nn.ReLU())
+            for _ in range(depth):
+                modules.append(torch.nn.Linear(width, width))
+                modules.append(torch.nn.ReLU())
+            modules.append(torch.nn.Linear(width, action_size*2))
+            modules.append(pfrl.nn.lmbda.Lambda(squashed_diagonal_gaussian_head))
+            policy = torch.nn.Sequential(*modules)
+
+            for i in range(depth+2):
+                torch.nn.init.xavier_uniform_(policy[i*2].weight)
+
             policy_optimizer = torch.optim.Adam(policy.parameters(), lr=yaml_p['lr'])
+            self.scheduler_policy = torch.optim.lr_scheduler.StepLR(policy_optimizer, step_size=yaml_p['lr_scheduler'], gamma=0.1, verbose=False)
 
             def make_q_func_with_optimizer():
-                q_func = torch.nn.Sequential(
-                    pfrl.nn.ConcatObsAndAction(),
-                    torch.nn.Linear(obs_size + action_size, 256),
-                    torch.nn.ReLU(),
-                    torch.nn.Linear(256, 256),
-                    torch.nn.ReLU(),
-                    torch.nn.Linear(256, 256),
-                    torch.nn.ReLU(),
-                    torch.nn.Linear(256, 1),
-                )
-                torch.nn.init.xavier_uniform_(q_func[1].weight)
-                torch.nn.init.xavier_uniform_(q_func[3].weight)
-                torch.nn.init.xavier_uniform_(q_func[5].weight)
-                torch.nn.init.xavier_uniform_(q_func[7].weight)
+                width = yaml_p['width']
+                depth = yaml_p['depth']
+
+                modules = []
+                modules.append(pfrl.nn.ConcatObsAndAction())
+                modules.append(torch.nn.Linear(obs_size + action_size, width))
+                modules.append(torch.nn.ReLU())
+                for _ in range(depth):
+                    modules.append(torch.nn.Linear(width, width))
+                    modules.append(torch.nn.ReLU())
+                modules.append(torch.nn.Linear(width, 1))
+                q_func = torch.nn.Sequential(*modules)
+
+                for i in range(depth+2):
+                    torch.nn.init.xavier_uniform_(q_func[i*2+1].weight)
+
                 q_func_optimizer = torch.optim.Adam(q_func.parameters(), lr=yaml_p['lr'])
+                self.scheduler_qfunc = torch.optim.lr_scheduler.StepLR(q_func_optimizer, step_size=yaml_p['lr_scheduler'], gamma=0.1, verbose=False)
                 return q_func, q_func_optimizer
 
             q_func1, q_func1_optimizer = make_q_func_with_optimizer()
@@ -232,7 +240,7 @@ class Agent:
         self.env.reset(roll_out=True)
         self.env.character.target = target
 
-    def run_epoch(self, render):
+    def run_epoch(self):
         obs = self.env.reset()
         sum_r = 0
 
@@ -263,8 +271,10 @@ class Agent:
                 sum_r = sum_r + reward
 
             self.step_n += 1
+            self.scheduler_policy.step()
+            self.scheduler_qfunc.step()
 
-            if render:
+            if yaml_p['render']:
                 self.env.render(mode=True)
 
             if done:
@@ -273,6 +283,9 @@ class Agent:
                     if yaml_p['continuous']:
                         self.writer.add_scalar('epsilon', 0 , self.step_n-1) # because we do above self.step_n += 1
                         self.writer.add_scalar('loss_qfunction', 0, self.step_n-1)
+                        self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n-1)
+                        self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n-1)
+
                     else:
                         if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
                             self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1

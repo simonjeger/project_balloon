@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, lr, replay_start_size,  minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, boundaries, short_sighted):
+def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, width, depth, lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -51,18 +51,21 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'rl: True' + '\n'
     text = text + 'explorer_type: LinearDecayEpsilonGreedy' + '\n'
     text = text + 'agent_type: SoftActorCritic' + '\n'
+    text = text + 'width: ' + str(width) + '\n'
+    text = text + 'depth: ' + str(depth) + '\n'
     text = text + 'epsi_high: 0.9' + '\n'
     text = text + 'epsi_low: 0.1' + '\n'
     text = text + 'decay: 300000' + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: 100000000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
+    text = text + 'lr_scheduler: 400000' + '\n'
     text = text + 'max_grad_norm: 1' + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'update_interval: 20' + '\n'
     text = text + 'target_update_interval: 20' + '\n'
-    text = text + 'minibatch_size: ' + str(minibatch_size) + '\n'
-    text = text + 'n_times_update: ' + str(n_times_update) + '\n'
+    text = text + 'minibatch_size: 800' + '\n'
+    text = text + 'n_times_update: 100' + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
@@ -88,8 +91,8 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
 
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
-    text = text + 'boundaries: ' + str(boundaries) + '\n'
-    text = text + 'short_sighted: ' + str(short_sighted) + '\n'
+    text = text + 'boundaries: "short"' + '\n'
+    text = text + 'short_sighted: False' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
@@ -99,54 +102,53 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'fps: 15' + '\n'
     text = text + 'overview: True' + '\n'
     text = text + 'clear: True' + '\n'
+    text = text + 'render: False' + '\n'
 
     file.write(text)
     file.close()
 
-step = -0.00003
-action = -0.05
 balloon = '"small"'
 time_train = 20*60*60
 
-process_nr = 1980
+process_nr = 2110
 
 for data_path in ['"data/"']:
-    for time in [600]:
+    for time in [230]:
         for type in ['"squished"']:
-            for boundaries in ['"short"']:
-                for min_proj_dist in [1]:
-                    for cherry_pick in [0,20]:
-                        for autoencoder in ['"HAE_avg"','"HAE_ext"','"VAE"']:
-                            for short_sighted in [False]:
-                                for window_size in [1,2,3,4,5]:
-                                    if autoencoder == '"HAE_avg"':
-                                        bottleneck = 10
-                                        vae_nr = 11111
-                                    elif autoencoder == '"HAE_ext"':
-                                        bottleneck = 10
-                                        vae_nr = 11111
-                                    elif autoencoder == '"VAE"':
-                                        bottleneck = 15
-                                        if window_size == 1:
-                                            vae_nr = 11113
-                                        elif window_size == 2:
-                                            vae_nr = 11123
-                                        elif window_size == 3:
-                                            vae_nr = 11133
-                                        elif window_size == 4:
-                                            vae_nr = 11143
-                                        elif window_size == 5:
-                                            vae_nr = 11153
-                                    for start_train in [[7,6,0]]:
-                                        for curriculum_dist in [1]:
-                                            for curriculum_rad in [1]:
-                                                for curriculum_rad_dry in [1000]:
-                                                    for minibatch_size in [800]:
-                                                        for n_times_update in [100]:
+            for min_proj_dist in [0]:
+                for step in [-0.00003]:
+                    for action in [-0.05]:
+                        for cherry_pick in [0]:
+                            for autoencoder in ['"HAE_avg"', '"HAE_ext"', '"VAE"']:
+                                for width in [128,256,512]:
+                                    for depth in [1,2,4]:
+                                        for window_size in [3,5]:
+                                            if autoencoder == '"HAE_avg"':
+                                                bottleneck = 10
+                                                vae_nr = 11111
+                                            elif autoencoder == '"HAE_ext"':
+                                                bottleneck = 10
+                                                vae_nr = 11111
+                                            elif autoencoder == '"VAE"':
+                                                bottleneck = 15
+                                                if window_size == 1:
+                                                    vae_nr = 11113
+                                                elif window_size == 2:
+                                                    vae_nr = 11123
+                                                elif window_size == 3:
+                                                    vae_nr = 11133
+                                                elif window_size == 4:
+                                                    vae_nr = 11143
+                                                elif window_size == 5:
+                                                    vae_nr = 11153
+                                            for start_train in [[7,6,0]]:
+                                                for curriculum_dist in [1]:
+                                                    for curriculum_rad in [1]:
+                                                        for curriculum_rad_dry in [1000]:
                                                             for lr in [0.0003]:
-                                                                for repeat in range(2):
+                                                                for repeat in range(3):
                                                                     for replay_start_size in [1000]:
                                                                         continuous = True
 
-                                                                        write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, lr, replay_start_size, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, boundaries, short_sighted)
+                                                                        write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, width, depth, lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon)
                                                                         process_nr += 1

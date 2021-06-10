@@ -3,6 +3,7 @@ import random
 from random import gauss
 import copy
 
+from preprocess_wind import squish
 from lowlevel_controller import ll_pd
 
 import yaml
@@ -50,6 +51,7 @@ class character():
         self.velocity = np.array([0,0])
 
         self.set_ceiling()
+        self.world_squished = squish(self.world, self.ceiling)
 
         self.residual = self.target - self.position
         self.measurement = self.interpolate_wind(measurement=True)[0:2]
@@ -66,7 +68,7 @@ class character():
         self.action = action
         self.world_compressed = world_compressed
 
-        in_bounds = self.move_particle(100, roll_out)
+        in_bounds = self.move_particle(int(yaml_p['time']/6), roll_out)
         if self.height_above_ground() < 0: #check if crashed into terrain
             in_bounds = False
         if self.dist_to_ceiling() < 0: #check if crashed into ceiling
@@ -212,11 +214,15 @@ class character():
         return self.ceiling - self.position[1]
 
     def interpolate_wind(self, measurement=False):
+        world = self.world_squished
+
+        pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,:])
+
         coord_x = int(np.clip(self.position[0],0,self.size_x-1))
-        coord_z = int(np.clip(self.position[1],0,self.size_z-1))
+        coord_z = int(np.clip(pos_z_squished,0,len(world[0,0,:])-1))
 
         x = self.position[0] - coord_x
-        z = self.position[1] - coord_z
+        z = pos_z_squished - coord_z
 
         if coord_x == self.size_x-1:
             coord_x -= 1
@@ -225,10 +231,10 @@ class character():
             coord_z -= 1
             z = 1
 
-        f_00 = self.world[-3::,coord_x,coord_z]
-        f_10 = self.world[-3::,coord_x+1,coord_z]
-        f_01 = self.world[-3::,coord_x,coord_z+1]
-        f_11 = self.world[-3::,coord_x+1,coord_z+1]
+        f_00 = world[-3::,coord_x,coord_z]
+        f_10 = world[-3::,coord_x+1,coord_z]
+        f_01 = world[-3::,coord_x,coord_z+1]
+        f_11 = world[-3::,coord_x+1,coord_z+1]
 
         wind = f_00*(1-x)*(1-z) + f_10*x*(1-z) + f_01*(1-x)*z + f_11*x*z
 

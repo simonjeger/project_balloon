@@ -49,14 +49,15 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'rl: True' + '\n'
     text = text + 'explorer_type: ' + str(explorer_type) + '\n'
     text = text + 'agent_type: "SoftActorCritic"' + '\n'
+    text = text + 'width: 256' + '\n'
+    text = text + 'depth: 2' + '\n'
     text = text + 'epsi_high: 0.9' + '\n'
     text = text + 'epsi_low: ' + str(epsi_low) + '\n'
     text = text + 'decay: 150000' + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: ' + str(buffer_size) + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
-    text = text + 'lr_actor: 0.0003' + '\n'
-    text = text + 'lr_critic: 0.0003' + '\n'
+    text = text + 'lr_scheduler: 400000' + '\n'
     text = text + 'max_grad_norm: ' + str(max_grad_norm) + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'update_interval: ' + str(update_interval) + '\n'
@@ -101,6 +102,7 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'fps: 15' + '\n'
     text = text + 'overview: True' + '\n'
     text = text + 'clear: True' + '\n'
+    text = text + 'render: False' + '\n'
 
     file.write(text)
     file.close()

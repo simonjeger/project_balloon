@@ -14,6 +14,7 @@ import seaborn as sns
 
 from utils.import_data import custom_data, wind_data
 from  visualize_world import visualize_world
+from preprocess_wind import squish
 
 import yaml
 import argparse
@@ -282,7 +283,7 @@ class VAE(nn.Module):
 
             self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real_')
             self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon_')
-            self.visualize(abs(data-recon_batch), 'autoencoder/results/' + str(i).zfill(5) + '_error_', error=True)
+            self.visualize(data-recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_error_', error=True)
 
         test_loss /= len(self.test_loader.dataset)
         print('====> Test set loss: {:.4f}'.format(test_loss))
@@ -316,19 +317,8 @@ class VAE(nn.Module):
         return window
 
     def window_squished(self, data, position, ceiling):
-        res = self.size_z
-        data_squished = np.zeros((len(data),self.size_x,self.size_y,res))
-        for i in range(self.size_x):
-            for j in range(self.size_y):
-                bottom = data[0,i,j,0]
-                top = ceiling
-
-                x_old = np.arange(0,self.size_z,1)
-                x_new = np.linspace(bottom,top,res)
-                data_squished[0,:,:,:] = data[0,:,:,:] #terrain stays the same
-
-                for k in range(1,len(data)):
-                    data_squished[k,i,j,:] = np.interp(x_new,x_old,data[k,i,j,:])
+        data_squished = squish(data,ceiling)
+        res = len(data_squished[0,0,0,:])
 
         data_padded = np.zeros((len(data_squished),self.size_x+2*self.window_size,self.size_y+2*self.window_size,self.size_z))
 

@@ -45,7 +45,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     world = torch.load(yaml_p['data_path'] + train_or_test + '/tensor/' + world_name + '.pt')
 
     # generate the three windows
-    visualize_world(world, character.position)
+    visualize_world(world, character.position, character.ceiling)
 
     for dim in ['xz']:
         display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_z, render_ratio, window_size, radius_x, radius_z, res, character, roll_out)

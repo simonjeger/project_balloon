@@ -84,7 +84,7 @@ for r in range(yaml_p['curriculum_rad']):
         else:
             ag.stash_weights()
 
-        log = ag.run_epoch(False)
+        log = ag.run_epoch()
         h = int((time.time() - init_time)/3600)
         m = int(((time.time() - init_time) - h*3600)/60)
         s = int((time.time() - init_time) - h*3600 - m*60)
@@ -97,7 +97,7 @@ for r in range(yaml_p['curriculum_rad']):
                 ag_val = Agent(epi_n,step_n,'val',env_val)
                 ag_val.load_stash()
                 with ag_val.agent.eval_mode():
-                    log_val = ag_val.run_epoch(False)
+                    log_val = ag_val.run_epoch()
                 current_phase[int((epi_n/yaml_p['cherry_pick'])%phase)] = log_val
                 writer.add_scalar('reward_epi_val', log_val, env.step_n-1)
                 print('reward_val: ' + str(log_val))

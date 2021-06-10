@@ -4,6 +4,7 @@ import pygame, sys
 import matplotlib.pylab as pl
 
 from visualize_world import visualize_world
+from preprocess_wind import squish
 
 import yaml
 import argparse
@@ -44,9 +45,12 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
 
     # read in wind_map
     world = torch.load(yaml_p['data_path'] + train_or_test + '/tensor/' + world_name + '.pt')
+    """
+    world = torch.load('render/world_squished.pt')
+    """
 
     # generate the three windows
-    visualize_world(world, character.position)
+    visualize_world(world, character.position, character.ceiling)
 
     for dim in ['xy', 'xz', 'yz']:
         display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_y, size_z, render_ratio, window_size, radius_xy, radius_z, res, character, roll_out)
