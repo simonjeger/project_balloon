@@ -92,6 +92,7 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'memory_interval: 5' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
     text = text + 'boundaries: "short"' + '\n'
+    text = text + 'max_proj_alt: True' + '\n'
     text = text + 'short_sighted: ' + str(short_sighted) + '\n'
 
     text = text + '\n' + '# logger' + '\n'
@@ -111,7 +112,7 @@ time = 360
 step = -0.00003
 action = -0.05
 balloon = '"small"'
-time_train = 23*60*60
+time_train = 20*60*60
 
 process_nr = 4000
 

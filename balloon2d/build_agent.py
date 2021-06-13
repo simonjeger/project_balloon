@@ -48,6 +48,7 @@ class Agent:
         self.env = env
         self.stash = [0]*yaml_p['phase']
         self.writer = writer
+        self.seed = 0
 
         acts = env.action_space
         obs = env.observation_space
@@ -87,6 +88,7 @@ class Agent:
 
             policy_optimizer = torch.optim.Adam(policy.parameters(), lr=yaml_p['lr'])
             self.scheduler_policy = torch.optim.lr_scheduler.StepLR(policy_optimizer, step_size=yaml_p['lr_scheduler'], gamma=0.1, verbose=False)
+            self.scheduler_policy._step_count = step_n
 
             def make_q_func_with_optimizer():
                 width = yaml_p['width']
@@ -107,6 +109,7 @@ class Agent:
 
                 q_func_optimizer = torch.optim.Adam(q_func.parameters(), lr=yaml_p['lr'])
                 self.scheduler_qfunc = torch.optim.lr_scheduler.StepLR(q_func_optimizer, step_size=yaml_p['lr_scheduler'], gamma=0.1, verbose=False)
+                self.scheduler_qfunc._step_count = step_n
                 return q_func, q_func_optimizer
 
             q_func1, q_func1_optimizer = make_q_func_with_optimizer()
@@ -161,9 +164,13 @@ class Agent:
             if yaml_p['agent_type'] == 'DoubleDQN':
                 self.qfunction = QFunction(obs.shape[0],acts.n)
 
+                optimizer = torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr'])
+                self.scheduler= torch.optim.lr_scheduler.StepLR(optimizer, step_size=yaml_p['lr_scheduler'], gamma=0.1, verbose=False)
+                self.scheduler._step_count = step_n
+
                 self.agent = pfrl.agents.DoubleDQN(
                     self.qfunction,
-                    torch.optim.Adam(self.qfunction.parameters(),lr=yaml_p['lr']), #in my case ADAMS
+                    optimizer, #in my case ADAMS
                     #torch.optim.Adadelta(self.qfunction.parameters()),
                     pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size']), #number of experiences I train my NN with
                     yaml_p['gamma'], #discount factor
@@ -195,11 +202,20 @@ class Agent:
         else:
             curr = curr_end
 
+        if self.train_or_test == 'test':
+            np.random.seed(self.seed)
+            self.seed += 1
+
         round = 0
         action = np.random.uniform(0.1,0.9)
         rel_set = np.random.uniform(0.1,0.9)
+
         while True:
             self.env.character.target = [-10,-10] #set target outside map
+
+            if self.train_or_test == 'test':
+                np.random.seed(self.seed)
+                self.seed += 1
 
             if np.random.uniform() < 1/4000*yaml_p['time']:
                 action = np.random.uniform(0.1,0.9)
@@ -271,8 +287,11 @@ class Agent:
                 sum_r = sum_r + reward
 
             self.step_n += 1
-            self.scheduler_policy.step()
-            self.scheduler_qfunc.step()
+            if yaml_p['continuous']:
+                self.scheduler_policy.step()
+                self.scheduler_qfunc.step()
+            else:
+                self.scheduler.step()
 
             if yaml_p['render']:
                 self.env.render(mode=True)
@@ -288,6 +307,7 @@ class Agent:
                     else:
                         if yaml_p['explorer_type'] == 'LinearDecayEpsilonGreedy':
                             self.writer.add_scalar('epsilon', self.agent.explorer.epsilon , self.step_n-1) # because we do above self.step_n += 1
+                            self.writer.add_scalar('scheduler', self.scheduler.get_last_lr()[0], self.step_n-1)
                         if len(self.agent.loss_record) != 0:
                             self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
                 self.epi_n += 1

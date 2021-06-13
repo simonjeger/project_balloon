@@ -33,6 +33,12 @@ class balloon2d(Env):
         self.radius_x = radius_x
         self.radius_z = radius_z
 
+        # initialize state and time
+        self.success_n = 0
+        self.epi_n = epi_n
+        self.step_n = step_n
+        self.seed = 0
+
         # initialize autoencoder object
         if yaml_p['autoencoder'][0:3] == 'HAE':
             self.ae = HAE()
@@ -61,12 +67,6 @@ class balloon2d(Env):
         world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
         world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
-
-
-        # initialize state and time
-        self.success_n = 0
-        self.epi_n = epi_n
-        self.step_n = step_n
 
         self.path_roll_out = None
 
@@ -193,7 +193,11 @@ class balloon2d(Env):
 
     def load_new_world(self):
         # choose random world_map
+        if self.train_or_test == 'test':
+            random.seed(self.seed)
+            self.seed +=1
         self.world_name = random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
+
         # remove suffix
         length = len(self.world_name)
         self.world_name = self.world_name[:length - 3]

@@ -251,7 +251,6 @@ def write_overview():
 
 def disp_overview():
     df = pd.read_csv('overview.csv')
-
     # determening the number of different subplots needed
     to_delete = []
     for i in range(len(df.columns)):

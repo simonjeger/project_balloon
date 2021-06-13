@@ -3,6 +3,7 @@ import scipy
 import random
 from random import gauss
 import copy
+from scipy.ndimage import gaussian_filter
 
 from preprocess_wind import squish
 from lowlevel_controller import ll_pd
@@ -102,7 +103,7 @@ class character():
         if yaml_p['type'] == 'regular':
             if yaml_p['boundaries'] == 'short':
                 boundaries = np.concatenate((self.compress_terrain(True)/[self.size_x, self.size_y, self.size_z], [self.position[0] - np.floor(self.position[0]), self.position[1] - np.floor(self.position[1])]))
-                self.bottleneck = len(boundaries)
+
             elif yaml_p['boundaries'] == 'long':
                 min_x = self.position[0]/self.size_x
                 max_x = (self.size_x - self.position[0])/self.size_x
@@ -111,14 +112,16 @@ class character():
                 min_z = self.position[2]/self.size_z
                 max_z = self.dist_to_ceiling()/self.size_z
                 boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z, self.height_above_ground()])
-                self.bottleneck = len(boundaries)
+
+            if yaml_p['max_proj_alt']:
+                boundaries = np.append(boundaries,self.max_proj_alt())
+            self.bottleneck = len(boundaries)
 
             self.state = np.concatenate(((self.residual/[self.size_x,self.size_y,self.size_z]).flatten(), self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
 
         elif yaml_p['type'] == 'squished':
             if yaml_p['boundaries'] == 'short':
                 boundaries = np.array([self.position[0] - np.floor(self.position[0]), self.position[1] - np.floor(self.position[1])])
-                self.bottleneck = len(boundaries)
 
             elif yaml_p['boundaries'] == 'long':
                 min_x = self.position[0]/self.size_x
@@ -128,7 +131,10 @@ class character():
                 min_z = self.position[2]/self.size_z
                 max_z = self.dist_to_ceiling()/self.size_z
                 boundaries = np.array([min_x, max_x, min_y, max_y, min_z, max_z])
-                self.bottleneck = len(boundaries)
+
+            if yaml_p['max_proj_alt']:
+                boundaries = np.append(boundaries,self.max_proj_alt())
+            self.bottleneck = len(boundaries)
 
             tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
             tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
@@ -319,6 +325,61 @@ class character():
 
     def normalize(self,x):
         return x/(abs(x)+3)
+
+    def max_proj_alt(self):
+        pos_x = int(np.clip(self.position[0],0,self.size_x-1))
+        pos_y = int(np.clip(self.position[1],0,self.size_y-1))
+        pos_z = int(np.clip(self.position[2],0,self.size_z-1))
+        tar_x = int(np.clip(self.target[0],0,self.size_x-1))
+        tar_y = int(np.clip(self.target[1],0,self.size_y-1))
+        tar_z = int(np.clip(self.target[2],0,self.size_z-1))
+        residual_x = self.residual[0]
+        residual_y = self.residual[1]
+        residual_z = self.residual[2]
+        tar_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0])
+        vel_x = self.velocity[0]
+        vel_y = self.velocity[1]
+
+        # window_squished
+        data = self.world
+        res = self.size_z
+        data_squished = np.zeros((len(data),self.size_x,self.size_y,res))
+        for i in range(self.size_x):
+            for j in range(self.size_y):
+                bottom = data[0,i,j,0]
+                top = self.ceiling
+
+                x_old = np.arange(0,self.size_z,1)
+                x_new = np.linspace(bottom,top,res)
+                data_squished[0,:,:,:] = data[0,:,:,:] #terrain stays the same
+
+                for k in range(1,len(data)):
+                    data_squished[k,i,j,:] = np.interp(x_new,x_old,data[k,i,j,:])
+
+        wind_x = data_squished[-4,pos_x,pos_y,:]
+        wind_x = gaussian_filter(wind_x,sigma=1)
+
+        wind_y = data_squished[-3,pos_x,pos_y,:]
+        wind_y = gaussian_filter(wind_y,sigma=1)
+
+        k_1 = 5 #5
+        k_2 = 100 #100
+
+        p_1 = 1/abs(residual_x)*k_1
+        p_2 = 1/abs(residual_y)*k_1
+        p_3 = np.clip(vel_x*residual_x*k_2,0.1,np.inf)
+        p_4 = np.clip(vel_y*residual_y*k_2,0.1,np.inf)
+        p = np.clip(p_1*p_2*p_3*p_4,0,1)
+
+        p = np.round(p,0) #bang bang makes most sense here
+        p = 0
+
+        norm_wind = np.sqrt(wind_x**2 + wind_y**2)
+        projections = (residual_x*wind_x + residual_y*wind_y)/norm_wind
+        action = np.argmax(projections)/len(projections)*(1-p) + tar_z_squished*p
+        #action = np.clip(action,0.05,1) #avoid crashing into terrain
+
+        return action
 
     def become_short_sighted(self):
         sight = yaml_p['window_size']
