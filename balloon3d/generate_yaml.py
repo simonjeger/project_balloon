@@ -44,7 +44,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'time_train: ' + str(time_train) + '\n'
     text = text + 'num_epochs_test: 1000' + '\n'
-    text = text + 'phase: 1' + '\n'
+    text = text + 'phase: 50' + '\n'
     text = text + 'cherry_pick: ' + str(cherry_pick) + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
@@ -111,16 +111,16 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
 balloon = '"small"'
 time_train = 20*60*60
 
-process_nr = 2350
+process_nr = 2410
 
-for data_path in ['"data/"']:
+for data_path in ['"data/"', '"data_big0/"', '"data_big1/"']:
     for time in [230]:
         for type in ['"squished"']:
             for min_proj_dist in [1]:
                 for step in [-0.00003]:
                     for action in [-0.005]:
-                        for cherry_pick in [0]:
-                            for agent_type in ['"SoftActorCritic"', '"DoubleDQN"']:
+                        for cherry_pick in [1]:
+                            for agent_type in ['"SoftActorCritic"']:
                                 if agent_type == '"SoftActorCritic"':
                                     continuous = True
                                 elif agent_type == '"DoubleDQN"':

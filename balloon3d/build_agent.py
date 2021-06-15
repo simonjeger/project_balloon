@@ -219,12 +219,6 @@ class Agent:
             if np.random.uniform() < 1/4000*yaml_p['time']:
                 action = np.random.uniform(0.1,0.9)
 
-            # actions are not in the same range in discrete / continuous cases
-            if yaml_p['continuous']:
-                action = action
-            else:
-                action = np.round(action,0)
-
             _, _, done, _ = self.env.step(action, roll_out=True)
 
             sucess = False

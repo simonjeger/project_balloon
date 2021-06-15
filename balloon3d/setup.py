@@ -3,7 +3,6 @@ matplotlib.use('Agg') # this needs to be called at the very beginning on cluster
 
 #from convert_wind_map import build_set
 from generate_world import generate_world
-from visualize_world import visualize_world
 
 from pathlib import Path
 import shutil
@@ -39,9 +38,9 @@ size_x = yaml_p['size_x']
 size_y = yaml_p['size_y']
 size_z = yaml_p['size_z']
 
-#build_set(500, 'train')
-#build_set(100, 'val')
-#build_set(100, 'test')
+#build_set(10000, 'train')
+#build_set(500, 'val')
+#build_set(500, 'test')
 #generate_world(500, 'train')
 #generate_world(500, 'val')
 #generate_world(15, 'test')

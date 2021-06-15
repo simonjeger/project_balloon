@@ -266,7 +266,7 @@ class VAE(nn.Module):
                 if yaml_p['type'] == 'regular':
                     to_fill = self.window(data[i], [center_x, center_y, center_z])
                 elif yaml_p['type'] == 'squished':
-                    ceiling = [np.random.uniform(0.9, 1) * self.size_z]*np.ones((self.size_x, self.size_y))
+                    ceiling = np.random.uniform(0.9, 1) * self.size_z
                     to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
                 data_window[i,:,:,:,:] = to_fill[-4:-1]
             data = data_window #to keep naming convention

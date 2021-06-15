@@ -110,6 +110,7 @@ for r in range(yaml_p['curriculum_rad']):
             if (dry > yaml_p['curriculum_rad_dry']) & (yaml_p['curriculum_rad'] + 1 < r):
                 dry = 0
                 epi_n += 1
+                print('curriculum_rad reset')
                 break
 
         dry += 1
