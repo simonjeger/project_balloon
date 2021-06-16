@@ -64,12 +64,7 @@ class balloon2d(Env):
         self.reset()
 
         # location array in x and z
-        regular_state_space_low = np.array([-1]*(3+3+self.character.bottleneck+3)) #residual, velocity, boundaries, measurement
-        regular_state_space_high = np.array([1]*(3+3+self.character.bottleneck+3))
-
-        world_compressed_state_space_low = np.array([-1]*self.ae.bottleneck)
-        world_compressed_state_space_high = np.array([1]*self.ae.bottleneck)
-        self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
+        self.observation_space = Box(low=np.array([-1]*self.character.bottleneck), high=np.array([1]*self.character.bottleneck), dtype=np.float64)
 
         self.path_roll_out = None
         self.reward_roll_out = None

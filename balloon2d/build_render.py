@@ -59,41 +59,26 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     t_velocity = myfont.render('velocity: ' + str([round(num, 3) for num in character.state[2:4].tolist()]), False, pygame.Color('LightGray'))
 
     if yaml_p['type'] == 'regular':
-        if yaml_p['boundaries'] == 'short':
-            t_border_x = myfont.render('border_x: ' + '{:.3f}'.format(character.state[4]), False, pygame.Color('LightGray'))
-            t_border_z = myfont.render('border_z: ' + '{:.3f}'.format(character.state[5]), False, pygame.Color('LightGray'))
-            t_rel_pos = myfont.render('rel_pos: ' + '{:.3f}'.format(character.state[6]), False, pygame.Color('LightGray'))
-            t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[7:9].tolist()]), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[8:].tolist()]), False, pygame.Color('LightGray'))
-        if yaml_p['boundaries'] == 'long':
-            t_border_x = myfont.render('border_x: ' + str([round(num, 3) for num in character.state[4:6].tolist()]), False, pygame.Color('LightGray'))
-            t_border_z = myfont.render('border_z: ' + str([round(num, 3) for num in character.state[6:9].tolist()]), False, pygame.Color('LightGray'))
-            t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[9:11].tolist()]), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[11:].tolist()]), False, pygame.Color('LightGray'))
+        t_border_x = myfont.render('border_x: ' + '{:.3f}'.format(character.state[4]), False, pygame.Color('LightGray'))
+        t_border_z = myfont.render('border_z: ' + '{:.3f}'.format(character.state[5]), False, pygame.Color('LightGray'))
+        t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:8].tolist()]), False, pygame.Color('LightGray'))
+        t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[8:10].tolist()]), False, pygame.Color('LightGray'))
+        t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[10:].tolist()]), False, pygame.Color('LightGray'))
 
     elif yaml_p['type'] == 'squished':
-        if yaml_p['boundaries'] == 'short':
-            t_border_x = myfont.render(' ', False, pygame.Color('LightGray'))
-            t_border_z = myfont.render(' ', False, pygame.Color('LightGray'))
-            t_rel_pos = myfont.render('rel_pos: ' + '{:.3f}'.format(character.state[4]), False, pygame.Color('LightGray'))
-            t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[5:7].tolist()]), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[7:].tolist()]), False, pygame.Color('LightGray'))
-        if yaml_p['boundaries'] == 'long':
-            t_border_x = myfont.render('border_x: ' + str([round(num, 3) for num in character.state[4:6].tolist()]), False, pygame.Color('LightGray'))
-            t_border_z = myfont.render('border_z: ' + str([round(num, 3) for num in character.state[6:8].tolist()]), False, pygame.Color('LightGray'))
-            t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[8:10].tolist()]), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[10:].tolist()]), False, pygame.Color('LightGray'))
+        t_border_x = myfont.render(' ', False, pygame.Color('LightGray'))
+        t_border_z = myfont.render(' ', False, pygame.Color('LightGray'))
+        t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[4:7].tolist()]), False, pygame.Color('LightGray'))
+        t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[7:9].tolist()]), False, pygame.Color('LightGray'))
+        t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[9:].tolist()]), False, pygame.Color('LightGray'))
 
     screen.blit(t_reward_step,(10,10))
     screen.blit(t_reward_epi,(10,25))
     screen.blit(t_residual,(10,55))
     screen.blit(t_velocity,(10,70))
-    screen.blit(t_border_x,(10,85))
-    screen.blit(t_border_z,(10,100))
-    if yaml_p['boundaries'] == 'short':
-        screen.blit(t_rel_pos,(10,115))
-    screen.blit(t_measurement,(10,130))
-    screen.blit(t_world_compressed,(10,160))
+    screen.blit(t_rel_pos,(10,85))
+    screen.blit(t_measurement,(10,105))
+    screen.blit(t_world_compressed,(10,120))
 
     # updating the window
     pygame.display.flip()

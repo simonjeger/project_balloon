@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_type, epsi_low, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, short_sighted):
+def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_type, agent_type, epsi_low, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, short_sighted):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -36,19 +36,19 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
     text = text + 'vae_nr: 11111' + '\n'
-    text = text + 'window_size: 3' + '\n'
-    text = text + 'bottleneck: 4' + '\n'
+    text = text + 'window_size: 0' + '\n'
+    text = text + 'bottleneck: 10' + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'time_train: ' + str(time_train) + '\n'
     text = text + 'num_epochs_test: 1000' + '\n'
     text = text + 'phase: 50' + '\n'
-    text = text + 'cherry_pick: 20' + '\n'
+    text = text + 'cherry_pick: 0' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'rl: True' + '\n'
     text = text + 'explorer_type: ' + str(explorer_type) + '\n'
-    text = text + 'agent_type: "SoftActorCritic"' + '\n'
+    text = text + 'agent_type: ' + str(agent_type) + '\n'
     text = text + 'width: 256' + '\n'
     text = text + 'depth: 2' + '\n'
     text = text + 'epsi_high: 0.9' + '\n'
@@ -74,7 +74,7 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'target_train: "random"' + '\n'
     text = text + 'target_test: "random"' + '\n'
     text = text + 'radius_start_x: 10' + '\n'
-    text = text + 'radius_stop_x: 2' + '\n'
+    text = text + 'radius_stop_x: 3.23' + '\n'
     text = text + 'radius_start_ratio: 1' + '\n'
     text = text + 'curriculum_dist: ' + str(curriculum_dist) + '\n'
     text = text + 'curriculum_rad: ' + str(curriculum_rad) + '\n'
@@ -91,8 +91,8 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'memory_size: 3' + '\n'
     text = text + 'memory_interval: 5' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
-    text = text + 'boundaries: "short"' + '\n'
-    text = text + 'max_proj_alt: True' + '\n'
+    text = text + 'measurement_info: True' + '\n'
+    text = text + 'wind_info: True' + '\n'
     text = text + 'short_sighted: ' + str(short_sighted) + '\n'
 
     text = text + '\n' + '# logger' + '\n'
@@ -108,33 +108,38 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     file.write(text)
     file.close()
 
-time = 360
 step = -0.00003
 action = -0.05
 balloon = '"small"'
 time_train = 20*60*60
 
-process_nr = 4000
+process_nr = 5383
 
 for data_path in ['"data/"']:
-    for start_train in [[7,0],'"random"']:
-        for type in ['"regular"', '"squished"']:
-            for short_sighted in [False]:
-                for min_proj_dist in [0]:
-                    for autoencoder in ['"HAE_avg"']:
-                        for buffer_size in [100000000]:
-                            for lr in [0.0005]:
-                                for explorer_type in ['"LinearDecayEpsilonGreedy"']:
-                                    for curriculum_dist in [1,40000]:
-                                        for curriculum_rad in [1,2,3]:
-                                            for epsi_low in [0.1]:
-                                                for max_grad_norm in [1]:
-                                                    for update_interval in [300]:
-                                                        for minibatch_size in [800]:
-                                                            for n_times_update in [100]:
-                                                                for repeat in range(2):
-                                                                    continuous = True
-                                                                    replay_start_size = 10000
+    for start_train in [[7,0]]:
+        for agent_type in ['"SoftActorCritic"']:
+            if agent_type == '"SoftActorCritic"':
+                time = 100
+                continuous = True
+            elif agent_type == '"DoubleDQN"':
+                time = 320
+                continuous = False
+            for type in ['"squished"']:
+                for short_sighted in [False]:
+                    for min_proj_dist in [0]:
+                        for autoencoder in ['"HAE_avg"']:
+                            for buffer_size in [100000000]:
+                                for lr in [0.0005]:
+                                    for explorer_type in ['"LinearDecayEpsilonGreedy"']:
+                                        for curriculum_dist in [1]:
+                                            for curriculum_rad in [1]:
+                                                for epsi_low in [0.1]:
+                                                    for max_grad_norm in [1]:
+                                                        for update_interval in [300]:
+                                                            for minibatch_size in [800]:
+                                                                for n_times_update in [100]:
+                                                                    for repeat in range(3):
+                                                                        replay_start_size = 10000
 
-                                                                    write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_type, epsi_low, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, short_sighted)
-                                                                    process_nr += 1
+                                                                        write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_type, agent_type, epsi_low, max_grad_norm, replay_start_size, update_interval, minibatch_size, n_times_update, data_path, continuous, start_train, curriculum_dist, curriculum_rad, step, action, min_proj_dist, balloon, short_sighted)
+                                                                        process_nr += 1

@@ -259,6 +259,9 @@ class Agent:
             self.set_reachable_target()
 
         while True:
+            if yaml_p['render']:
+                self.env.render(mode=True)
+                
             if yaml_p['rl']:
                 action = self.agent.act(obs) #uses self.agent.model to decide next step
 
@@ -287,9 +290,6 @@ class Agent:
                 self.scheduler_qfunc.step()
             else:
                 self.scheduler.step()
-
-            if yaml_p['render']:
-                self.env.render(mode=True)
 
             if done:
                 # logger

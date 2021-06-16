@@ -75,7 +75,7 @@ def visualize_world(tensor, position, ceiling):
 
         if dim != 'xy':
             # set parameters
-            dpi = 10
+            dpi = 50
             ax.set_aspect(1)
 
             # plot terrain
@@ -83,7 +83,7 @@ def visualize_world(tensor, position, ceiling):
 
         else:
             # set parameters
-            dpi = 50
+            dpi = 70
             ax.set_aspect(1)
 
             # plot contour lines

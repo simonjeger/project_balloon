@@ -38,9 +38,9 @@ shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['pro
 size_x = yaml_p['size_x']
 size_z = yaml_p['size_z']
 
-#build_set(500, 'train')
-#build_set(100, 'val')
-#build_set(100, 'test')
+#build_set(5000, 'train')
+#build_set(500, 'val')
+#build_set(500, 'test')
 #generate_world(500, 'train')
 #generate_world(500, 'val')
 #generate_world(15, 'test')

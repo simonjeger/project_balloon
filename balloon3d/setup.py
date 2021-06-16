@@ -38,7 +38,7 @@ size_x = yaml_p['size_x']
 size_y = yaml_p['size_y']
 size_z = yaml_p['size_z']
 
-#build_set(10000, 'train')
+#build_set(5000, 'train')
 #build_set(500, 'val')
 #build_set(500, 'test')
 #generate_world(500, 'train')

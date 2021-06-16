@@ -44,10 +44,7 @@ class VAE(nn.Module):
         self.bottleneck_terrain = 2
         self.bottleneck_wind = yaml_p['bottleneck']
 
-        if yaml_p['type'] == 'regular':
-            self.bottleneck = self.bottleneck_wind
-        elif yaml_p['type'] == 'squished':
-            self.bottleneck = self.bottleneck_wind + 2
+        self.bottleneck = self.bottleneck_wind
 
         self.window_size = yaml_p['window_size']
         self.window_size_total = 2*self.window_size + 1
@@ -391,7 +388,11 @@ class VAE(nn.Module):
     def window(self, data, center):
         window = np.zeros((len(data),self.window_size_total,self.size_z))
         data_padded = np.zeros((len(data),self.size_x+2*self.window_size,self.size_z))
-        data_padded[:,self.window_size:-self.window_size,:] = data
+
+        if self.window_size == 0:
+            data_padded = data_squished
+        else:
+            data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data_squished
 
         for i in range(self.window_size):
             data_padded[:,i,:] = data_padded[:,self.window_size,:]
@@ -409,7 +410,11 @@ class VAE(nn.Module):
         res = len(data_squished[0,0,:])
 
         data_padded = np.zeros((len(data_squished),self.size_x+2*self.window_size,res))
-        data_padded[:,self.window_size:-self.window_size,:] = data_squished
+
+        if self.window_size == 0:
+            data_padded = data_squished
+        else:
+            data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data_squished
 
         for i in range(self.window_size):
             data_padded[:,i,:] = data_padded[:,self.window_size,:]
@@ -480,9 +485,6 @@ class VAE(nn.Module):
         recon_batch, mu, logvar = self(data)
         comp = mu[0].detach().numpy()
 
-        if yaml_p['type'] == 'regular':
-            result = comp
-        elif yaml_p['type'] == 'squished':
-            result = np.concatenate((comp,[rel_pos, size]))
+        result = comp
 
         return result
