@@ -54,6 +54,8 @@ class character():
         self.position = copy.copy(self.start)
         self.velocity = np.array([0,0,0])
 
+        self.n = int(yaml_p['time']/6)
+
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
         y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
@@ -79,7 +81,7 @@ class character():
         self.action = action
         self.world_compressed = world_compressed
 
-        in_bounds = self.move_particle(int(yaml_p['time']/6), roll_out)
+        in_bounds = self.move_particle(roll_out)
         if self.height_above_ground() < 0: #check if crashed into terrain
             in_bounds = False
         if self.dist_to_ceiling() < 0: #check if crashed into ceiling
@@ -144,16 +146,16 @@ class character():
 
         self.state = self.state.astype(np.float32)
 
-    def move_particle(self, n, roll_out):
+    def move_particle(self, roll_out):
         c = self.area*self.rho*self.c_w/(2*self.mass)
-        delta_t = yaml_p['time']/n
+        delta_t = yaml_p['time']/self.n
 
         p_x = (self.path[-1][0] - self.path[-2][0])/delta_t
         p_y = (self.path[-1][1] - self.path[-2][1])/delta_t
         p_z = (self.path[-1][2] - self.path[-2][2])/delta_t
 
         self.U = 0
-        for _ in range(n):
+        for _ in range(self.n):
             if (yaml_p['type'] == 'regular') & (not roll_out):
                 b = (self.action - 1)*self.force/yaml_p['unit_z']/self.mass
 
@@ -165,7 +167,7 @@ class character():
                 u = ll_pd(self.action,rel_pos,velocity)
 
                 b = u*self.force/yaml_p['unit_z']/self.mass
-                self.U += abs(u)/n
+                self.U += abs(u)/self.n
 
             coord = [int(i) for i in np.floor(self.position)]
             in_bounds = (0 <= self.position[0] < self.size_x) & (0 <= self.position[1] < self.size_y) & (0 <= self.position[2] < self.size_z) #if still within bounds
@@ -177,9 +179,9 @@ class character():
                 y = np.arange(0,self.size_y,1)
                 z = np.arange(0,self.size_z,1)
 
-                w_x += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
-                w_y += gauss(0,sig_xz/np.sqrt(n)) #is it /sqrt(n) or just /n?
-                w_z += gauss(0,sig_xz/np.sqrt(n))
+                w_x += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
+                w_y += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
+                w_z += gauss(0,sig_xz/np.sqrt(self.n))
 
                 v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*delta_t + p_x
                 v_y = (np.sign(w_y - p_y) * (w_y - p_y)**2 * c + 0)*delta_t + p_y

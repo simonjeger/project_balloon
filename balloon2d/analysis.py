@@ -193,6 +193,10 @@ def write_overview():
     maximum = max(mean_reward_epi)
     mean = np.mean(mean_reward_epi)
 
+    # mean of normalized reward
+    rew_epi_norm = np.array(df['reward_epi_norm'].dropna())
+    mean_norm = np.mean(rew_epi_norm)
+
     # linear regression
     Y = rew_epi
     X = np.linspace(0,len(rew_epi)-1,len(rew_epi)).reshape((-1, 1))
@@ -218,6 +222,7 @@ def write_overview():
     df_reward = pd.DataFrame(dic_copy)
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)
+    df_reward.insert(len(df_reward.columns),'rew_epi_norm_mean', mean_norm, True)
     df_reward.insert(len(df_reward.columns),'linreg_slope', slope, True)
     df_reward.insert(len(df_reward.columns),'linreg_intercept', slope, True)
     df_reward.insert(len(df_reward.columns),'linreg_score', score, True)
@@ -257,7 +262,8 @@ def disp_overview():
                 axs[i,j].grid(linewidth=0.1)
                 # colors
                 color_max='red'
-                color_mean='blue'
+                color_mean='Indigo'
+                color_norm='MediumSlateBlue'
                 color_success='violet'
                 color_slope='green'
                 color_intercept='orange'
@@ -292,6 +298,12 @@ def disp_overview():
                 if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
                     mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, color=color_mean)
+
+                # mean_norm
+                df_mean_norm = pd.concat([df.iloc[:,x], df['rew_epi_norm_mean']], axis=1)
+                if df_mean_norm.columns[0] != df_mean_norm.columns[1]:
+                    mean_rew_norm = df_mean_norm.groupby(df_mean_norm.columns[0]).mean().reset_index()
+                    axs[i,j].scatter(mean_rew_norm.iloc[:,0], mean_rew_norm.iloc[:,1], s=0.1, color=color_norm)
 
                 # success
                 df_mean_success = pd.concat([df.iloc[:,x], df['success_rate']], axis=1)

@@ -246,6 +246,7 @@ class Agent:
             self.env.path_roll_out = self.env.character.path[0:idx]
             target = self.env.character.path[idx] + [0,0,1] #set target so close, it will be counted as a success immediatly
 
+        self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
         self.env.reset(roll_out=True)
         self.env.character.target = target
 

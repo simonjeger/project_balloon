@@ -27,8 +27,8 @@ def convert_map():
     #size_x = 362
     #size_y = 252
 
-    size_x = 50 #100
-    size_y = 50 #100
+    size_x = 100 #50
+    size_y = 100 #50
     size_z = 105
 
     world = np.zeros(shape=(1+4,size_x,size_y,size_z))
@@ -39,7 +39,7 @@ def convert_map():
     #max_lon :5.5040283
 
     center_lat = 46.803198 #46.803198
-    center_lon = 10 #8.18615665
+    center_lon = 8.18615665 #10
 
     #center_lat = 46.5
     #center_lon = 6
@@ -237,5 +237,5 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map()
+convert_map()
 #build_set(500, 'test')

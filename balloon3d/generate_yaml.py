@@ -111,9 +111,9 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
 balloon = '"small"'
 time_train = 20*60*60
 
-process_nr = 2410
+process_nr = 2442
 
-for data_path in ['"data/"', '"data_big0/"', '"data_big1/"']:
+for data_path in ['"data_big1/"']:
     for time in [230]:
         for type in ['"squished"']:
             for min_proj_dist in [1]:
@@ -128,9 +128,9 @@ for data_path in ['"data/"', '"data_big0/"', '"data_big1/"']:
                                 for autoencoder in ['"HAE_avg"']:
                                     for width in [512]:
                                         for depth in [2]:
-                                            for window_size in [3]:
+                                            for window_size in [2]:
                                                 if autoencoder == '"HAE_avg"':
-                                                    bottleneck = 10
+                                                    bottleneck = 1
                                                     vae_nr = 11111
                                                 elif autoencoder == '"HAE_ext"':
                                                     bottleneck = 10

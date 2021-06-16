@@ -72,6 +72,8 @@ class balloon2d(Env):
         self.observation_space = Box(low=np.concatenate((regular_state_space_low, world_compressed_state_space_low), axis=0), high=np.concatenate((regular_state_space_high, world_compressed_state_space_high), axis=0), dtype=np.float64) #ballon_x = [0,...,100], balloon_z = [0,...,30], error_x = [0,...,100], error_z = [0,...,30]
 
         self.path_roll_out = None
+        self.reward_roll_out = None
+        self.reward_list = []
 
     def step(self, action, roll_out=False):
         # Update compressed wind map
@@ -101,7 +103,10 @@ class balloon2d(Env):
                     self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
                     self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
                     self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
-                    self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+
+                    self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
+                    self.writer.add_scalar('target_y', self.character.target[1], self.step_n)
+                    self.writer.add_scalar('target_z', self.character.target[2], self.step_n)
 
                     self.writer.add_scalar('size_x', self.size_x , self.step_n)
                     self.writer.add_scalar('size_y', self.size_y , self.step_n)
@@ -110,10 +115,9 @@ class balloon2d(Env):
                     self.writer.add_scalar('radius_xy', self.radius_xy , self.step_n)
                     self.writer.add_scalar('radius_z', self.radius_z , self.step_n)
 
-                    self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
-                    self.writer.add_scalar('target_y', self.character.target[1], self.step_n)
-                    self.writer.add_scalar('target_z', self.character.target[2], self.step_n)
+                    self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
                     self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
+                    self.writer.add_scalar('reward_epi_norm', self.reward_epi/self.reward_roll_out, self.step_n)
 
                     self.writer.add_scalar('success_n', self.success_n, self.step_n)
 
@@ -153,6 +157,7 @@ class balloon2d(Env):
             done = True
 
         self.reward_epi += self.reward_step
+        self.reward_list.append(self.reward_step)
         return done
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
@@ -199,6 +204,7 @@ class balloon2d(Env):
         if self.character.ceiling - self.world[0,pos_x,pos_y,0] < min_space:
             self.reset()
 
+        self.reward_list = []
         self.prev_int = [-1,-1]
 
         """
