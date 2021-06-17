@@ -291,6 +291,9 @@ class Agent:
                 self.scheduler.step()
 
             if done:
+                if yaml_p['render']:
+                    self.env.render(mode=True)
+                
                 # logger
                 if self.writer is not None:
                     if yaml_p['continuous']:

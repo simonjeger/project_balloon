@@ -122,7 +122,7 @@ for data_path in ['"data/"']:
                 time = 100
                 continuous = True
             elif agent_type == '"DoubleDQN"':
-                time = 320
+                time = 230
                 continuous = False
             for type in ['"squished"']:
                 for short_sighted in [False]:

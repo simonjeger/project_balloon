@@ -103,7 +103,7 @@ class character():
 
     def set_state(self):
         if not yaml_p['wind_info']:
-            self.wind_compressed *= 0
+            self.world_compressed *= 0
 
         if not yaml_p['measurement_info']:
             self.measurement *= 0
