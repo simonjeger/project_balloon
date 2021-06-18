@@ -10,7 +10,7 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     # Write submit command
     file = open(path + '/submit.txt', "a")
     #file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
-    file.write('bsub -n 2 -W 24:00 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -n 2 -W 23:55 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -36,13 +36,13 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
     text = text + 'vae_nr: 11111' + '\n'
-    text = text + 'window_size: 0' + '\n'
-    text = text + 'bottleneck: 10' + '\n'
+    text = text + 'window_size: 2' + '\n'
+    text = text + 'bottleneck: 4' + '\n'
 
     text = text + '\n' + '# model_train' + '\n'
     text = text + 'time_train: ' + str(time_train) + '\n'
     text = text + 'num_epochs_test: 1000' + '\n'
-    text = text + 'phase: 50' + '\n'
+    text = text + 'phase: 1' + '\n'
     text = text + 'cherry_pick: 0' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
@@ -113,13 +113,13 @@ action = -0.05
 balloon = '"small"'
 time_train = 20*60*60
 
-process_nr = 5383
+process_nr = 5390
 
-for data_path in ['"data/"']:
+for data_path in ['"data_big/"']:
     for start_train in [[7,0]]:
-        for agent_type in ['"SoftActorCritic"']:
+        for agent_type in ['"SoftActorCritic"', '"DoubleDQN"']:
             if agent_type == '"SoftActorCritic"':
-                time = 100
+                time = 230
                 continuous = True
             elif agent_type == '"DoubleDQN"':
                 time = 230

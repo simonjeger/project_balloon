@@ -113,14 +113,14 @@ time_train = 20*60*60
 step = -0.00003
 action = -0.005
 wind_info = False
-measurement_info = False
+measurement_info = True
 
-process_nr = 2520
+process_nr = 2660
 
 for data_path in ['"data_big/"']:
     for type in ['"squished"']:
         for min_proj_dist in [1]:
-            for cherry_pick in [1]:
+            for cherry_pick in [0]:
                 for agent_type in ['"SoftActorCritic"']:
                     if agent_type == '"SoftActorCritic"':
                         time = 230
@@ -131,26 +131,48 @@ for data_path in ['"data_big/"']:
                     for autoencoder in ['"HAE_avg"']:
                         for width in [512]:
                             for depth in [2]:
-                                if autoencoder == '"HAE_avg"':
-                                    bottleneck = 1
-                                    vae_nr = 11111
-                                elif autoencoder == '"HAE_ext"':
-                                    bottleneck = 10
-                                    vae_nr = 11111
-                                elif autoencoder == '"VAE"':
-                                    bottleneck = 15
-                                    if window_size == 1:
-                                        vae_nr = 11113
-                                    elif window_size == 2:
-                                        vae_nr = 11123
-                                    elif window_size == 3:
-                                        vae_nr = 11133
-                                    elif window_size == 4:
-                                        vae_nr = 11143
-                                    elif window_size == 5:
-                                        vae_nr = 11153
-                                for window_size in [1]:
+                                for window_size in [0]:
                                     for bottleneck in [1]:
+                                        if autoencoder == '"HAE_avg"':
+                                            vae_nr = 11111
+                                        elif autoencoder == '"HAE_ext"':
+                                            vae_nr = 11111
+                                        elif autoencoder == '"VAE"':
+                                            if window_size == 1:
+                                                if bottleneck == 5:
+                                                    vae_nr = 11111
+                                                elif bottleneck == 10:
+                                                    vae_nr = 11112
+                                                elif bottleneck == 15:
+                                                    vae_nr = 11113
+                                            elif window_size == 2:
+                                                if bottleneck == 5:
+                                                    vae_nr = 11121
+                                                elif bottleneck == 10:
+                                                    vae_nr = 11122
+                                                elif bottleneck == 15:
+                                                    vae_nr = 11123
+                                            elif window_size == 3:
+                                                if bottleneck == 5:
+                                                    vae_nr = 11131
+                                                elif bottleneck == 10:
+                                                    vae_nr = 11132
+                                                elif bottleneck == 15:
+                                                    vae_nr = 11133
+                                            elif window_size == 4:
+                                                if bottleneck == 5:
+                                                    vae_nr = 11141
+                                                elif bottleneck == 10:
+                                                    vae_nr = 11142
+                                                elif bottleneck == 15:
+                                                    vae_nr = 11143
+                                            elif window_size == 5:
+                                                if bottleneck == 5:
+                                                    vae_nr = 11151
+                                                elif bottleneck == 10:
+                                                    vae_nr = 11152
+                                                elif bottleneck == 15:
+                                                    vae_nr = 11153
                                         for start_train in [[7,6,0]]:
                                             for curriculum_dist in [1]:
                                                 for curriculum_rad in [1]:

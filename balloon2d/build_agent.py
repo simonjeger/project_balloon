@@ -217,7 +217,7 @@ class Agent:
                 np.random.seed(self.seed)
                 self.seed += 1
 
-            if np.random.uniform() < 1/4000*yaml_p['time']:
+            if np.random.uniform() < 1/2000*yaml_p['time']:
                 action = np.random.uniform(0.1,0.9)
 
             _, _, done, _ = self.env.step(action, roll_out=True)
@@ -294,7 +294,7 @@ class Agent:
             if done:
                 if yaml_p['render']:
                     self.env.render(mode=True)
-                    
+
                 # logger
                 if self.writer is not None:
                     if yaml_p['continuous']:
