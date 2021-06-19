@@ -57,9 +57,9 @@ class HAE():
         window = np.zeros((len(data),self.window_size_total,self.size_z))
         data_padded = np.zeros((len(data),self.size_x+2*self.window_size,self.size_y+2*self.window_size,self.size_z))
         if self.window_size == 0:
-            data_padded = data_squished
+            data_padded = data
         else:
-            data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data_squished
+            data_padded[:,self.window_size:-self.window_size,self.window_size:-self.window_size,:] = data
 
         for i in range(self.window_size):
             data_padded[:,i,:,:] = data_padded[:,self.window_size,:,:]

@@ -88,8 +88,6 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'bounds: -1' + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
-    text = text + 'memory_size: 3' + '\n'
-    text = text + 'memory_interval: 5' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
     text = text + 'measurement_info: True' + '\n'
     text = text + 'wind_info: True' + '\n'
