@@ -115,70 +115,71 @@ action = -0.005
 wind_info = False
 measurement_info = True
 
-process_nr = 2660
+process_nr = 2670
 
 for data_path in ['"data_big/"']:
-    for type in ['"squished"']:
-        for min_proj_dist in [1]:
-            for cherry_pick in [0]:
-                for agent_type in ['"SoftActorCritic"']:
-                    if agent_type == '"SoftActorCritic"':
-                        time = 230
-                        continuous = True
-                    elif agent_type == '"DoubleDQN"':
-                        time = 100
-                        continuous = False
-                    for autoencoder in ['"HAE_avg"']:
-                        for width in [512]:
-                            for depth in [2]:
-                                for window_size in [0]:
-                                    for bottleneck in [1]:
-                                        if autoencoder == '"HAE_avg"':
-                                            vae_nr = 11111
-                                        elif autoencoder == '"HAE_ext"':
-                                            vae_nr = 11111
-                                        elif autoencoder == '"VAE"':
-                                            if window_size == 1:
-                                                if bottleneck == 5:
-                                                    vae_nr = 11111
-                                                elif bottleneck == 10:
-                                                    vae_nr = 11112
-                                                elif bottleneck == 15:
-                                                    vae_nr = 11113
-                                            elif window_size == 2:
-                                                if bottleneck == 5:
-                                                    vae_nr = 11121
-                                                elif bottleneck == 10:
-                                                    vae_nr = 11122
-                                                elif bottleneck == 15:
-                                                    vae_nr = 11123
-                                            elif window_size == 3:
-                                                if bottleneck == 5:
-                                                    vae_nr = 11131
-                                                elif bottleneck == 10:
-                                                    vae_nr = 11132
-                                                elif bottleneck == 15:
-                                                    vae_nr = 11133
-                                            elif window_size == 4:
-                                                if bottleneck == 5:
-                                                    vae_nr = 11141
-                                                elif bottleneck == 10:
-                                                    vae_nr = 11142
-                                                elif bottleneck == 15:
-                                                    vae_nr = 11143
-                                            elif window_size == 5:
-                                                if bottleneck == 5:
-                                                    vae_nr = 11151
-                                                elif bottleneck == 10:
-                                                    vae_nr = 11152
-                                                elif bottleneck == 15:
-                                                    vae_nr = 11153
-                                        for start_train in [[7,6,0]]:
-                                            for curriculum_dist in [1]:
-                                                for curriculum_rad in [1]:
-                                                    for curriculum_rad_dry in [1000]:
-                                                        for lr in [0.0003]:
-                                                            for repeat in range(3):
-                                                                for replay_start_size in [1000]:
-                                                                    write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, agent_type, width, depth, lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info)
-                                                                    process_nr += 1
+    for min_proj_dist in [1]:
+        for cherry_pick in [0]:
+            for agent_type in ['"SoftActorCritic"', '"DoubleDQN"']:
+                if agent_type == '"SoftActorCritic"':
+                    time = 230
+                    type = '"squished"'
+                    continuous = True
+                elif agent_type == '"DoubleDQN"':
+                    time = 100
+                    type = '"regular"'
+                    continuous = False
+                for autoencoder in ['"HAE_avg"']:
+                    for width in [512]:
+                        for depth in [2]:
+                            for window_size in [2]:
+                                for bottleneck in [4]:
+                                    if autoencoder == '"HAE_avg"':
+                                        vae_nr = 11111
+                                    elif autoencoder == '"HAE_ext"':
+                                        vae_nr = 11111
+                                    elif autoencoder == '"VAE"':
+                                        if window_size == 1:
+                                            if bottleneck == 5:
+                                                vae_nr = 11111
+                                            elif bottleneck == 10:
+                                                vae_nr = 11112
+                                            elif bottleneck == 15:
+                                                vae_nr = 11113
+                                        elif window_size == 2:
+                                            if bottleneck == 5:
+                                                vae_nr = 11121
+                                            elif bottleneck == 10:
+                                                vae_nr = 11122
+                                            elif bottleneck == 15:
+                                                vae_nr = 11123
+                                        elif window_size == 3:
+                                            if bottleneck == 5:
+                                                vae_nr = 11131
+                                            elif bottleneck == 10:
+                                                vae_nr = 11132
+                                            elif bottleneck == 15:
+                                                vae_nr = 11133
+                                        elif window_size == 4:
+                                            if bottleneck == 5:
+                                                vae_nr = 11141
+                                            elif bottleneck == 10:
+                                                vae_nr = 11142
+                                            elif bottleneck == 15:
+                                                vae_nr = 11143
+                                        elif window_size == 5:
+                                            if bottleneck == 5:
+                                                vae_nr = 11151
+                                            elif bottleneck == 10:
+                                                vae_nr = 11152
+                                            elif bottleneck == 15:
+                                                vae_nr = 11153
+                                    for start_train in [[7,6,0]]:
+                                        for curriculum_dist in [1]:
+                                            for curriculum_rad in [1]:
+                                                for curriculum_rad_dry in [1000]:
+                                                    for lr in [0.0003]:
+                                                        for repeat in range(3):
+                                                            for replay_start_size in [1000]:
+                                                                write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, agent_type, width, depth, lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info)
+                                                                process_nr += 1

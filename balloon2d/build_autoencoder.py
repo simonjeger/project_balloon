@@ -55,8 +55,8 @@ class VAE(nn.Module):
             train_dataset = custom_data('data_cars/train/')
             test_dataset = custom_data('data_cars/test/')
         else:
-            train_dataset = wind_data('data/train/tensor/')
-            test_dataset = wind_data('data/test/tensor/')
+            train_dataset = wind_data(yaml_p['data_path'] + '/train/tensor/')
+            test_dataset = wind_data(yaml_p['data_path'] + '/test/tensor/')
 
         self.size_c = 2
         self.size_x = len(train_dataset[0][0])
@@ -383,6 +383,7 @@ class VAE(nn.Module):
 
     def load_weights(self, path):
         self.load_state_dict(torch.load(path))
+        self.to(self.device)
         self.eval()
 
     def window(self, data, center):
@@ -478,12 +479,13 @@ class VAE(nn.Module):
         data = data.view(1,self.size_c,self.window_size_total,self.size_z)
         data = data.type(torch.FloatTensor)
         self.eval() #toggle model to test / inference mode
-        self.device = 'cpu'
+        self.eval() #toggle model to test / inference mode
+        data = data.to(self.device)
 
         # we're only going to infer, so no autograd at all required: volatile=True
         data = Variable(data, volatile=True)
         recon_batch, mu, logvar = self(data)
-        comp = mu[0].detach().numpy()
+        comp = mu[0].cpu().detach().numpy()
 
         result = comp
 

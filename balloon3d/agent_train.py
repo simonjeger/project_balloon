@@ -36,7 +36,7 @@ writer = SummaryWriter(yaml_p['process_path'] + 'process' + str(yaml_p['process_
 init_time = time.time()
 
 if yaml_p['phase'] < yaml_p['cherry_pick']:
-    print('Please choose a higher phase / lower cherr_pick')
+    print('Please choose a higher phase / lower cherry_pick')
 if yaml_p['cherry_pick']:
     phase = int(yaml_p['phase']/yaml_p['cherry_pick'])
 else:

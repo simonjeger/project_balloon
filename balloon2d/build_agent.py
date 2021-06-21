@@ -387,6 +387,7 @@ class Agent:
         p_2 = np.clip(vel_x*residual_x,0,np.inf)*k_2
         p = np.clip(p_1*p_2,0,1)
         p = np.round(p,0) #bang bang makes most sense here
+        p = 1
 
         projections = residual_x * wind_x
         action = np.argmax(projections)/len(projections)*(1-p) + tar_z_squished*p
