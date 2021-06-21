@@ -64,7 +64,10 @@ class VAE(nn.Module):
         nc = self.size_c
 
         # set kernel size of x direction
-        if self.window_size_total == 3:
+        if self.window_size_total == 1:
+            k_enc = [1,1,1,1]
+            k_dec = [1,1,1,1]
+        elif self.window_size_total == 3:
             k_enc = [3,1,1,1]
             k_dec = [1,2,2,1]
         elif self.window_size_total == 5:
