@@ -59,6 +59,7 @@ class character():
         self.residual = self.target - self.position
         self.measurement = self.interpolate_wind(measurement=True)[0:2]
 
+        self.importance = None
         self.set_state()
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -114,6 +115,9 @@ class character():
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
+
+        if self.importance is not None:
+            self.state[self.importance] = np.random.uniform(-1,1)
 
     def move_particle(self, roll_out):
         c = self.area*self.rho*self.c_w/(2*self.mass)

@@ -194,7 +194,7 @@ class Agent:
 
     def set_reachable_target(self):
         curr_start = 0.35
-        curr_window = 0.2
+        curr_window = 0.1
         curr_end = 1 - curr_window
         if self.train_or_test == 'train':
             curr = curr_start + (curr_end - curr_start)*min(self.step_n/yaml_p['curriculum_dist'],1)
@@ -207,55 +207,66 @@ class Agent:
 
         round = 0
         action = np.random.uniform(0.1,0.9)
-        rel_set = np.random.uniform(0.1,0.9)
+        set_action = 1
+        n_action = 0
+        ndtsu = 0 #normalized_distance_travelled_since_update
 
         while True:
             self.env.character.target = [-10,-10,-10] #set target outside map
 
             if self.train_or_test == 'test':
-                np.random.seed(self.seed)
                 self.seed += 1
+                np.random.seed(self.seed)
 
-            if np.random.uniform() < 1/2000*yaml_p['time']:
-                action = np.random.uniform(0.1,0.9)
+            ndtsu += np.sqrt(self.env.character.velocity[0]**2 + self.env.character.velocity[1]**2)*yaml_p['time'] / np.sqrt(self.env.size_x**2 + self.env.size_y**2)
+            if np.random.uniform() < 2*ndtsu:
+                dtsu = 0
+                rand = np.random.uniform(0.1,0.9)
+                while abs(action - rand) < 0.35:
+                    self.seed += 1
+                    np.random.seed(self.seed)
+                    rand = np.random.uniform(0.1,0.9)
+                action = rand
+                set_action -= 1
+                if set_action >= 0:
+                    n_action = len(self.env.character.path)
 
             _, _, done, _ = self.env.step(action, roll_out=True)
 
             sucess = False
-            # dist_to_start does not change with curriculum learning
-            dist_to_start = np.sqrt(((self.env.character.position[0] - self.env.character.start[0])*self.render_ratio/yaml_p['radius_stop_xy'])**2 + ((self.env.character.position[1] - self.env.character.start[1])*self.render_ratio/yaml_p['radius_stop_xy'])**2 + ((self.env.character.position[2] - self.env.character.start[2])/yaml_p['radius_stop_xy'])**2)
-            if done & (dist_to_start > 2):
+            lowest = n_action + 50
+            if done & (n_action > 0) & (lowest < len(self.env.character.path)):
                 break
             elif done:
-                if round >= 3:
+                if round >= 10:
                     break
                 else:
                     self.env.reset(roll_out=True)
+                    n_action = 0
                     round += 1
 
-        lowest = 50
         # write down path and set target (avoid loops with else)
-        if len(self.env.character.path) > lowest:
-            lower = max(lowest,int(curr*len(self.env.character.path)))
-            upper = max(lowest+1,int((curr+curr_window-0.1)*len(self.env.character.path)),int(curr*len(self.env.character.path)) + 1)
-            idx = np.random.randint(lower, upper)
-            self.env.path_roll_out = self.env.character.path[0:idx]
-            target = self.env.character.path[idx]
-        else:
-            idx = 0
-            self.env.path_roll_out = self.env.character.path[0:idx]
-            target = self.env.character.path[idx] + [0,0,1] #set target so close, it will be counted as a success immediatly
+        lower = max(lowest,int(curr*len(self.env.character.path)))
+        upper = max(lowest+1,int((curr+curr_window-0.1)*len(self.env.character.path)),int(curr*len(self.env.character.path)) + 1)
+        upper = min(upper,len(self.env.character.path)-1)
+        lower = min(lower,upper-1)
+        idx = np.random.randint(lower, upper)
+        self.env.path_roll_out = self.env.character.path[0:idx]
+        target = self.env.character.path[idx]
 
         self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
         self.env.reset(roll_out=True)
         self.env.character.target = target
 
-    def run_epoch(self):
+    def run_epoch(self,importance=None):
         obs = self.env.reset()
         sum_r = 0
 
         if yaml_p['curriculum_dist'] > 0: #reset target to something reachable if that flag is set
             self.set_reachable_target()
+
+        if importance is not None:
+            self.env.character.importance = importance
 
         while True:
             if yaml_p['render']:

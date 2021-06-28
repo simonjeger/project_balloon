@@ -82,10 +82,11 @@ def unsquish(data_squished, ceiling):
     size_z = len(data_squished[0,0,0,:])
     data = np.zeros((len(data_squished),size_x,size_y,size_z))
     for i in range(size_x):
+        print(np.round(100*i/size_x,0))
         for j in range(size_y):
             bottom = data_squished[0,i,j,0]
             top = ceiling
-            print(i,j)
+
             x_old = np.linspace(bottom,top,size_z)
             x_new = np.arange(0,size_z,1)
             data[0,:,:,0] = data_squished[0,:,:,0] #terrain stays the same

@@ -48,7 +48,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     """
     world = torch.load('render/world_squished.pt')
     """
-
+    
     # generate the three windows
     visualize_world(world, character.position, character.ceiling)
 

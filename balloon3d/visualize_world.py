@@ -86,6 +86,14 @@ def visualize_world(tensor, position, ceiling):
             dpi = 70
             ax.set_aspect(1)
 
+            """
+            #TypeError: Shapes of x (216, 252) and z (433, 505) do not match
+            dir_x = dir_x[1::2,1::2]
+            dir_y = dir_y[1::2,1::2]
+            local_size_x = int(local_size_x/2)
+            local_size_y = int(local_size_y/2)
+            """
+
             # plot contour lines
             x = np.arange(0, local_size_x, 1)
             y = np.arange(0, local_size_y, 1)

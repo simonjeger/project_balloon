@@ -50,3 +50,4 @@ size_z = yaml_p['size_z']
 
 import agent_train
 import agent_test
+import agent_importance

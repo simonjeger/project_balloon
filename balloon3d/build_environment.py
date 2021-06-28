@@ -26,7 +26,7 @@ with open(args.yaml_file, 'rt') as fh:
 
 logger.set_level(40) # to avoid UserWarning about box bound precision
 
-class balloon2d(Env):
+class balloon3d(Env):
     def __init__(self, epi_n, step_n, train_or_test, writer=None, radius_xy=yaml_p['radius_stop_xy'], radius_z=yaml_p['radius_stop_xy']):
         # which data to use
         self.train_or_test = train_or_test

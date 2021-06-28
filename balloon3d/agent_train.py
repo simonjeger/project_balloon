@@ -15,7 +15,7 @@ if not yaml_p['reuse_weights']:
     clear('train')
     clear('test')
 
-from build_environment import balloon2d
+from build_environment import balloon3d
 from build_agent import Agent
 from utils.load_tf import tflog2pandas, many_logs2pandas
 
@@ -68,7 +68,7 @@ for r in range(yaml_p['curriculum_rad']):
         radius_xy = yaml_p['radius_start_xy'] - (yaml_p['radius_start_xy'] - yaml_p['radius_stop_xy'])*x
         radius_z = radius_xy*(1+(1-x)*(yaml_p['radius_start_ratio']-1))
 
-    env = balloon2d(epi_n,step_n,'train',writer,radius_xy, radius_z)
+    env = balloon3d(epi_n,step_n,'train',writer,radius_xy, radius_z)
     ag = Agent(epi_n,step_n,'train',env,writer)
     if (r > 0) | load_prev_weights:
         ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
@@ -93,7 +93,7 @@ for r in range(yaml_p['curriculum_rad']):
         # save weights
         if yaml_p['cherry_pick'] > 0:
             if epi_n%yaml_p['cherry_pick'] == 0:
-                env_val = balloon2d(epi_n,step_n,'val')
+                env_val = balloon3d(epi_n,step_n,'val')
                 ag_val = Agent(epi_n,step_n,'val',env_val)
                 ag_val.load_stash()
                 with ag_val.agent.eval_mode():
