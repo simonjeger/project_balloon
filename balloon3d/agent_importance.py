@@ -1,5 +1,5 @@
 from analysis import plot_reward, plot_path, write_overview, clear
-from build_environment import balloon2d
+from build_environment import balloon3d
 from build_agent import Agent
 
 import numpy as np
@@ -31,7 +31,7 @@ sucess = []
 score = []
 
 while True:
-    env = balloon2d(0,0,'test',writer)
+    env = balloon3d(0,0,'test',writer)
     ag = Agent(0,0,'test',env,writer)
     ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
     with ag.agent.eval_mode():
