@@ -90,6 +90,7 @@ def plot_reward():
 
     fig.tight_layout()
     plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
+    plt.close()
 
 def plot_path():
     # read in logger file as pandas
