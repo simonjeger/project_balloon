@@ -57,7 +57,8 @@ def write(process_nr, type, autoencoder, time_train, buffer_size, lr, explorer_t
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: ' + str(buffer_size) + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
-    text = text + 'lr_scheduler: 400000' + '\n'
+    text = text + 'lr_scheduler: 600000' + '\n'
+    text = text + 'temperature_optimizer_lr: null' + '\n'
     text = text + 'max_grad_norm: ' + str(max_grad_norm) + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'update_interval: ' + str(update_interval) + '\n'

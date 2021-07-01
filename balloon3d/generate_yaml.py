@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, agent_type, width, depth, lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info):
+def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, agent_type, width, depth, lr, temperature_optimizer_lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -57,9 +57,10 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'epsi_low: 0.1' + '\n'
     text = text + 'decay: 300000' + '\n'
     text = text + 'gamma: 0.95' + '\n'
-    text = text + 'buffer_size: 100000000' + '\n'
+    text = text + 'buffer_size: 600000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'lr_scheduler: 600000' + '\n'
+    text = text + 'temperature_optimizer_lr: ' + f'{temperature_optimizer_lr:.10f}' + '\n'
     text = text + 'max_grad_norm: 1' + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
     text = text + 'update_interval: 20' + '\n'
@@ -112,10 +113,10 @@ balloon = '"small"'
 time_train = 20*60*60
 step = -0.00003
 action = -0.005
-wind_info = False
+wind_info = True
 measurement_info = True
 
-process_nr = 2770
+process_nr = 3050
 
 for data_path in ['"data_big/"']:
     for min_proj_dist in [1]:
@@ -129,11 +130,11 @@ for data_path in ['"data_big/"']:
                     time = 100
                     type = '"regular"'
                     continuous = False
-                for autoencoder in ['"VAE"']:
+                for autoencoder in ['"HAE_avg"']:
                     for width in [512]:
                         for depth in [2]:
-                            for window_size in [0,1,2,3]:
-                                for bottleneck in [4,10,15]:
+                            for window_size in [1]:
+                                for bottleneck in [4]:
                                     if autoencoder == '"HAE_avg"':
                                         vae_nr = 11111
                                     elif autoencoder == '"HAE_ext"':
@@ -198,7 +199,8 @@ for data_path in ['"data_big/"']:
                                             for curriculum_rad in [1]:
                                                 for curriculum_rad_dry in [1000]:
                                                     for lr in [0.003]:
-                                                        for repeat in range(3):
-                                                            for replay_start_size in [1000]:
-                                                                write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, agent_type, width, depth, lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info)
-                                                                process_nr += 1
+                                                        for temperature_optimizer_lr in [0, 0.3, 0.03, 0.003, 0.0003, 0.00003]:
+                                                            for repeat in range(3):
+                                                                for replay_start_size in [1000]:
+                                                                    write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, agent_type, width, depth, lr, temperature_optimizer_lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info)
+                                                                    process_nr += 1

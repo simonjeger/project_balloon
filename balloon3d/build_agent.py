@@ -137,7 +137,7 @@ class Agent:
                     minibatch_size=yaml_p['minibatch_size'],
                     burnin_action_func=burnin_action_func,
                     entropy_target=-action_size,
-                    temperature_optimizer_lr=0.0003,
+                    temperature_optimizer_lr=yaml_p['temperature_optimizer_lr'],
                 )
 
             else:
@@ -410,7 +410,7 @@ class Agent:
         p = np.clip(p_1*p_2*p_3*p_4,0,1)
 
         p = np.round(p,0) #bang bang makes most sense here
-        p = 1
+        #p = 1
 
         norm_wind = np.sqrt(wind_x**2 + wind_y**2)
         projections = (residual_x*wind_x + residual_y*wind_y)/norm_wind
