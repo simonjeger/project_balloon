@@ -59,7 +59,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: 600000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
-    text = text + 'lr_scheduler: 600000' + '\n'
+    text = text + 'lr_scheduler: 999999999999' + '\n'
     text = text + 'temperature_optimizer_lr: ' + f'{temperature_optimizer_lr:.10f}' + '\n'
     text = text + 'max_grad_norm: 1' + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
@@ -116,7 +116,7 @@ action = -0.005
 wind_info = True
 measurement_info = True
 
-process_nr = 3050
+process_nr = 3190
 
 for data_path in ['"data_big/"']:
     for min_proj_dist in [1]:
@@ -130,11 +130,11 @@ for data_path in ['"data_big/"']:
                     time = 100
                     type = '"regular"'
                     continuous = False
-                for autoencoder in ['"HAE_avg"']:
+                for autoencoder in ['"HAE_ext"']:
                     for width in [512]:
                         for depth in [2]:
                             for window_size in [1]:
-                                for bottleneck in [4]:
+                                for bottleneck in [0]:
                                     if autoencoder == '"HAE_avg"':
                                         vae_nr = 11111
                                     elif autoencoder == '"HAE_ext"':
@@ -198,8 +198,8 @@ for data_path in ['"data_big/"']:
                                         for curriculum_dist in [1]:
                                             for curriculum_rad in [1]:
                                                 for curriculum_rad_dry in [1000]:
-                                                    for lr in [0.003]:
-                                                        for temperature_optimizer_lr in [0, 0.3, 0.03, 0.003, 0.0003, 0.00003]:
+                                                    for lr in [0.006]:
+                                                        for temperature_optimizer_lr in [0.00003]:
                                                             for repeat in range(3):
                                                                 for replay_start_size in [1000]:
                                                                     write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, agent_type, width, depth, lr, temperature_optimizer_lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info)

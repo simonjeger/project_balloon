@@ -112,7 +112,10 @@ class balloon3d(Env):
 
                     self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
                     self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
-                    self.writer.add_scalar('reward_epi_norm', self.reward_epi/self.reward_roll_out, self.step_n)
+                    if self.reward_roll_out is not None:
+                        self.writer.add_scalar('reward_epi_norm', self.reward_epi/self.reward_roll_out, self.step_n)
+                    else:
+                        self.writer.add_scalar('reward_epi_norm', 0, self.step_n)
 
                     self.writer.add_scalar('success_n', self.success_n, self.step_n)
 
@@ -196,7 +199,7 @@ class balloon3d(Env):
         min_space = self.size_z*yaml_p['min_space']
         pos_x = int(np.clip(self.character.position[0],0,self.size_x - 1))
         pos_y = int(np.clip(self.character.position[1],0,self.size_y - 1))
-        if self.character.ceiling - self.world[0,pos_x,pos_y,0] < min_space:
+        if (self.character.ceiling - self.world[0,pos_x,pos_y,0] < min_space) | (np.mean(self.character.ceiling - self.world[0,:,:,0]) < min_space):
             self.reset()
 
         self.reward_list = []
