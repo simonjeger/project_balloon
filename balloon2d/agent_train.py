@@ -107,10 +107,13 @@ for r in range(yaml_p['curriculum_rad']):
                     best_phase = current_phase[:]
                     dry = 0
 
-            if (dry > yaml_p['curriculum_rad_dry']) & (yaml_p['curriculum_rad'] + 1 < r):
+            if (dry > yaml_p['curriculum_rad_dry']) & (r + 1 < yaml_p['curriculum_rad']):
                 dry = 0
                 epi_n += 1
                 break
+
+        if (yaml_p['cherry_pick'] == False) & (yaml_p['curriculum_rad'] > 1):
+            print('turn on "cherry_pick" when curriculum_rad = True')
 
         dry += 1
         epi_n += 1

@@ -106,13 +106,14 @@ for r in range(yaml_p['curriculum_rad']):
                     ag.save_weights(current_phase, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
                     best_phase = current_phase[:]
                     dry = 0
-
-            if (dry > yaml_p['curriculum_rad_dry']) & (yaml_p['curriculum_rad'] + 1 < r):
+            if (dry > yaml_p['curriculum_rad_dry']) & (r + 1 < yaml_p['curriculum_rad']):
                 dry = 0
                 epi_n += 1
                 print('curriculum_rad reset')
                 break
 
+        if (yaml_p['cherry_pick'] == False) & (yaml_p['curriculum_rad'] > 1):
+            print('turn on "cherry_pick" when curriculum_rad = True')
         dry += 1
         epi_n += 1
     step_n = env.step_n

@@ -57,7 +57,7 @@ def write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, 
     text = text + 'epsi_low: 0.1' + '\n'
     text = text + 'decay: 300000' + '\n'
     text = text + 'gamma: 0.95' + '\n'
-    text = text + 'buffer_size: 600000' + '\n'
+    text = text + 'buffer_size: 100000000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'lr_scheduler: 999999999999' + '\n'
     text = text + 'temperature_optimizer_lr: ' + f'{temperature_optimizer_lr:.10f}' + '\n'
@@ -116,7 +116,7 @@ action = -0.005
 wind_info = True
 measurement_info = True
 
-process_nr = 3190
+process_nr = 3210
 
 for data_path in ['"data_big/"']:
     for min_proj_dist in [1]:
@@ -130,11 +130,11 @@ for data_path in ['"data_big/"']:
                     time = 100
                     type = '"regular"'
                     continuous = False
-                for autoencoder in ['"HAE_ext"']:
+                for autoencoder in ['"HAE_avg"']:
                     for width in [512]:
                         for depth in [2]:
-                            for window_size in [1]:
-                                for bottleneck in [0]:
+                            for window_size in [4]:
+                                for bottleneck in [2]:
                                     if autoencoder == '"HAE_avg"':
                                         vae_nr = 11111
                                     elif autoencoder == '"HAE_ext"':
@@ -195,8 +195,8 @@ for data_path in ['"data_big/"']:
                                             elif bottleneck == 30:
                                                 vae_nr = 11155
                                     for start_train in [[7,6,0]]:
-                                        for curriculum_dist in [1]:
-                                            for curriculum_rad in [1]:
+                                        for curriculum_dist in [1,10000,50000,100000,500000,1000000]:
+                                            for curriculum_rad in [1,2,3]:
                                                 for curriculum_rad_dry in [1000]:
                                                     for lr in [0.006]:
                                                         for temperature_optimizer_lr in [0.00003]:
