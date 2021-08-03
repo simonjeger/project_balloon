@@ -250,6 +250,7 @@ class VAE(nn.Module):
 
     def model_test(self, epoch):
         # toggle model to test / inference mode
+        np.random.seed(1)
         self.eval()
         test_loss = 0
 
@@ -283,6 +284,70 @@ class VAE(nn.Module):
             self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real_')
             self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon_')
             self.visualize(data-recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_error_', error=True)
+
+        test_loss /= len(self.test_loader.dataset)
+        print('====> Test set loss: {:.4f}'.format(test_loss))
+
+    def model_test_HAE_avg(self, epoch):
+        import warnings
+        self.box_size = int(self.size_z/yaml_p['bottleneck'])
+
+        # toggle model to test / inference mode
+        np.random.seed(1)
+        self.eval()
+        test_loss = 0
+
+        # each data is of self.batch_size (default 128) samples
+        for batch_idx, data in enumerate(self.test_loader):
+            data = data.type(torch.FloatTensor) #numpy uses doubles, so just to be save
+
+            data_window = torch.zeros([self.batch_size, self.size_c, self.window_size_total, self.window_size_total, self.size_z])
+            for i in range(self.batch_size): #number of samples we take from the same world
+                center_x = np.random.randint(0,self.size_x)
+                center_y = np.random.randint(0,self.size_y)
+                center_z = np.random.randint(0,self.size_z)
+                if yaml_p['type'] == 'regular':
+                    to_fill = self.window(data[i], [center_x, center_y, center_z])
+                elif yaml_p['type'] == 'squished':
+                    ceiling = np.random.uniform(0.9, 1) * self.size_z
+                    to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
+                data_window[i,:,:,:,:] = to_fill[-4:-1]
+            data = data_window #to keep naming convention
+
+            recon_batch = np.zeros((self.batch_size,3,self.window_size_total,self.window_size_total,self.size_z))
+            for b in range(self.batch_size):
+                mean_x = data[b,-3,:,:]
+                mean_y = data[b,-2,:,:]
+                mean_z = data[b,-1,:,:]
+
+                idx = np.arange(0,self.size_z, self.box_size)
+                if self.size_z%self.box_size != 0:
+                    idx = idx[:-1]
+                pred = np.zeros((len(idx)*2)) # two different wind directions
+
+                # wind
+                for i in range(len(idx)):
+                    with warnings.catch_warnings(): #I expect to see RuntimeWarnings in this block
+                        warnings.simplefilter("ignore", category=RuntimeWarning)
+
+                        recon_batch[b,0,:,:,idx[i]:idx[i] + self.box_size] = np.nanmean(mean_x[:,:,idx[i]:idx[i] + self.box_size])
+                        recon_batch[b,1,:,:,idx[i]:idx[i] + self.box_size] = np.nanmean(mean_y[:,:,idx[i]:idx[i] + self.box_size])
+                        #pred[2*len(idx)+i] = torch.mean(mean_z[:,:,idx[i]:idx[i] + self.box_size])
+
+            recon_batch = torch.tensor(np.nan_to_num(recon_batch,0))
+            # we're only going to infer, so no autograd at all required: volatile=True
+            #data = Variable(data, volatile=True)
+            #recon_batch, mu, logvar = self(data)
+            #test_loss += self.loss_function(recon_batch, data, mu, logvar).data.item()
+
+            # get data back to plot it on cpu
+            #data = data.cpu()
+            #recon_batch = recon_batch.cpu()
+
+            self.visualize(data, 'autoencoder/results/' + str(i).zfill(5) + '_real_')
+            self.visualize(recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_recon_')
+            self.visualize(data-recon_batch, 'autoencoder/results/' + str(i).zfill(5) + '_error_', error=True)
+            test_loss += torch.sum(abs(data-recon_batch))
 
         test_loss /= len(self.test_loader.dataset)
         print('====> Test set loss: {:.4f}'.format(test_loss))
@@ -346,7 +411,7 @@ class VAE(nn.Module):
         return window
 
     def visualize(self, data, path, error=False):
-        n = 0 #which port of the batch should be visualized
+        n = 0 #which part of the batch should be visualized
 
         for dim in ['xz', 'yz']:
             if dim == 'xz':
@@ -364,18 +429,18 @@ class VAE(nn.Module):
             render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
             if error == False:
-                cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
-                ax.imshow(mean_2.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+                #cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
+                #ax.imshow(mean_2.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
 
                 cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-                map = ax.imshow(mean_1.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, vmin=-5, vmax=5, interpolation='bilinear')
+                map = ax.imshow(mean_1.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=1, vmin=-5, vmax=5, interpolation='bilinear')
                 fig.colorbar(map)
             else:
-                cmap = 'Blues'
-                ax.imshow(mean_2.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, interpolation='bilinear')
+                #cmap = 'Blues'
+                #ax.imshow(mean_2.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, interpolation='bilinear')
 
-                cmap = 'Reds'
-                map = ax.imshow(mean_1.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=0.5, interpolation='bilinear')
+                cmap = 'BrBG'
+                map = ax.imshow(mean_1.T, origin='lower', extent=[0, size_1, 0, size_2], cmap=cmap, alpha=1, vmin=-1.5, vmax=1.5, interpolation='bilinear')
                 fig.colorbar(map)
 
             ax.set_axis_off()

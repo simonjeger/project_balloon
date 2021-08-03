@@ -24,6 +24,7 @@ with open(args.yaml_file, 'rt') as fh:
 def plot_reward():
     # read in logger file as pandas
     path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_train/'
+    name_list.sort()
     name_list = os.listdir(path_logger)
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
@@ -180,6 +181,7 @@ def write_overview():
     # read in logger file as pandas
     path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
     name_list = os.listdir(path_logger)
+    name_list.sort()
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
     df = many_logs2pandas(name_list)

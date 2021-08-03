@@ -321,7 +321,6 @@ class Agent:
                             self.writer.add_scalar('loss_qfunction', np.mean(self.agent.loss_record), self.step_n-1)
                 self.epi_n += 1
                 break
-
         return sum_r
 
     def weights_init(self, m):

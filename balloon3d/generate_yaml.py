@@ -116,7 +116,7 @@ action = -0.005
 wind_info = True
 measurement_info = True
 
-process_nr = 3210
+process_nr = 3310
 
 for data_path in ['"data_big/"']:
     for min_proj_dist in [1]:
@@ -195,12 +195,12 @@ for data_path in ['"data_big/"']:
                                             elif bottleneck == 30:
                                                 vae_nr = 11155
                                     for start_train in [[7,6,0]]:
-                                        for curriculum_dist in [1,10000,50000,100000,500000,1000000]:
-                                            for curriculum_rad in [1,2,3]:
+                                        for curriculum_dist in [1]:
+                                            for curriculum_rad in [1]:
                                                 for curriculum_rad_dry in [1000]:
                                                     for lr in [0.006]:
                                                         for temperature_optimizer_lr in [0.00003]:
-                                                            for repeat in range(3):
-                                                                for replay_start_size in [1000]:
+                                                            for replay_start_size in [1000]:
+                                                                for repeat in range(200):
                                                                     write(process_nr, time, type, autoencoder, vae_nr, window_size, bottleneck, time_train, cherry_pick, agent_type, width, depth, lr, temperature_optimizer_lr, replay_start_size, data_path, continuous, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info)
                                                                     process_nr += 1
