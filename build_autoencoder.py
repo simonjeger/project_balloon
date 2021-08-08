@@ -205,11 +205,8 @@ class VAE(nn.Module):
                 center_x = np.random.randint(0,self.size_x)
                 center_y = np.random.randint(0,self.size_y)
                 center_z = np.random.randint(0,self.size_z)
-                if yaml_p['type'] == 'regular':
-                    to_fill = self.window(data[i], [center_x, center_y, center_z])
-                elif yaml_p['type'] == 'squished':
-                    ceiling = np.random.uniform(0.9, 1) * self.size_z
-                    to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
+                ceiling = np.random.uniform(0.9, 1) * self.size_z
+                to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
                 data_window[i,:,:,:,:] = to_fill[-4:-1]
             data = data_window #to keep naming convention
 
@@ -263,11 +260,8 @@ class VAE(nn.Module):
                 center_x = np.random.randint(0,self.size_x)
                 center_y = np.random.randint(0,self.size_y)
                 center_z = np.random.randint(0,self.size_z)
-                if yaml_p['type'] == 'regular':
-                    to_fill = self.window(data[i], [center_x, center_y, center_z])
-                elif yaml_p['type'] == 'squished':
-                    ceiling = np.random.uniform(0.9, 1) * self.size_z
-                    to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
+                ceiling = np.random.uniform(0.9, 1) * self.size_z
+                to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
                 data_window[i,:,:,:,:] = to_fill[-4:-1]
             data = data_window #to keep naming convention
 
@@ -306,11 +300,8 @@ class VAE(nn.Module):
                 center_x = np.random.randint(0,self.size_x)
                 center_y = np.random.randint(0,self.size_y)
                 center_z = np.random.randint(0,self.size_z)
-                if yaml_p['type'] == 'regular':
-                    to_fill = self.window(data[i], [center_x, center_y, center_z])
-                elif yaml_p['type'] == 'squished':
-                    ceiling = np.random.uniform(0.9, 1) * self.size_z
-                    to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
+                ceiling = np.random.uniform(0.9, 1) * self.size_z
+                to_fill = self.window_squished(data[i], [center_x, center_y, center_z], ceiling)
                 data_window[i,:,:,:,:] = to_fill[-4:-1]
             data = data_window #to keep naming convention
 
@@ -449,17 +440,13 @@ class VAE(nn.Module):
             plt.close()
 
     def compress(self, data, position, ceiling):
-        if yaml_p['type'] == 'regular':
-            to_fill = self.window(data, position)
+        pos_x = np.clip(int(position[0]),0,self.size_x - 1)
+        pos_y = np.clip(int(position[1]),0,self.size_y - 1)
 
-        elif yaml_p['type'] == 'squished':
-            pos_x = np.clip(int(position[0]),0,self.size_x - 1)
-            pos_y = np.clip(int(position[1]),0,self.size_y - 1)
+        rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling - data[0,self.window_size,self.window_size,0])])
+        size = (ceiling - data[0,self.window_size,self.window_size,0])/self.size_z
 
-            rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling - data[0,self.window_size,self.window_size,0])])
-            size = (ceiling - data[0,self.window_size,self.window_size,0])/self.size_z
-
-            to_fill = self.window_squished(data, position, ceiling)
+        to_fill = self.window_squished(data, position, ceiling)
         data = to_fill[-4:-1]
 
         # wind

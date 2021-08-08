@@ -21,11 +21,13 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
+render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+
 def plot_reward():
     # read in logger file as pandas
     path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_train/'
-    name_list.sort()
     name_list = os.listdir(path_logger)
+    name_list.sort()
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
     df = many_logs2pandas(name_list)
@@ -35,7 +37,7 @@ def plot_reward():
     #rew_step = np.array(df['reward_step'])
 
     # plot mean reward
-    N_epi = yaml_p['phase']
+    N_epi = 1
     cumsum_rew = np.cumsum(np.insert(rew_epi, 0, 0))
     mean_reward_epi = (cumsum_rew[N_epi:] - cumsum_rew[:-N_epi]) / float(N_epi)
 
@@ -61,19 +63,6 @@ def plot_reward():
     ax.plot(mean_reward_epi)
     ax.plot(Y_pred)
     ax.plot(mean_reward_epi_big)
-
-    if yaml_p['cherry_pick'] > 0:
-        # validation
-        rew_epi_val = np.array(df['reward_epi_val'].dropna())
-        N_epi_val = int(len(rew_epi)/10)
-        cumsum_rew_val = np.cumsum(np.insert(rew_epi_val, 0, 0))
-        mean_reward_epi_val = (cumsum_rew_val[N_epi_val:] - cumsum_rew_val[:-N_epi_val]) / float(N_epi_val)
-        ax.plot(mean_reward_epi_val)
-
-        # save_weights
-        weights_saved = np.array(df['weights_saved'].dropna())
-        for w in weights_saved:
-            ax.axvline(w, color='black', linewidth=0.5)
 
     #ax.set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
     ax.set_xlabel('episode')
@@ -110,6 +99,7 @@ def plot_path():
 
     #vmin = np.min(df['reward_epi'])
     #vmax = np.max(df['reward_epi'])
+
     vmin = -2
     vmax = 1
 
@@ -120,7 +110,7 @@ def plot_path():
 
     step = 0
     for i in range(len(idx)-1):
-        fig, axs = plt.subplots(2,1)
+        fig, axs = plt.subplots(4,1)
 
         idx_fra = np.arange(idx[i], idx[i+1],1)
         df_fra = df[df['epi_n'].isin(idx_fra)]
@@ -132,28 +122,47 @@ def plot_path():
             legend = [-2, -1.5, -1, -0.5, 0, 0.5, 1]
             for l in range(len(legend)):
                 c = np.argmin(np.abs(spectrum - legend[l]))
-                axs[0].text(df_fra['size_x'].iloc[-1],df_fra['size_z'].iloc[-1]/len(legend)*(l), str(legend[l]), verticalalignment='bottom', horizontalalignment='left', color=colors[c])
+                axs[2].text(df_fra['size_x'].iloc[-1],df_fra['size_y'].iloc[-1]/len(legend)*(l), str(legend[l]), verticalalignment='bottom', horizontalalignment='left', color=colors[c], fontsize=5)
 
-            # add path
             c = np.argmin(np.abs(spectrum - df_loc['reward_epi'].iloc[-1]))
 
-            # plot path
-            axs[0].plot(df_loc['position_x'], df_loc['position_z'], color=colors[c])
-            axs[0].scatter(df_loc['target_x'].dropna().iloc[-1], df_loc['target_z'].dropna().iloc[-1], s=20, facecolors='none', edgecolors='grey')
-            axs[0].set_xlim(0,df_loc['size_x'].dropna().iloc[-1])
+            # plot path in yz
+            axs[0].set_title('yz')
+            axs[0].set_aspect(1/render_ratio)
+            axs[0].plot(df_loc['position_y'], df_loc['position_z'], color=colors[c])
+            axs[0].scatter(df_loc['target_y'].dropna().iloc[-1], df_loc['target_z'].dropna().iloc[-1], s=20, facecolors='none', edgecolors='grey')
+            axs[0].set_xlim(0,df_loc['size_y'].dropna().iloc[-1])
             axs[0].set_ylim(0,df_loc['size_z'].dropna().iloc[-1])
+
+            # plot path in xz
+            axs[1].set_title('xz')
+            axs[1].set_aspect(1/render_ratio)
+            axs[1].plot(df_loc['position_x'], df_loc['position_z'], color=colors[c])
+            axs[1].scatter(df_loc['target_x'].dropna().iloc[-1], df_loc['target_z'].dropna().iloc[-1], s=20, facecolors='none', edgecolors='grey')
+            axs[1].set_xlim(0,df_loc['size_x'].dropna().iloc[-1])
+            axs[1].set_ylim(0,df_loc['size_z'].dropna().iloc[-1])
+
+            # plot path in xy
+            axs[2].set_title('xy')
+            axs[2].set_aspect(1)
+            axs[2].plot(df_loc['position_x'], df_loc['position_y'], color=colors[c])
+            axs[2].scatter(df_loc['target_x'].dropna().iloc[-1], df_loc['target_y'].dropna().iloc[-1], s=20, facecolors='none', edgecolors='grey')
+            axs[2].set_xlim(0,df_loc['size_x'].dropna().iloc[-1])
+            axs[2].set_ylim(0,df_loc['size_y'].dropna().iloc[-1])
 
             step = df_loc['position_x'].index[0] + 1
 
-        axs[0].set_title(str(int(i/n_f*100)) + ' %')
+        fig.suptitle(str(int(i/n_f*100)) + ' %')
+        plt.subplots_adjust(wspace=0.5, hspace=1)
 
         # plot epsilon
         df = df.interpolate() #to fill the NaN values
-        axs[1].plot(df['epsilon'].iloc[0:step], color='grey')
-        axs[1].set_xlabel('steps')
-        axs[1].set_ylabel('epsilon')
-        axs[1].set_xlim(0,step)
-        axs[1].set_ylim(0,1)
+        axs[3].set_title('epsilon')
+        axs[3].plot(df['epsilon'].iloc[0:step], color='grey')
+        axs[3].set_xlabel('steps')
+        axs[3].set_ylabel('epsilon')
+        axs[3].set_xlim(0,step)
+        axs[3].set_ylim(0,1)
 
         # Build folder structure if it doesn't exist yet
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
@@ -176,7 +185,6 @@ def plot_path():
     # Delete temp folder
     shutil.rmtree(path)
 
-
 def write_overview():
     # read in logger file as pandas
     path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
@@ -185,11 +193,10 @@ def write_overview():
     for i in range(len(name_list)):
         name_list[i] = path_logger + name_list[i]
     df = many_logs2pandas(name_list)
-
     rew_epi = np.array(df['reward_epi'].dropna())
 
     # maximum and mean
-    N_epi = yaml_p['phase']
+    N_epi = 1
     cumsum_rew = np.cumsum(np.insert(rew_epi, 0, 0))
     mean_reward_epi = (cumsum_rew[N_epi:] - cumsum_rew[:-N_epi]) / float(N_epi)
 
@@ -238,7 +245,6 @@ def write_overview():
 
 def disp_overview():
     df = pd.read_csv('overview.csv')
-
     # determening the number of different subplots needed
     to_delete = []
     for i in range(len(df.columns)):
@@ -298,6 +304,7 @@ def disp_overview():
 
                 # mean
                 df_mean_mean = pd.concat([df.iloc[:,x], df['rew_epi_mean']], axis=1)
+
                 if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
                     mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, color=color_mean)

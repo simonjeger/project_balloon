@@ -4,6 +4,7 @@ import pygame, sys
 import matplotlib.pylab as pl
 
 from visualize_world import visualize_world
+from preprocess_wind import squish
 
 import yaml
 import argparse
@@ -15,10 +16,11 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def build_render(character, reward_step, reward_epi, world_name, window_size, radius_x, radius_z, train_or_test, roll_out):
-    render_ratio = int(yaml_p['unit_x'] / yaml_p['unit_z'])
+def build_render(character, reward_step, reward_epi, world_name, window_size, radius_xy, radius_z, train_or_test, roll_out):
+    render_ratio = int(yaml_p['unit_xy'] / yaml_p['unit_z'])
 
     size_x = character.size_x*render_ratio
+    size_y = character.size_y*render_ratio
     size_z = character.size_z
 
     # general setup
@@ -26,14 +28,14 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     clock = pygame.time.Clock()
 
     # setting up the main window
-    res = 4 #int(100/size_z)
+    res = 1.5 #int(100/size_z)
     screen_width = int(3*size_z*res)
-    screen_height = int(size_z*res)
+    screen_height = int((2*size_z)*res + screen_width)
     screen = pygame.display.set_mode((screen_width, screen_height))
 
     c_background = (34,42,53)
     screen.fill(c_background)
-    pygame.display.set_caption('balloon2d')
+    pygame.display.set_caption('balloon3d')
 
     # handling input
     for event in pygame.event.get():
@@ -43,54 +45,64 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
 
     # read in wind_map
     world = torch.load(yaml_p['data_path'] + train_or_test + '/tensor/' + world_name + '.pt')
+    """
+    world = torch.load('render/world_squished.pt')
+    """
 
     # generate the three windows
     visualize_world(world, character.position, character.ceiling)
 
-    for dim in ['xz']:
-        display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_z, render_ratio, window_size, radius_x, radius_z, res, character, roll_out)
+    for dim in ['xy', 'xz', 'yz']:
+        display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_y, size_z, render_ratio, window_size, radius_xy, radius_z, res, character, roll_out)
 
     # text
     myfont = pygame.font.SysFont('Arial', 10, bold=False)
 
     t_reward_step = myfont.render('reward_step: ' + '{:.3f}'.format(reward_step), False, pygame.Color('LightGray'))
     t_reward_epi = myfont.render('reward_epi: ' + '{:.3f}'.format(reward_epi), False, pygame.Color('LightGray'))
-    t_residual = myfont.render('residual: ' + str([round(num, 3) for num in character.state[0:2].tolist()]), False, pygame.Color('LightGray'))
-    t_velocity = myfont.render('velocity: ' + str([round(num, 3) for num in character.state[2:4].tolist()]), False, pygame.Color('LightGray'))
+    t_diameter = myfont.render('diameter: ' + str(np.round(character.diameter,2)), False, pygame.Color('LightGray'))
+    t_battery_level = myfont.render('battery_level: ' + str(np.round(character.battery_level,2)), False, pygame.Color('LightGray'))
+    t_residual = myfont.render('residual: ' + str([round(num, 3) for num in character.state[0:3].tolist()]), False, pygame.Color('LightGray'))
+    t_velocity = myfont.render('velocity: ' + str([round(num, 3) for num in character.state[3:6].tolist()]), False, pygame.Color('LightGray'))
 
-    if yaml_p['type'] == 'regular':
-        t_border_x = myfont.render('border_x: ' + '{:.3f}'.format(character.state[4]), False, pygame.Color('LightGray'))
-        t_border_z = myfont.render('border_z: ' + '{:.3f}'.format(character.state[5]), False, pygame.Color('LightGray'))
-        t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:8].tolist()]), False, pygame.Color('LightGray'))
-        t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[8:10].tolist()]), False, pygame.Color('LightGray'))
-        t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[10:].tolist()]), False, pygame.Color('LightGray'))
+    t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:10].tolist()]), False, pygame.Color('LightGray'))
+    t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[10:13].tolist()]), False, pygame.Color('LightGray'))
+    t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[13:].tolist()]), False, pygame.Color('LightGray'))
 
-    elif yaml_p['type'] == 'squished':
-        t_border_x = myfont.render(' ', False, pygame.Color('LightGray'))
-        t_border_z = myfont.render(' ', False, pygame.Color('LightGray'))
-        t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[4:7].tolist()]), False, pygame.Color('LightGray'))
-        t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[7:9].tolist()]), False, pygame.Color('LightGray'))
-        t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[9:].tolist()]), False, pygame.Color('LightGray'))
-
-    screen.blit(t_reward_step,(10,10))
-    screen.blit(t_reward_epi,(10,25))
-    screen.blit(t_residual,(10,55))
-    screen.blit(t_velocity,(10,70))
-    screen.blit(t_rel_pos,(10,85))
-    screen.blit(t_measurement,(10,105))
-    screen.blit(t_world_compressed,(10,120))
+    start_text = 2*size_z*res
+    space_text = 15
+    screen.blit(t_reward_step,(space_text,start_text+1*space_text))
+    screen.blit(t_reward_epi,(space_text,start_text+2*space_text))
+    screen.blit(t_diameter,(space_text,start_text+3*space_text))
+    screen.blit(t_battery_level,(space_text,start_text+4*space_text))
+    screen.blit(t_residual,(space_text,start_text+6*space_text))
+    screen.blit(t_velocity,(space_text,start_text+7*space_text))
+    screen.blit(t_rel_pos,(space_text,start_text+8*space_text))
+    screen.blit(t_measurement,(space_text,start_text+9*space_text))
+    screen.blit(t_world_compressed,(space_text,start_text+10*space_text))
 
     # updating the window
     pygame.display.flip()
-    clock.tick(5) #cycles per second
+    clock.tick(1) #cycles per second
 
-def display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_z, render_ratio, window_size, radius_x, radius_z, res, character, roll_out):
-    size_y = 0
-
+def display_movement(dim, screen, screen_width, screen_height, c_background, size_x, size_y, size_z, render_ratio, window_size, radius_xy, radius_z, res, character, roll_out):
     if dim == 'xz':
         i1 = 0
-        i2 = 1
+        i2 = 2
         size_1 = size_x
+        size_2 = size_z
+        dist_to_top = size_z
+        dist_to_bottom = 2*size_z
+        position_1 = character.position[i1]*render_ratio
+        position_2 = character.position[i2]
+        target_1 = character.target[i1]*render_ratio
+        target_2 = character.target[i2]
+        ceiling = character.ceiling
+
+    if dim == 'yz':
+        i1 = 1
+        i2 = 2
+        size_1 = size_y
         size_2 = size_z
         dist_to_top = 0
         dist_to_bottom = size_z
@@ -99,6 +111,18 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         target_1 = character.target[i1]*render_ratio
         target_2 = character.target[i2]
         ceiling = character.ceiling
+
+    if dim == 'xy':
+        i1 = 0
+        i2 = 1
+        size_1 = size_x
+        size_2 = size_y
+        dist_to_top = 2*size_z
+        dist_to_bottom = screen_height/res
+        position_1 = character.position[i1]*render_ratio
+        position_2 = character.position[i2]*render_ratio
+        target_1 = character.target[i1]*render_ratio
+        target_2 = character.target[i2]*render_ratio
 
     window_size = window_size*render_ratio
 
@@ -186,7 +210,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
                 path_roll_out.append(((i[i1]*render_ratio+offset_1)*res, (dist_to_bottom-i[i2]*render_ratio-offset_2)*res))
 
     # write balloon
-    size_balloon = 2*res
+    size_balloon = 4*res
     if dim != 'xy':
         pos_balloon = [(position_1 + offset_1)*res, (dist_to_bottom - position_2)*res]
     else:
@@ -194,7 +218,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
     rec_balloon = pygame.Rect(pos_balloon[0] - size_balloon/2, pos_balloon[1] - size_balloon/2, size_balloon, size_balloon)
 
     # write target
-    size_target = 2*res
+    size_target = 4*res
     if dim != 'xy':
         pos_target = [(target_1 + offset_1)*res, (dist_to_bottom - target_2)*res]
     else:
@@ -209,36 +233,21 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         pygame.draw.lines(screen, c_path, False, path, 1)
 
     # balloon
-    if yaml_p['type'] == 'regular':
-        if yaml_p['continuous']:
-            cv = 100
-            colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
-            action = np.sign(character.action-1)*(abs(character.action - 1)**0.5 + 1)/2 #rescale the color map to make change more visible
-            color = colors[int(action*cv)]*255
-            pygame.draw.ellipse(screen, color, rec_balloon)
-        else:
-            if character.action == 2:
-                pygame.draw.ellipse(screen, c_up, rec_balloon)
-            if character.action == 1:
-                pygame.draw.ellipse(screen, c_stay, rec_balloon)
-            if character.action == 0:
-                pygame.draw.ellipse(screen, c_down, rec_balloon)
-    elif yaml_p['type'] == 'squished':
-        cv = 100
-        colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
-        action = character.action
-        color = colors[int(action*cv)]*255
-        pygame.draw.ellipse(screen, color, rec_balloon)
+    cv = 100
+    colors = pl.cm.BrBG(np.linspace(0,1,cv+1))
+    action = character.action
+    color = colors[int(action*cv)]*255
+    pygame.draw.ellipse(screen, color, rec_balloon)
 
     # draw target (dense and transparent)
     pygame.draw.ellipse(screen, c_target_center, rec_target)
 
     if dim != 'xy':
-        r_1 = radius_x*res
+        r_1 = radius_xy*res
         r_2 = radius_z*res
     else:
-        r_1 = radius_x*res
-        r_2 = radius_x*res
+        r_1 = radius_xy*res
+        r_2 = radius_xy*res
 
     target_rect = pygame.Rect((pos_target), (0, 0)).inflate((r_1*2, r_2*2))
     shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)

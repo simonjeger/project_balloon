@@ -35,21 +35,12 @@ class HAE():
         self.window_size_total = 2*self.window_size + 1
         self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
-        if yaml_p['type'] == 'regular':
-            if yaml_p['autoencoder'] == 'HAE_avg':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*2 #because wind in x and y direction
-            elif yaml_p['autoencoder'] == 'HAE_ext':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*2*self.window_size_total**2
-            else:
-                print('ERROR: please choose one of the available HAE')
-
-        elif yaml_p['type'] == 'squished':
-            if yaml_p['autoencoder'] == 'HAE_avg':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*2 #because we mainly look at wind in x direction
-            elif yaml_p['autoencoder'] == 'HAE_ext':
-                self.bottleneck_wind = int(self.size_z/self.box_size)*2*self.window_size_total**2
-            else:
-                print('ERROR: please choose one of the available HAE')
+        if yaml_p['autoencoder'] == 'HAE_avg':
+            self.bottleneck_wind = int(self.size_z/self.box_size)*2 #because we mainly look at wind in x direction
+        elif yaml_p['autoencoder'] == 'HAE_ext':
+            self.bottleneck_wind = int(self.size_z/self.box_size)*2*self.window_size_total**2
+        else:
+            print('ERROR: please choose one of the available HAE')
 
         self.bottleneck = self.bottleneck_wind
 
@@ -102,19 +93,11 @@ class HAE():
         return window
 
     def compress(self, data, position, ceiling):
-        if yaml_p['type'] == 'regular':
-            window = self.window(data, position)
-            if yaml_p['autoencoder'] == 'HAE_avg':
-                wind = self.compress_wind_avg(window,position)
-            elif yaml_p['autoencoder'] == 'HAE_ext':
-                wind = self.compress_wind_ext(window, position)
-
-        elif yaml_p['type'] == 'squished':
-            window = self.window_squished(data, position, ceiling)
-            if yaml_p['autoencoder'] == 'HAE_avg':
-                wind = self.compress_wind_avg_squished(window, position, ceiling)
-            elif yaml_p['autoencoder'] == 'HAE_ext':
-                wind = self.compress_wind_ext_squished(window, position, ceiling)
+        window = self.window_squished(data, position, ceiling)
+        if yaml_p['autoencoder'] == 'HAE_avg':
+            wind = self.compress_wind_avg_squished(window, position, ceiling)
+        elif yaml_p['autoencoder'] == 'HAE_ext':
+            wind = self.compress_wind_ext_squished(window, position, ceiling)
         return wind
 
     def compress_wind_avg(self, data, position):
