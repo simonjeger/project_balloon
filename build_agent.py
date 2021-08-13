@@ -13,8 +13,6 @@ from scipy.ndimage import gaussian_filter
 import warnings
 warnings.simplefilter("ignore", UserWarning) #UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate warnings.warn("Detected call of `lr_scheduler.step()` before `optimizer.step()`. "
 
-from lowlevel_controller import ll_pd
-
 import yaml
 import argparse
 
@@ -195,7 +193,7 @@ class Agent:
                     n_action = 0
                     round += 1
 
-        # write down path and set target (avoid loops with else)
+        # write down path and set target
         lower = max(lowest,int(curr*len(self.env.character.path)))
         upper = max(lowest+1,int((curr+curr_window-0.1)*len(self.env.character.path)),int(curr*len(self.env.character.path)) + 1)
         upper = min(upper,len(self.env.character.path)-1)
@@ -263,7 +261,6 @@ class Agent:
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
-        print('weights loaded')
 
     def act_simple(self, character):
         pos_x = int(np.clip(character.position[0],0,self.env.size_x-1))

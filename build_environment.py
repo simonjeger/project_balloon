@@ -190,7 +190,7 @@ class balloon3d(Env):
         pos_x = int(np.clip(self.character.position[0],0,self.size_x - 1))
         pos_y = int(np.clip(self.character.position[1],0,self.size_y - 1))
         if (self.character.ceiling - self.world[0,pos_x,pos_y,0] < min_space) | (np.mean(self.character.ceiling - self.world[0,:,:,0]) < min_space):
-            self.reset()
+            self.reset(roll_out=roll_out)
 
         self.reward_list = []
         self.prev_int = [-1,-1]

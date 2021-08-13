@@ -6,7 +6,7 @@ import copy
 from scipy.ndimage import gaussian_filter
 
 from preprocess_wind import squish
-from lowlevel_controller import ll_pd
+from build_ll_controller import ll_controler
 
 import yaml
 import argparse
@@ -32,32 +32,27 @@ class character():
         self.start = start.astype(float)
         self.target = target.astype(float)
 
+        self.ll_controler = ll_controler()
+
         if yaml_p['balloon'] == 'outdoor_balloon':
-            self.mass_structure = 2.5 #kg
-            self.delta_volume = 0.012 #m^3
-            self.pump_volume = 0.000083 #m^3
-            self.pump_consumption = 5 #W
-            self.valve_consumption = 2.5 #W
+            self.mass_structure = 2 #kg
+            self.delta_f = 2 #N
+            self.ascent_consumption = 2.5 #5 #W
+            self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W
             self.battery_capacity = 13187 #Ws
-            self.pressure_tank = 200000 #Pa
-            self.l_in = 0.1 #m
-            self.r_in = 0.00635 #m
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 1.2 #kg
-            self.delta_volume = 0.006 #m^3
-            self.pump_volume = 0.000083 #m^3
-            self.pump_consumption = 5 #W
-            self.valve_consumption = 2.5 #W
+            self.delta_f = 0.01 #N
+            self.ascent_consumption = 5 #W
+            self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W
             self.battery_capacity = 1798 #Ws
-            self.pressure_tank = 200000 #Pa
-            self.l_in = 0.1 #m
-            self.r_in = 0.00635 #m
+        else:
+            print('ERROR: please choose one of the available balloons')
 
         self.t = T
         self.battery_level = 1
-        self.delta_v_prev = 0
         self.action = 1
         self.diameter = 0
 
@@ -142,7 +137,7 @@ class character():
             dist_top = self.dist_to_ceiling()
             rel_pos = dist_bottom / (dist_top + dist_bottom)
             velocity = self.velocity[2]
-            u = ll_pd(self.action,rel_pos,velocity)
+            u = self.ll_controler.pd(self.action,rel_pos,velocity)
 
             #update physics model
             self.adapt_volume(u)
@@ -152,7 +147,7 @@ class character():
             p_y = (self.path[-1][1] - self.path[-2][1])/self.delta_tn
             p_z = (self.path[-1][2] - self.path[-2][2])/self.delta_tn
 
-            b = self.volume_to_force(self.delta_v)/yaml_p['unit_z']/self.mass_total
+            b = self.net_force(u)/yaml_p['unit_z']**2/self.mass_total
             self.U += abs(u)/self.n
 
             coord = [int(i) for i in np.floor(self.position)]
@@ -165,9 +160,11 @@ class character():
                 y = np.arange(0,self.size_y,1)
                 z = np.arange(0,self.size_z,1)
 
+                """
                 w_x += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
                 w_y += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
                 w_z += gauss(0,sig_xz/np.sqrt(self.n))
+                """
 
                 v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*self.delta_tn + p_x
                 v_y = (np.sign(w_y - p_y) * (w_y - p_y)**2 * c + 0)*self.delta_tn + p_y
@@ -196,13 +193,6 @@ class character():
         #general properties
         self.c_w = 0.45
 
-        # density
-        rho_air_init = 1.225 #kg/m^3
-        rho_gas_init = 0.1785 #kg/m^3
-        slope_gas = -0.00001052333 #linear interpolation between 0 and 30000m for air, assumption: it's the same for the lifting gas (https://www.engineeringtoolbox.com/standard-atmosphere-d_604.html)
-        self.rho_air = rho_air_init + self.position[2]*yaml_p['unit_z']*slope_gas #kg/m^3
-        self.rho_gas = rho_gas_init + self.position[2]*yaml_p['unit_z']*slope_gas #kg/m^3
-
         # pressure
         pressure_init = 101300 #Pa
         slope_pressure = -0.00010393333
@@ -218,21 +208,22 @@ class character():
         slope_vis = 0.0045
         vis = vis_init + temp*slope_vis #Pa s
 
-        # gas flow
-        gas_flow_in = (np.pi*self.r_in**4*(self.pressure_tank - pressure))/(8*vis*self.l_in) #m^3/s
-        gas_flow_out = self.pump_volume #m^3/s
+        # density
+        rho_air_init = 1.225 #kg/m^3
+        rho_gas_init = 0.1785 #kg/m^3
+        self.rho_air = rho_air_init*temp_init/temp*pressure_init/pressure
+        self.rho_gas = rho_gas_init*temp_init/temp*pressure_init/pressure
 
-        self.delta_v = self.delta_v_prev + yaml_p['delta_t']*(max(u,0)*gas_flow_in + min(u,0)*gas_flow_out)
-        self.delta_v = np.clip(self.delta_v,-self.delta_volume, self.delta_volume)
-        self.battery_level -= (self.rest_consumption*self.delta_tn + abs(min(self.delta_v - self.delta_v_prev,0))*self.pump_consumption*self.delta_tn + max(self.delta_v - self.delta_v_prev,0)*self.valve_consumption*self.delta_tn)/self.battery_capacity
-        self.delta_v_prev = self.delta_v
+        self.battery_level -= (self.rest_consumption*self.delta_tn + abs(min(u,0))*self.descent_consumption*self.delta_tn + max(u,0)*self.ascent_consumption*self.delta_tn)/self.battery_capacity
 
-        volume = self.mass_structure/(self.rho_air - self.rho_gas) + self.delta_v #m^3
-        self.diameter = 2*(volume*3/(4*np.pi))**(1/3) #m
+        # volume
+        volume_init = self.mass_structure/(rho_air_init - rho_gas_init) #m^3
+        self.volume = pressure_init*volume_init/temp_init*temp/pressure #m^3
+        self.diameter = 2*(self.volume*3/(4*np.pi))**(1/3) #m
         self.area = (self.diameter/2)**2*np.pi #m^2
-        self.mass_total = self.mass_structure + volume*self.rho_gas #kg
+        self.mass_total = self.mass_structure + volume_init*rho_gas_init #kg
 
-        #print('Specs of ' + yaml_p['balloon'] + ': volume = ' + str(np.round(volume,2)) + 'm^3, self.diameter = ' + str(np.round(self.diameter,2)) + 'm, force = ' + str(np.round(self.volume_to_force(self.delta_v),5)) + 'N, total_mass = ' + str(np.round(self.mass_total,2)) + 'kg, delta_volume = ' + str(np.round(self.delta_v,5)) + 'm^3, velocity = ' + str(np.round(self.velocity[2]*yaml_p['unit_z'],2)) + 'm/s')
+        #print('Specs of ' + yaml_p['balloon'] + ': volume = ' + str(np.round(self.volume,2)) + 'm^3, self.diameter = ' + str(np.round(self.diameter,2)) + 'm, force = ' + str(np.round(self.volume_to_force(self.delta_v),5)) + 'N, total_mass = ' + str(np.round(self.mass_total,2)) + 'kg, delta_volume = ' + str(np.round(self.delta_v,5)) + 'm^3, velocity = ' + str(np.round(self.velocity[2]*yaml_p['unit_z'],2)) + 'm/s')
 
         global max_speed
         global min_speed
@@ -241,12 +232,13 @@ class character():
         if min_speed > self.velocity[2]:
             min_speed = self.velocity[2]
 
-        print('min: ' + str(min_speed*yaml_p['unit_z']))
-        print('max: ' + str(max_speed*yaml_p['unit_z']))
+        #print('min: ' + str(min_speed*yaml_p['unit_z']))
+        #print('max: ' + str(max_speed*yaml_p['unit_z']))
 
-    def volume_to_force(self, delta_v):
-        f = delta_v*(self.rho_air - self.rho_gas)*9.81
-        return f
+    def net_force(self,u):
+        f_balloon = (self.volume*(self.rho_air-self.rho_gas) - self.mass_structure)*9.81
+        f_net = f_balloon + self.delta_f*u
+        return f_net
 
     def height_above_ground(self):
         return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]

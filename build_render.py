@@ -209,6 +209,22 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
             for i in roll_out:
                 path_roll_out.append(((i[i1]*render_ratio+offset_1)*res, (dist_to_bottom-i[i2]*render_ratio-offset_2)*res))
 
+    # draw action line
+    if dim == 'xz':
+        pos_y = int(np.clip(character.position[1],0,character.size_y-1))
+        action = (ceiling - character.world[0,:,pos_y,0])*character.action + character.world[0,:,pos_y,0]
+
+    if dim == 'yz':
+        pos_x = int(np.clip(character.position[0],0,character.size_x-1))
+        action = (ceiling - character.world[0,pos_x,:,0])*character.action + character.world[0,pos_x,:,0]
+
+    if dim != 'xy':
+        array_2 = np.arange(0,size_1,1)
+        line_action = []
+        for i in range(len(action)):
+            line_action.append(((array_2[i]*render_ratio + offset_1)*res, (dist_to_bottom-action[i])*res))
+        pygame.draw.lines(screen, 'red', False, line_action, 1)
+
     # write balloon
     size_balloon = 4*res
     if dim != 'xy':
