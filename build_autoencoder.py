@@ -11,6 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
 import seaborn as sns
+import warnings
 
 from utils.import_data import custom_data, wind_data
 from  visualize_world import visualize_world
@@ -283,7 +284,6 @@ class VAE(nn.Module):
         print('====> Test set loss: {:.4f}'.format(test_loss))
 
     def model_test_HAE_avg(self, epoch):
-        import warnings
         self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
         # toggle model to test / inference mode

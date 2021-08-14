@@ -228,11 +228,16 @@ def write_overview():
     success_n = np.array(df['success_n'].dropna())
     success_rate = success_n[-1]/yaml_p['num_epochs_test']
 
+    # success_n
+    reachability_study = np.array(df['reachability_study'].dropna())
+    reachability_rate = np.mean(reachability_study)
+
     # write down
     df_reward = pd.DataFrame(dic_copy)
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_norm_mean', mean_norm, True)
+    df_reward.insert(len(df_reward.columns),'reachability_rate', reachability_rate, True)
     df_reward.insert(len(df_reward.columns),'linreg_slope', slope, True)
     df_reward.insert(len(df_reward.columns),'linreg_intercept', slope, True)
     df_reward.insert(len(df_reward.columns),'linreg_score', score, True)
@@ -356,10 +361,7 @@ def clear(train_or_test):
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)
 
-    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/log_qmap')
+    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study')
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)
-
-    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp_w')
-    if dirpath.exists() and dirpath.is_dir():
-        shutil.rmtree(dirpath, ignore_errors=True)
+        os.mkdir(dirpath) #recreate the folder I just deleted

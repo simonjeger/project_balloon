@@ -66,6 +66,8 @@ class balloon3d(Env):
         self.reward_roll_out = None
         self.reward_list = []
 
+        self.path_reachability = []
+
     def step(self, action, roll_out=False):
         # Update compressed wind map
         if self.prev_int != [int(self.character.position[0]), int(self.character.position[1])]:

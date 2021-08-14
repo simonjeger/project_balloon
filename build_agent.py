@@ -9,9 +9,9 @@ from pathlib import Path
 import shutil
 from distutils.dir_util import copy_tree
 from scipy.ndimage import gaussian_filter
-
-import warnings
-warnings.simplefilter("ignore", UserWarning) #UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate warnings.warn("Detected call of `lr_scheduler.step()` before `optimizer.step()`. "
+import alphashape
+import matplotlib.pyplot as plt
+from descartes import PolygonPatch
 
 import yaml
 import argparse
@@ -202,13 +202,58 @@ class Agent:
         self.env.path_roll_out = self.env.character.path[0:idx]
         target = self.env.character.path[idx]
 
+        # write down path for reachability study
+        self.env.path_reachability.append([self.env.character.path])
+
         self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
         self.env.reset(roll_out=True)
         self.env.character.target = target
 
+    def reachability_study(self):
+        fig, ax = plt.subplots()
+        ax.scatter(0,0,color='white')
+        ax.scatter(self.env.size_x,self.env.size_y,color='white')
+
+        x_global = []
+        y_global = []
+
+        for i in range(yaml_p['reachability_study']):
+            self.set_reachable_target()
+            x = []
+            y = []
+
+            for j in range(len(self.env.path_reachability[-1][-1])):
+                x_j = self.env.path_reachability[-1][-1][j][0]
+                y_j = self.env.path_reachability[-1][-1][j][1]
+
+                x.append(x_j)
+                y.append(y_j)
+                x_global.append(x_j)
+                y_global.append(y_j)
+
+            ax.plot(x,y)
+
+        points = list(zip(x_global,y_global))
+
+        # Generate the alpha shape
+        alpha = 0.2
+        alpha_shape = alphashape.alphashape(points, alpha)
+
+        # Plot alpha shape
+        ax.add_patch(PolygonPatch(alpha_shape, alpha=.2))
+        ax.set_title(str(np.round(alpha_shape.area/(self.env.size_x*self.env.size_y)*100,2)) + '% reachable')
+        plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '.png')
+        plt.close()
+
+        if self.writer is not None:
+            self.writer.add_scalar('reachability_study', alpha_shape.area/(self.env.size_x*self.env.size_y) , self.step_n-1) # because we do above self.step_n += 1
+
     def run_epoch(self,importance=None):
         obs = self.env.reset()
         sum_r = 0
+
+        if yaml_p['reachability_study']:
+            self.reachability_study()
 
         if yaml_p['set_reachable_target']: #reset target to something reachable if that flag is set
             self.set_reachable_target()
