@@ -36,7 +36,7 @@ class character():
 
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 2 #kg
-            self.delta_f = 2 #N
+            self.delta_f = yaml_p['delta_f'] #N
             self.ascent_consumption = 2.5 #5 #W
             self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W

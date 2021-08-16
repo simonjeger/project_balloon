@@ -149,7 +149,13 @@ class Agent:
             self.reachability_study()
 
         if yaml_p['set_reachable_target']: #reset target to something reachable if that flag is set
-            self.set_reachable_target()
+            if yaml_p['set_reachable_target_type'] == 'uniform':
+                self.set_reachable_target_uniform()
+            if yaml_p['set_reachable_target_type'] == 'controlled':
+                self.set_reachable_target_controlled()
+            if yaml_p['set_reachable_target_type'] == 'complex':
+                self.set_reachable_target_complex()
+            #self.set_reachable_target()
 
         if importance is not None:
             self.env.character.importance = importance
@@ -194,7 +200,104 @@ class Agent:
 
         return sum_r
 
-    def set_reachable_target(self):
+    def set_reachable_target_uniform(self):
+        round = 0
+        action = np.random.uniform(0.1,0.9)
+
+        while True:
+            self.env.character.target = [-10,-10,-10] #set target outside map
+
+            if self.train_or_test == 'test':
+                self.seed += 1
+                np.random.seed(self.seed)
+
+            if np.random.uniform() < 0.001*yaml_p['delta_t']:
+                action = np.random.uniform(0.1,0.9)
+
+            _, _, done, _ = self.env.step(action, roll_out=True)
+            sucess = False
+            if done:
+                break
+
+        # write down path and set target
+        idx = np.random.randint(0, len(self.env.character.path)-1)
+        coord_x = []
+        coord_y = []
+        for i in range(len(self.env.character.path)):
+            coord_x.append(self.env.character.path[i][0])
+            coord_y.append(self.env.character.path[i][1])
+        idx_x = np.random.uniform(min(coord_x),max(coord_x))
+        idx_y = np.random.uniform(min(coord_x),max(coord_y))
+        closest = np.argmin(np.sqrt(np.subtract(coord_x,idx_x)**2 + np.subtract(coord_y,idx_y)**2))
+
+        self.env.path_roll_out = self.env.character.path[0:closest]
+        target = self.env.character.path[idx]
+
+        # write down path for reachability study
+        self.env.path_reachability.append([self.env.character.path])
+
+        self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
+        self.env.reset(roll_out=True)
+        self.env.character.target = target
+
+    def set_reachable_target_controlled(self):
+        if self.train_or_test == 'test':
+            np.random.seed(self.seed)
+            self.seed += 1
+
+        round = 0
+        action = np.random.uniform(0.1,0.9)
+        set_action = 1
+        n_action = 0
+        ndtsu = 0 #normalized_distance_travelled_since_update
+
+        while True:
+            self.env.character.target = [-10,-10,-10] #set target outside map
+
+            if self.train_or_test == 'test':
+                self.seed += 1
+                np.random.seed(self.seed)
+
+            ndtsu += np.sqrt(self.env.character.velocity[0]**2 + self.env.character.velocity[1]**2)*yaml_p['delta_t'] / np.sqrt(self.env.size_x**2 + self.env.size_y**2)
+            if np.random.uniform() < 2*ndtsu:
+                dtsu = 0
+                rand = np.random.uniform(0.1,0.9)
+                while abs(action - rand) < 0.35:
+                    self.seed += 1
+                    np.random.seed(self.seed)
+                    rand = np.random.uniform(0.1,0.9)
+                action = rand
+                set_action -= 1
+                if set_action >= 0:
+                    n_action = len(self.env.character.path)
+
+            _, _, done, _ = self.env.step(action, roll_out=True)
+
+            sucess = False
+            lowest = n_action + 50
+            if done & (n_action > 0) & (lowest < len(self.env.character.path)):
+                break
+            elif done:
+                if round >= 10:
+                    break
+                else:
+                    self.env.reset(roll_out=True)
+                    n_action = 0
+                    round += 1
+
+        # write down path and set target
+        idx = np.random.randint(0, len(self.env.character.path)-1)
+        self.env.path_roll_out = self.env.character.path[0:idx]
+        target = self.env.character.path[idx]
+
+        # write down path for reachability study
+        self.env.path_reachability.append([self.env.character.path])
+
+        self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
+        self.env.reset(roll_out=True)
+        self.env.character.target = target
+
+    def set_reachable_target_complex(self):
         curr_start = 0.35
         curr_window = 0.1
         curr_end = 1 - curr_window
@@ -272,7 +375,14 @@ class Agent:
         y_global = []
 
         for i in range(yaml_p['reachability_study']):
-            self.set_reachable_target()
+            if yaml_p['set_reachable_target_type'] == 'uniform':
+                self.set_reachable_target_uniform()
+            if yaml_p['set_reachable_target_type'] == 'controlled':
+                self.set_reachable_target_controlled()
+            if yaml_p['set_reachable_target_type'] == 'complex':
+                self.set_reachable_target_complex()
+
+            #self.set_reachable_target()
             x = []
             y = []
 
