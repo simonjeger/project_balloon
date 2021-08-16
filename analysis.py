@@ -365,3 +365,8 @@ def clear(train_or_test):
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)
         os.mkdir(dirpath) #recreate the folder I just deleted
+
+    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test')
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath, ignore_errors=True)
+        os.mkdir(dirpath) #recreate the folder I just deleted

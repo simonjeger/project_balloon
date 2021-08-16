@@ -72,7 +72,3 @@ step_n = env.step_n
 
 plot_reward()
 plot_path()
-
-# Need to clear out for log files during testing
-if yaml_p['clear'] & (not yaml_p['reuse_weights']):
-    clear('train')

@@ -35,6 +35,7 @@ class balloon3d(Env):
         self.radius_z = yaml_p['radius_z']
 
         # initialize state and time
+        self.success = False
         self.success_n = 0
         self.epi_n = epi_n
         self.step_n = step_n
@@ -131,6 +132,7 @@ class balloon3d(Env):
             # calculate reward
             if self.character.min_proj_dist <= 1:
                 self.reward_step = yaml_p['hit']
+                self.success = True
                 self.success_n += 1
                 done = True
             else:
@@ -139,11 +141,13 @@ class balloon3d(Env):
 
             if self.character.t <= 0:
                 self.reward_step = yaml_p['overtime'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min * yaml_p['min_proj_dist']
+                self.success = False
                 done = True
 
         else:
             self.reward_step = yaml_p['bounds'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min * yaml_p['min_proj_dist']
             self.character.t = 0
+            self.success = False
             done = True
 
         self.reward_epi += self.reward_step
@@ -166,7 +170,7 @@ class balloon3d(Env):
             start = self.set_start()
         else:
             start = self.character.path[0]
-        target = self.set_target(start)
+        self.set_target(start)
 
         # if started "under ground"
         above_ground_start = self.size_z/100
@@ -179,13 +183,13 @@ class balloon3d(Env):
         if start[2] <= f(start[0], start[1])[0] + above_ground_start:
             start[2] = f(start[0], start[1])[0] + above_ground_start
 
-        if target[2] <= f(target[0], target[1])[0] + above_ground_target:
-            target[2] = f(target[0], target[1])[0] + above_ground_target
+        if self.target[2] <= f(self.target[0], self.target[1])[0] + above_ground_target:
+            self.target[2] = f(self.target[0], self.target[1])[0] + above_ground_target
 
         # Initial compressed wind map
         self.world_compressed = self.ae.compress(self.world, start, self.size_z)
 
-        self.character = character(self.size_x, self.size_y, self.size_z, start, target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
+        self.character = character(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
 
         # avoid impossible szenarios
         min_space = self.size_z*yaml_p['min_space']
@@ -257,14 +261,12 @@ class balloon3d(Env):
             yaml_target = yaml_p['target_test']
 
         if yaml_target == 'random':
-            target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+            self.target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_target == 'random_low':
-            target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
+            self.target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
         elif yaml_target == 'right':
-            target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),border_y + random.random()*(self.size_y - 2*border_y),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+            self.target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),border_y + random.random()*(self.size_y - 2*border_y),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_target == 'right_low':
-            target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
+            self.target = np.array([start[0] + random.random()*(self.size_x - start[0] - border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
         else:
-            target = np.array(yaml_target, dtype=float)
-
-        return target
+            self.target = np.array(yaml_target, dtype=float)

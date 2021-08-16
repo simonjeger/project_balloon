@@ -21,6 +21,7 @@ with open(args.yaml_file, 'rt') as fh:
 Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5)).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_agent').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/reachability_study').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/map_test').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train/image').mkdir(parents=True, exist_ok=True)

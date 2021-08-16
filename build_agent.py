@@ -12,6 +12,7 @@ from scipy.ndimage import gaussian_filter
 import alphashape
 import matplotlib.pyplot as plt
 from descartes import PolygonPatch
+import pickle
 
 import yaml
 import argparse
@@ -140,6 +141,59 @@ class Agent:
         self.step_n = step_n
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
 
+    def run_epoch(self,importance=None):
+        obs = self.env.reset()
+        sum_r = 0
+
+        if yaml_p['reachability_study']:
+            self.reachability_study()
+
+        if yaml_p['set_reachable_target']: #reset target to something reachable if that flag is set
+            self.set_reachable_target()
+
+        if importance is not None:
+            self.env.character.importance = importance
+
+        while True:
+            if yaml_p['render']:
+                self.env.render(mode=True)
+
+            if yaml_p['rl']:
+                action = self.agent.act(obs) #uses self.agent.model to decide next step
+                action = (action[0]+1)/2
+
+                obs, reward, done, _ = self.env.step(action)
+                sum_r = sum_r + reward
+                self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
+
+            else:
+                action = self.act_simple(self.env.character) #only works with type = "squished"
+                obs, reward, done, _ = self.env.step(action)
+                sum_r = sum_r + reward
+
+            self.step_n += 1
+            self.scheduler_policy.step()
+            self.scheduler_qfunc.step()
+
+            if done:
+                if yaml_p['render']:
+                    self.env.render(mode=True)
+
+                # logger
+                if self.writer is not None:
+                    self.writer.add_scalar('epsilon', 0 , self.step_n-1) # because we do above self.step_n += 1
+                    self.writer.add_scalar('loss_qfunction', 0, self.step_n-1)
+                    self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n-1)
+                    self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n-1)
+
+                self.epi_n += 1
+                break
+
+        # mark in reachability_study if this was a success or not
+        self.map_test()
+
+        return sum_r
+
     def set_reachable_target(self):
         curr_start = 0.35
         curr_window = 0.1
@@ -203,7 +257,7 @@ class Agent:
         target = self.env.character.path[idx]
 
         # write down path for reachability study
-        self.env.path_reachability.append([self.env.character.path])
+        self.env.path_reachability.append([self.env.character.path[lower:upper]])
 
         self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
         self.env.reset(roll_out=True)
@@ -231,7 +285,7 @@ class Agent:
                 x_global.append(x_j)
                 y_global.append(y_j)
 
-            ax.plot(x,y)
+            ax.plot(x,y,color='grey')
 
         points = list(zip(x_global,y_global))
 
@@ -242,60 +296,35 @@ class Agent:
         # Plot alpha shape
         ax.add_patch(PolygonPatch(alpha_shape, alpha=.2))
         ax.set_title(str(np.round(alpha_shape.area/(self.env.size_x*self.env.size_y)*100,2)) + '% reachable')
+        ax.set_aspect('equal')
         plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '.png')
+
+        # Save pickled version for later edits
+        with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.pkl','wb') as fid:
+            pickle.dump(ax, fid)
+
         plt.close()
 
         if self.writer is not None:
             self.writer.add_scalar('reachability_study', alpha_shape.area/(self.env.size_x*self.env.size_y) , self.step_n-1) # because we do above self.step_n += 1
 
-    def run_epoch(self,importance=None):
-        obs = self.env.reset()
-        sum_r = 0
+    def map_test(self):
+        with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.pkl','rb') as fid:
+            ax = pickle.load(fid)
 
-        if yaml_p['reachability_study']:
-            self.reachability_study()
+        if self.env.success:
+            color = 'green'
+        else:
+            color = 'red'
 
-        if yaml_p['set_reachable_target']: #reset target to something reachable if that flag is set
-            self.set_reachable_target()
+        circle = plt.Circle((self.env.character.target[0], self.env.character.target[1]),yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy'], color=color, fill=False, zorder=np.inf) #always plot on top
+        ax.add_patch(circle)
+        plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.png')
 
-        if importance is not None:
-            self.env.character.importance = importance
-
-        while True:
-            if yaml_p['render']:
-                self.env.render(mode=True)
-
-            if yaml_p['rl']:
-                action = self.agent.act(obs) #uses self.agent.model to decide next step
-                action = (action[0]+1)/2
-
-                obs, reward, done, _ = self.env.step(action)
-                sum_r = sum_r + reward
-                self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
-
-            else:
-                action = self.act_simple(self.env.character) #only works with type = "squished"
-                obs, reward, done, _ = self.env.step(action)
-                sum_r = sum_r + reward
-
-            self.step_n += 1
-            self.scheduler_policy.step()
-            self.scheduler_qfunc.step()
-
-            if done:
-                if yaml_p['render']:
-                    self.env.render(mode=True)
-
-                # logger
-                if self.writer is not None:
-                    self.writer.add_scalar('epsilon', 0 , self.step_n-1) # because we do above self.step_n += 1
-                    self.writer.add_scalar('loss_qfunction', 0, self.step_n-1)
-                    self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n-1)
-                    self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n-1)
-
-                self.epi_n += 1
-                break
-        return sum_r
+        # Save pickled version for later edits
+        with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.pkl','wb') as fid:
+            pickle.dump(ax, fid)
+        plt.close()
 
     def weights_init(self, m):
         if isinstance(m, torch.nn.Linear):

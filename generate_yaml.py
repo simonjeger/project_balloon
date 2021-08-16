@@ -90,7 +90,6 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 15' + '\n'
     text = text + 'overview: True' + '\n'
-    text = text + 'clear: True' + '\n'
     text = text + 'render: False' + '\n'
 
     file.write(text)

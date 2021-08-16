@@ -37,7 +37,3 @@ with ag.agent.eval_mode():
 # analyse
 if yaml_p['overview']:
     write_overview()
-
-# Delete log files
-if yaml_p['clear']:
-    clear('test')

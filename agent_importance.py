@@ -57,5 +57,4 @@ plt.legend(['sucess', 'score'])
 plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/feature_importance.pdf')
 
 # Delete log files
-if yaml_p['clear']:
-    clear('test')
+clear('test')
