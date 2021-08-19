@@ -3,6 +3,10 @@ from human_autoencoder import HAE
 from build_autoencoder import VAE
 from build_character import character
 
+import sys
+sys.path.append('/Users/simonjeger/X-Plane 11/Resources/plugins/XPlaneConnect-1.3-rc6/Python3/src/')
+from build_character_xplane import character_xplane
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from gym import Env, logger
@@ -189,7 +193,10 @@ class balloon3d(Env):
         # Initial compressed wind map
         self.world_compressed = self.ae.compress(self.world, start, self.size_z)
 
-        self.character = character(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
+        if yaml_p['environment'] == 'python3':
+            self.character = character(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
+        elif yaml_p['environment'] == 'xplane':
+            self.character = character_xplane(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
 
         # avoid impossible szenarios
         min_space = self.size_z*yaml_p['min_space']

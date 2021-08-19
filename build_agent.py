@@ -145,7 +145,7 @@ class Agent:
         obs = self.env.reset()
         sum_r = 0
 
-        if yaml_p['reachability_study']:
+        if (yaml_p['reachability_study'] > 0) & (self.train_or_test == 'test'):
             self.reachability_study()
 
         if yaml_p['set_reachable_target']: #reset target to something reachable if that flag is set
@@ -195,8 +195,9 @@ class Agent:
                 self.epi_n += 1
                 break
 
-        # mark in reachability_study if this was a success or not
-        self.map_test()
+        # mark in map_test if this was a success or not
+        if (yaml_p['reachability_study'] > 0) & (self.train_or_test == 'test'):
+            self.map_test()
 
         return sum_r
 
@@ -220,17 +221,16 @@ class Agent:
                 break
 
         # write down path and set target
-        idx = np.random.randint(0, len(self.env.character.path)-1)
         coord_x = []
         coord_y = []
         for i in range(len(self.env.character.path)):
             coord_x.append(self.env.character.path[i][0])
             coord_y.append(self.env.character.path[i][1])
         idx_x = np.random.uniform(min(coord_x),max(coord_x))
-        idx_y = np.random.uniform(min(coord_x),max(coord_y))
-        closest = np.argmin(np.sqrt(np.subtract(coord_x,idx_x)**2 + np.subtract(coord_y,idx_y)**2))
+        idx_y = np.random.uniform(min(coord_y),max(coord_y))
+        idx = np.argmin(np.sqrt(np.subtract(coord_x,idx_x)**2 + np.subtract(coord_y,idx_y)**2))
 
-        self.env.path_roll_out = self.env.character.path[0:closest]
+        self.env.path_roll_out = self.env.character.path[0:idx]
         target = self.env.character.path[idx]
 
         # write down path for reachability study

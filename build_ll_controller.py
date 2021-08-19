@@ -17,3 +17,14 @@ class ll_controler():
         u = k_p*error + k_d*velocity + k_i*self.error_int
         u = np.clip(u,-1,1)
         return u
+
+    def bangbang(self, set, position):
+        error = set - position
+        tolerance = 0.005
+        if error > tolerance:
+            u = 1
+        elif error < -tolerance:
+            u = -1
+        else:
+            u = 0
+        return u

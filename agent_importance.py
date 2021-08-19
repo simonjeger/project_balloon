@@ -42,7 +42,7 @@ while True:
             else:
                 log = ag.run_epoch(importance=f-1)
             log_tot += log
-            print('analysis: ' + str(int((f+i/N)*100/(env.observation_space.shape[0]+1))) + '% epoch: ' + str(i) + ' reward: ' + str(log))
+            print('importance analysis: ' + str(int((f+i/N)*100/(env.observation_space.shape[0]+1))) + '% epoch: ' + str(i) + ' reward: ' + str(log))
         sucess.append(env.success_n/N)
         score.append(log_tot/N)
     f += 1

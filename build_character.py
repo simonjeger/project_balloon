@@ -62,7 +62,7 @@ class character():
         self.position = copy.copy(self.start)
         self.velocity = np.array([0,0,0])
 
-        self.n = int(yaml_p['delta_t']/6)
+        self.n = int(yaml_p['delta_t']*1/0.5) #physics every 1/x seconds
         self.delta_tn = yaml_p['delta_t']/self.n
 
         # interpolation for terrain
@@ -71,6 +71,7 @@ class character():
 
         self.f_terrain = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
 
+        self.seed = 0
         self.set_ceiling()
         self.world_squished = squish(self.world, self.ceiling)
 
@@ -89,21 +90,12 @@ class character():
         self.world_compressed = world_compressed
 
         not_done = self.move_particle(roll_out)
-        if self.height_above_ground() < 0: #check if crashed into terrain
-            not_done = False
-        if self.dist_to_ceiling() < 0: #check if crashed into ceiling
-            not_done = False
-        if self.battery_level < 0: #check if battery is empty
-            not_done = False
 
         # update state
         self.residual = self.target - self.position
         self.measurement = self.interpolate_wind(measurement=True)[0:3]
 
         self.set_state()
-
-        # reduce flight length by 1 second
-        self.t -= 1
 
         return not_done
 
@@ -132,12 +124,13 @@ class character():
 
     def move_particle(self, roll_out):
         self.U = 0
+        not_done = True
         for _ in range(self.n):
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
             rel_pos = dist_bottom / (dist_top + dist_bottom)
             velocity = self.velocity[2]
-            u = self.ll_controler.pd(self.action,rel_pos,velocity)
+            u = self.ll_controler.bangbang(self.action,rel_pos)
 
             #update physics model
             self.adapt_volume(u)
@@ -151,42 +144,59 @@ class character():
             self.U += abs(u)/self.n
 
             coord = [int(i) for i in np.floor(self.position)]
-            not_done = (0 <= self.position[0] < self.size_x) & (0 <= self.position[1] < self.size_y) & (0 <= self.position[2] < self.size_z) #if still within bounds
-            if not_done:
-                # calculate velocity at time step t
-                w_x, w_y, w_z, sig_xz = self.interpolate_wind()
 
-                x = np.arange(0,self.size_x,1)
-                y = np.arange(0,self.size_y,1)
-                z = np.arange(0,self.size_z,1)
+            # calculate velocity at time step t
+            w_x, w_y, w_z, sig_xz = self.interpolate_wind()
 
-                """
-                w_x += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
-                w_y += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
-                w_z += gauss(0,sig_xz/np.sqrt(self.n))
-                """
+            x = np.arange(0,self.size_x,1)
+            y = np.arange(0,self.size_y,1)
+            z = np.arange(0,self.size_z,1)
 
-                v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*self.delta_tn + p_x
-                v_y = (np.sign(w_y - p_y) * (w_y - p_y)**2 * c + 0)*self.delta_tn + p_y
-                v_z = (np.sign(w_z - p_z) * (w_z - p_z)**2 * c + b)*self.delta_tn + p_z
+            """
+            w_x += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
+            w_y += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
+            w_z += gauss(0,sig_xz/np.sqrt(self.n))
+            """
 
-                # update
-                self.position += [v_x*self.delta_tn, v_y*self.delta_tn, v_z*self.delta_tn]
-                p_x = v_x
-                p_y = v_y
-                p_z = v_z
+            v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*self.delta_tn + p_x
+            v_y = (np.sign(w_y - p_y) * (w_y - p_y)**2 * c + 0)*self.delta_tn + p_y
+            v_z = (np.sign(w_z - p_z) * (w_z - p_z)**2 * c + b)*self.delta_tn + p_z
 
-                # set velocity for state
-                self.velocity = np.array([v_x, v_y, v_z])
+            # update
+            self.position += [v_x*self.delta_tn, v_y*self.delta_tn, v_z*self.delta_tn]
+            p_x = v_x
+            p_y = v_y
+            p_z = v_z
 
-                # write down path in history
-                self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
+            # set velocity for state
+            self.velocity = np.array([v_x, v_y, v_z])
 
-                # find min_proj_dist
-                self.residual = self.target - self.position
-                min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
-                if min_proj_dist < self.min_proj_dist:
-                    self.min_proj_dist = min_proj_dist
+            # write down path in history
+            self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
+
+            # find min_proj_dist
+            self.residual = self.target - self.position
+            min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+            if min_proj_dist < self.min_proj_dist:
+                self.min_proj_dist = min_proj_dist
+
+            # update time
+            self.t -= yaml_p['delta_t']/self.n
+
+            # check if done or not
+            if (self.position[0] < 0) | (self.position[0] > self.size_x):
+                not_done = False
+            if (self.position[1] < 0) | (self.position[1] > self.size_y):
+                not_done = False
+            if self.height_above_ground() < 0: #check if crashed into terrain
+                not_done = False
+            if self.dist_to_ceiling() < 0: #check if crashed into ceiling
+                not_done = False
+            if self.t < 0: #check if flight time is over
+                not_done = False
+            if self.battery_level < 0: #check if battery is empty
+                not_done = False
+
         return not_done
 
     def adapt_volume(self,u):
@@ -244,6 +254,8 @@ class character():
         return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
 
     def set_ceiling(self):
+        random.seed(self.seed)
+        self.seed +=1
         self.ceiling = random.uniform(0.9, 1) * self.size_z
 
     def dist_to_ceiling(self):
