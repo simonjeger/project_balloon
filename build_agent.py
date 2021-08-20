@@ -10,9 +10,11 @@ import shutil
 from distutils.dir_util import copy_tree
 from scipy.ndimage import gaussian_filter
 import alphashape
+from shapely.geometry import Point
 import matplotlib.pyplot as plt
 from descartes import PolygonPatch
 import pickle
+import logging
 
 import yaml
 import argparse
@@ -145,17 +147,10 @@ class Agent:
         obs = self.env.reset()
         sum_r = 0
 
-        if (yaml_p['reachability_study'] > 0) & (self.train_or_test == 'test'):
+        if (yaml_p['reachability_study'] > 0):
             self.reachability_study()
-
-        if yaml_p['set_reachable_target']: #reset target to something reachable if that flag is set
-            if yaml_p['set_reachable_target_type'] == 'uniform':
-                self.set_reachable_target_uniform()
-            if yaml_p['set_reachable_target_type'] == 'controlled':
-                self.set_reachable_target_controlled()
-            if yaml_p['set_reachable_target_type'] == 'complex':
-                self.set_reachable_target_complex()
-            #self.set_reachable_target()
+        elif yaml_p['set_reachable_target']:
+            self.set_reachable_target()
 
         if importance is not None:
             self.env.character.importance = importance
@@ -201,24 +196,86 @@ class Agent:
 
         return sum_r
 
-    def set_reachable_target_uniform(self):
-        round = 0
-        action = np.random.uniform(0.1,0.9)
+    def reachability_study(self):
+        self.path_mt_pkl = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.pkl'
+        self.path_mt_png = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.png'
+        self.path_rs_pkl = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '.pkl'
+        self.path_rs_as = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '_as' +'.pkl'
+        self.path_rs_png = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '.png'
+        self.path_rs_csv = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/percentage' + '.csv'
 
-        while True:
-            self.env.character.target = [-10,-10,-10] #set target outside map
+        if os.path.isfile(self.path_rs_as):
+            with open(self.path_rs_as,'rb') as fid:
+                alpha_shape = pickle.load(fid)
+        else:
+            fig, ax = plt.subplots()
+            ax.scatter(0,0,color='white')
+            ax.scatter(self.env.size_x,self.env.size_y,color='white')
 
-            if self.train_or_test == 'test':
-                self.seed += 1
-                np.random.seed(self.seed)
+            x_global = []
+            y_global = []
 
-            if np.random.uniform() < 0.001*yaml_p['delta_t']:
-                action = np.random.uniform(0.1,0.9)
+            res = 10
+            for i in range(yaml_p['reachability_study']):
+                self.random_roll_out()
+                self.env.reset(roll_out=True)
 
-            _, _, done, _ = self.env.step(action, roll_out=True)
-            sucess = False
-            if done:
-                break
+                x = []
+                y = []
+
+                for j in range(res+1):
+                    if j <= res:
+                        k = int(j*len(self.env.path_reachability[-1][-1])/res - 1)
+                    else:
+                        k = len(self.env.path_reachability[-1][-1]) - 1 #this is to make sure the last point is considered
+                    x_j = self.env.path_reachability[-1][-1][k][0]
+                    y_j = self.env.path_reachability[-1][-1][k][1]
+
+                    x.append(x_j)
+                    y.append(y_j)
+                    x_global.append(x_j)
+                    y_global.append(y_j)
+                ax.plot(x,y,color='grey')
+                print('reachability_study: ' + str(np.round(i/yaml_p['reachability_study']*100,0)) + ' %')
+
+            points = list(zip(x_global,y_global))
+
+            # Generate the alpha shape
+            alpha = 0.2
+
+            logging.disable() #to suppress: WARNING:root:Singular matrix. Likely caused by all points lying in an N-1 space.
+            alpha_shape = alphashape.alphashape(points, alpha)
+            print('alpha_shape calculated')
+
+            # save alpha_shape for next time
+            with open(self.path_rs_as,'wb') as fid:
+                pickle.dump(alpha_shape, fid)
+
+            # Plot alpha shape
+            ax.add_patch(PolygonPatch(alpha_shape, alpha=.2))
+            ax.set_title(str(np.round(alpha_shape.area/(self.env.size_x*self.env.size_y)*100,2)) + '% reachable')
+            ax.set_aspect('equal')
+            plt.savefig(self.path_rs_png)
+
+            # Save pickled version for later edits
+            with open(self.path_rs_pkl,'wb') as fid:
+                pickle.dump(ax, fid)
+
+            plt.close()
+
+            df = pd.DataFrame([alpha_shape.area/(self.env.size_x*self.env.size_y)],[self.env.world_name])
+            df.to_csv(self.path_rs_csv, mode='a', header=False)
+
+        # Place target within shape
+        target = [-10,-10,-10]
+        while alpha_shape.contains(Point(target[0],target[1])) == False:
+            self.seed += 1
+            np.random.seed(self.seed)
+            target = [np.random.uniform(0,self.env.size_x), np.random.uniform(0,self.env.size_z), np.random.uniform(0,self.env.character.ceiling)]
+            self.env.character.target = target
+
+    def set_reachable_target(self):
+        self.random_roll_out()
 
         # write down path and set target
         coord_x = []
@@ -233,23 +290,13 @@ class Agent:
         self.env.path_roll_out = self.env.character.path[0:idx]
         target = self.env.character.path[idx]
 
-        # write down path for reachability study
-        self.env.path_reachability.append([self.env.character.path])
-
         self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
         self.env.reset(roll_out=True)
         self.env.character.target = target
 
-    def set_reachable_target_controlled(self):
-        if self.train_or_test == 'test':
-            np.random.seed(self.seed)
-            self.seed += 1
-
+    def random_roll_out(self):
         round = 0
         action = np.random.uniform(0.1,0.9)
-        set_action = 1
-        n_action = 0
-        ndtsu = 0 #normalized_distance_travelled_since_update
 
         while True:
             self.env.character.target = [-10,-10,-10] #set target outside map
@@ -258,169 +305,26 @@ class Agent:
                 self.seed += 1
                 np.random.seed(self.seed)
 
-            ndtsu += np.sqrt(self.env.character.velocity[0]**2 + self.env.character.velocity[1]**2)*yaml_p['delta_t'] / np.sqrt(self.env.size_x**2 + self.env.size_y**2)
-            if np.random.uniform() < 2*ndtsu:
-                dtsu = 0
-                rand = np.random.uniform(0.1,0.9)
-                while abs(action - rand) < 0.35:
-                    self.seed += 1
-                    np.random.seed(self.seed)
-                    rand = np.random.uniform(0.1,0.9)
-                action = rand
-                set_action -= 1
-                if set_action >= 0:
-                    n_action = len(self.env.character.path)
+            if abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.5: #x m/s, basically: did I reach the set altitude?
+                if np.random.uniform() < 0.25: # if yes, set a new one with a certain probability
+                    action = np.random.uniform(0.1,0.9)
 
             _, _, done, _ = self.env.step(action, roll_out=True)
-
             sucess = False
-            lowest = n_action + 50
-            if done & (n_action > 0) & (lowest < len(self.env.character.path)):
-                break
-            elif done:
-                if round >= 10:
-                    break
-                else:
-                    self.env.reset(roll_out=True)
-                    n_action = 0
-                    round += 1
 
-        # write down path and set target
-        idx = np.random.randint(0, len(self.env.character.path)-1)
-        self.env.path_roll_out = self.env.character.path[0:idx]
-        target = self.env.character.path[idx]
+            if done:
+                break
 
         # write down path for reachability study
         self.env.path_reachability.append([self.env.character.path])
-
-        self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
-        self.env.reset(roll_out=True)
-        self.env.character.target = target
-
-    def set_reachable_target_complex(self):
-        curr_start = 0.35
-        curr_window = 0.1
-        curr_end = 1 - curr_window
-        if self.train_or_test == 'train':
-            curr = curr_start + (curr_end - curr_start)
-        else:
-            curr = curr_end
-
-        if self.train_or_test == 'test':
-            np.random.seed(self.seed)
-            self.seed += 1
-
-        round = 0
-        action = np.random.uniform(0.1,0.9)
-        set_action = 1
-        n_action = 0
-        ndtsu = 0 #normalized_distance_travelled_since_update
-
-        while True:
-            self.env.character.target = [-10,-10,-10] #set target outside map
-
-            if self.train_or_test == 'test':
-                self.seed += 1
-                np.random.seed(self.seed)
-
-            ndtsu += np.sqrt(self.env.character.velocity[0]**2 + self.env.character.velocity[1]**2)*yaml_p['delta_t'] / np.sqrt(self.env.size_x**2 + self.env.size_y**2)
-            if np.random.uniform() < 2*ndtsu:
-                dtsu = 0
-                rand = np.random.uniform(0.1,0.9)
-                while abs(action - rand) < 0.35:
-                    self.seed += 1
-                    np.random.seed(self.seed)
-                    rand = np.random.uniform(0.1,0.9)
-                action = rand
-                set_action -= 1
-                if set_action >= 0:
-                    n_action = len(self.env.character.path)
-
-            _, _, done, _ = self.env.step(action, roll_out=True)
-
-            sucess = False
-            lowest = n_action + 50
-            if done & (n_action > 0) & (lowest < len(self.env.character.path)):
-                break
-            elif done:
-                if round >= 10:
-                    break
-                else:
-                    self.env.reset(roll_out=True)
-                    n_action = 0
-                    round += 1
-
-        # write down path and set target
-        lower = max(lowest,int(curr*len(self.env.character.path)))
-        upper = max(lowest+1,int((curr+curr_window-0.1)*len(self.env.character.path)),int(curr*len(self.env.character.path)) + 1)
-        upper = min(upper,len(self.env.character.path)-1)
-        lower = min(lower,upper-1)
-        idx = np.random.randint(lower, upper)
-        self.env.path_roll_out = self.env.character.path[0:idx]
-        target = self.env.character.path[idx]
-
-        # write down path for reachability study
-        self.env.path_reachability.append([self.env.character.path[lower:upper]])
-
-        self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
-        self.env.reset(roll_out=True)
-        self.env.character.target = target
-
-    def reachability_study(self):
-        fig, ax = plt.subplots()
-        ax.scatter(0,0,color='white')
-        ax.scatter(self.env.size_x,self.env.size_y,color='white')
-
-        x_global = []
-        y_global = []
-
-        for i in range(yaml_p['reachability_study']):
-            if yaml_p['set_reachable_target_type'] == 'uniform':
-                self.set_reachable_target_uniform()
-            if yaml_p['set_reachable_target_type'] == 'controlled':
-                self.set_reachable_target_controlled()
-            if yaml_p['set_reachable_target_type'] == 'complex':
-                self.set_reachable_target_complex()
-
-            #self.set_reachable_target()
-            x = []
-            y = []
-
-            for j in range(len(self.env.path_reachability[-1][-1])):
-                x_j = self.env.path_reachability[-1][-1][j][0]
-                y_j = self.env.path_reachability[-1][-1][j][1]
-
-                x.append(x_j)
-                y.append(y_j)
-                x_global.append(x_j)
-                y_global.append(y_j)
-
-            ax.plot(x,y,color='grey')
-
-        points = list(zip(x_global,y_global))
-
-        # Generate the alpha shape
-        alpha = 0.2
-        alpha_shape = alphashape.alphashape(points, alpha)
-
-        # Plot alpha shape
-        ax.add_patch(PolygonPatch(alpha_shape, alpha=.2))
-        ax.set_title(str(np.round(alpha_shape.area/(self.env.size_x*self.env.size_y)*100,2)) + '% reachable')
-        ax.set_aspect('equal')
-        plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '.png')
-
-        # Save pickled version for later edits
-        with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.pkl','wb') as fid:
-            pickle.dump(ax, fid)
-
-        plt.close()
-
-        if self.writer is not None:
-            self.writer.add_scalar('reachability_study', alpha_shape.area/(self.env.size_x*self.env.size_y) , self.step_n-1) # because we do above self.step_n += 1
 
     def map_test(self):
-        with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.pkl','rb') as fid:
-            ax = pickle.load(fid)
+        if os.path.isfile(self.path_mt_pkl):
+            with open(self.path_mt_pkl,'rb') as fid:
+                ax = pickle.load(fid)
+        else:
+            with open(self.path_rs_pkl,'rb') as fid:
+                ax = pickle.load(fid)
 
         if self.env.success:
             color = 'green'
@@ -429,10 +333,10 @@ class Agent:
 
         circle = plt.Circle((self.env.character.target[0], self.env.character.target[1]),yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy'], color=color, fill=False, zorder=np.inf) #always plot on top
         ax.add_patch(circle)
-        plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.png')
+        plt.savefig(self.path_mt_png)
 
         # Save pickled version for later edits
-        with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.pkl','wb') as fid:
+        with open(self.path_mt_pkl,'wb') as fid:
             pickle.dump(ax, fid)
         plt.close()
 

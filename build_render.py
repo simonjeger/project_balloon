@@ -62,6 +62,7 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     t_reward_epi = myfont.render('reward_epi: ' + '{:.3f}'.format(reward_epi), False, pygame.Color('LightGray'))
     t_diameter = myfont.render('diameter: ' + str(np.round(character.diameter,2)), False, pygame.Color('LightGray'))
     t_battery_level = myfont.render('battery_level: ' + str(np.round(character.battery_level,2)), False, pygame.Color('LightGray'))
+    t_time = myfont.render('time: ' + str(np.round(character.t,2)), False, pygame.Color('LightGray'))
     t_residual = myfont.render('residual: ' + str([round(num, 3) for num in character.state[0:3].tolist()]), False, pygame.Color('LightGray'))
     t_velocity = myfont.render('velocity: ' + str([round(num, 3) for num in character.state[3:6].tolist()]), False, pygame.Color('LightGray'))
 
@@ -75,11 +76,12 @@ def build_render(character, reward_step, reward_epi, world_name, window_size, ra
     screen.blit(t_reward_epi,(space_text,start_text+2*space_text))
     screen.blit(t_diameter,(space_text,start_text+3*space_text))
     screen.blit(t_battery_level,(space_text,start_text+4*space_text))
-    screen.blit(t_residual,(space_text,start_text+6*space_text))
-    screen.blit(t_velocity,(space_text,start_text+7*space_text))
-    screen.blit(t_rel_pos,(space_text,start_text+8*space_text))
-    screen.blit(t_measurement,(space_text,start_text+9*space_text))
-    screen.blit(t_world_compressed,(space_text,start_text+10*space_text))
+    screen.blit(t_time,(space_text,start_text+5*space_text))
+    screen.blit(t_residual,(space_text,start_text+7*space_text))
+    screen.blit(t_velocity,(space_text,start_text+8*space_text))
+    screen.blit(t_rel_pos,(space_text,start_text+9*space_text))
+    screen.blit(t_measurement,(space_text,start_text+10*space_text))
+    screen.blit(t_world_compressed,(space_text,start_text+11*space_text))
 
     # updating the window
     pygame.display.flip()
@@ -200,7 +202,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         for i in character.path:
             path.append(((i[i1]*render_ratio+offset_1)*res, (dist_to_bottom-i[i2]*render_ratio-offset_2)*res))
 
-    if roll_out is not None:
+    if len(roll_out) > 0:
         path_roll_out = []
         if dim != 'xy':
             for i in roll_out:
@@ -242,7 +244,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
     rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
     # path
-    if len(path_roll_out) > 1:
+    if len(roll_out) > 0:
         pygame.draw.lines(screen, c_path_roll_out, False, path_roll_out, 1)
 
     if len(path) > 1:

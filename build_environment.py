@@ -67,7 +67,7 @@ class balloon3d(Env):
         # location array in x and z
         self.observation_space = Box(low=np.array([-1]*self.character.bottleneck), high=np.array([1]*self.character.bottleneck), dtype=np.float64)
 
-        self.path_roll_out = None
+        self.path_roll_out = []
         self.reward_roll_out = None
         self.reward_list = []
 
@@ -178,7 +178,7 @@ class balloon3d(Env):
 
         # if started "under ground"
         above_ground_start = self.size_z/100
-        above_ground_target = self.size_z/5
+        above_ground_target = self.size_z/100
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
         y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
 
@@ -198,14 +198,15 @@ class balloon3d(Env):
         elif yaml_p['environment'] == 'xplane':
             self.character = character_xplane(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
 
+        """
         # avoid impossible szenarios
         min_space = self.size_z*yaml_p['min_space']
         pos_x = int(np.clip(self.character.position[0],0,self.size_x - 1))
         pos_y = int(np.clip(self.character.position[1],0,self.size_y - 1))
         if (self.character.ceiling - self.world[0,pos_x,pos_y,0] < min_space) | (np.mean(self.character.ceiling - self.world[0,:,:,0]) < min_space):
             self.reset(roll_out=roll_out)
-
         self.reward_list = []
+        """
         self.prev_int = [-1,-1]
 
         """

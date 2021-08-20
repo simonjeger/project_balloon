@@ -237,12 +237,6 @@ def write_overview():
     df_reward.insert(len(df_reward.columns),'linreg_intercept', slope, True)
     df_reward.insert(len(df_reward.columns),'linreg_score', score, True)
 
-    # reachability_study
-    if yaml_p['reachability_study'] > 0:
-        reachability_study = np.array(df['reachability_study'].dropna())
-        reachability_rate = np.mean(reachability_study)
-        df_reward.insert(len(df_reward.columns),'reachability_rate', reachability_rate, True)
-
     df_reward.insert(len(df_reward.columns),'success_rate', success_rate, True)
     dirpath = Path('overview.csv')
     if dirpath.exists() and dirpath.is_file():
@@ -362,11 +356,6 @@ def clear(train_or_test):
     dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp')
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath, ignore_errors=True)
-
-    dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study')
-    if dirpath.exists() and dirpath.is_dir():
-        shutil.rmtree(dirpath, ignore_errors=True)
-        os.mkdir(dirpath) #recreate the folder I just deleted
 
     dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test')
     if dirpath.exists() and dirpath.is_dir():

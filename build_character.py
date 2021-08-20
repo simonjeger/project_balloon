@@ -37,10 +37,10 @@ class character():
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 2 #kg
             self.delta_f = yaml_p['delta_f'] #N
-            self.ascent_consumption = 2.5 #5 #W
-            self.descent_consumption = 2.5 #W
+            self.ascent_consumption = 1 #W
+            self.descent_consumption = 1 #W
             self.rest_consumption = 0.5 #W
-            self.battery_capacity = 13187 #Ws
+            self.battery_capacity = 100000 #13187 #Ws
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 1.2 #kg
             self.delta_f = 0.01 #N
@@ -264,7 +264,6 @@ class character():
     def interpolate_wind(self, measurement=False):
         world = self.world_squished
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
-
         coord_x = int(np.clip(self.position[0],0,self.size_x-1))
         coord_y = int(np.clip(self.position[1],0,self.size_y-1))
         coord_z = int(np.clip(pos_z_squished,0,len(world[0,0,0,:])-1))
