@@ -252,7 +252,7 @@ class Agent:
                 pickle.dump(alpha_shape, fid)
 
             # Plot alpha shape
-            ax.add_patch(PolygonPatch(alpha_shape, alpha=.2))
+            ax.add_patch(PolygonPatch(alpha_shape, fc='blue', ec='blue'))
             ax.set_title(str(np.round(alpha_shape.area/(self.env.size_x*self.env.size_y)*100,2)) + '% reachable')
             ax.set_aspect('equal')
             plt.savefig(self.path_rs_png)
