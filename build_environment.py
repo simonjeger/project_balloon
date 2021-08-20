@@ -3,11 +3,6 @@ from human_autoencoder import HAE
 from build_autoencoder import VAE
 from build_character import character
 
-if yaml_p['environment'] == 'xplane':
-    import sys
-    sys.path.append('/Users/simonjeger/X-Plane 11/Resources/plugins/XPlaneConnect-1.3-rc6/Python3/src/')
-    from build_character_xplane import character_xplane
-
 import pandas as pd
 import matplotlib.pyplot as plt
 from gym import Env, logger
@@ -21,6 +16,11 @@ import os
 
 import yaml
 import argparse
+
+if yaml_p['environment'] == 'xplane':
+    import sys
+    sys.path.append('/Users/simonjeger/X-Plane 11/Resources/plugins/XPlaneConnect-1.3-rc6/Python3/src/')
+    from build_character_xplane import character_xplane
 
 # Get yaml parameter
 parser = argparse.ArgumentParser()
