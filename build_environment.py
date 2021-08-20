@@ -17,17 +17,17 @@ import os
 import yaml
 import argparse
 
-if yaml_p['environment'] == 'xplane':
-    import sys
-    sys.path.append('/Users/simonjeger/X-Plane 11/Resources/plugins/XPlaneConnect-1.3-rc6/Python3/src/')
-    from build_character_xplane import character_xplane
-
 # Get yaml parameter
 parser = argparse.ArgumentParser()
 parser.add_argument('yaml_file')
 args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
+
+if yaml_p['environment'] == 'xplane':
+    import sys
+    sys.path.append('/Users/simonjeger/X-Plane 11/Resources/plugins/XPlaneConnect-1.3-rc6/Python3/src/')
+    from build_character_xplane import character_xplane
 
 logger.set_level(40) # to avoid UserWarning about box bound precision
 
