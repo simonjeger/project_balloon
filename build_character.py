@@ -17,8 +17,6 @@ parser.add_argument('yaml_file')
 args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
-min_speed = 0
-max_speed = 0
 
 class character():
     def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed):
@@ -232,18 +230,6 @@ class character():
         self.diameter = 2*(self.volume*3/(4*np.pi))**(1/3) #m
         self.area = (self.diameter/2)**2*np.pi #m^2
         self.mass_total = self.mass_structure + volume_init*rho_gas_init #kg
-
-        #print('Specs of ' + yaml_p['balloon'] + ': volume = ' + str(np.round(self.volume,2)) + 'm^3, self.diameter = ' + str(np.round(self.diameter,2)) + 'm, force = ' + str(np.round(self.volume_to_force(self.delta_v),5)) + 'N, total_mass = ' + str(np.round(self.mass_total,2)) + 'kg, delta_volume = ' + str(np.round(self.delta_v,5)) + 'm^3, velocity = ' + str(np.round(self.velocity[2]*yaml_p['unit_z'],2)) + 'm/s')
-
-        global max_speed
-        global min_speed
-        if max_speed < self.velocity[2]:
-            max_speed = self.velocity[2]
-        if min_speed > self.velocity[2]:
-            min_speed = self.velocity[2]
-
-        #print('min: ' + str(min_speed*yaml_p['unit_z']))
-        #print('max: ' + str(max_speed*yaml_p['unit_z']))
 
     def net_force(self,u):
         f_balloon = (self.volume*(self.rho_air-self.rho_gas) - self.mass_structure)*9.81

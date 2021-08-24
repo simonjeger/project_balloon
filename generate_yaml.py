@@ -45,7 +45,7 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + 'num_epochs_test: 1000' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
-    text = text + 'rl: True' + '\n'
+    text = text + 'mode: "reinforcement_learning"' + '\n'
     text = text + 'explorer_type: LinearDecayEpsilonGreedy' + '\n'
     text = text + 'width: 512' + '\n'
     text = text + 'depth: 2' + '\n'

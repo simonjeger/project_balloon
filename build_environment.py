@@ -196,19 +196,18 @@ class balloon3d(Env):
 
         if yaml_p['environment'] == 'python3':
             self.character = character(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
+
+            # avoid impossible szenarios
+            min_space = self.size_z*yaml_p['min_space']
+            pos_x = int(np.clip(self.character.position[0],0,self.size_x - 1))
+            pos_y = int(np.clip(self.character.position[1],0,self.size_y - 1))
+            if (self.character.ceiling - self.world[0,pos_x,pos_y,0] < min_space) | (np.mean(self.character.ceiling - self.world[0,:,:,0]) < min_space):
+                self.reset(roll_out=roll_out)
+            self.reward_list = []
+            self.prev_int = [-1,-1]
+
         elif yaml_p['environment'] == 'xplane':
             self.character = character_xplane(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed)
-
-        """
-        # avoid impossible szenarios
-        min_space = self.size_z*yaml_p['min_space']
-        pos_x = int(np.clip(self.character.position[0],0,self.size_x - 1))
-        pos_y = int(np.clip(self.character.position[1],0,self.size_y - 1))
-        if (self.character.ceiling - self.world[0,pos_x,pos_y,0] < min_space) | (np.mean(self.character.ceiling - self.world[0,:,:,0]) < min_space):
-            self.reset(roll_out=roll_out)
-        self.reward_list = []
-        """
-        self.prev_int = [-1,-1]
 
         """
         # generate world_squished for rendering later

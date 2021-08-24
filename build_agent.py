@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from descartes import PolygonPatch
 import pickle
 import logging
+import pygame
 
 import yaml
 import argparse
@@ -155,11 +156,12 @@ class Agent:
         if importance is not None:
             self.env.character.importance = importance
 
+        action = 0.5 #for mode = game
         while True:
             if yaml_p['render']:
                 self.env.render(mode=True)
 
-            if yaml_p['rl']:
+            if yaml_p['mode'] == 'reinforcement_learning':
                 action = self.agent.act(obs) #uses self.agent.model to decide next step
                 action = (action[0]+1)/2
 
@@ -167,8 +169,41 @@ class Agent:
                 sum_r = sum_r + reward
                 self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
 
+            elif yaml_p['mode'] == 'game':
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == 60:
+                            action = 0
+                        elif event.key == pygame.K_1:
+                            action = 0.1
+                        elif event.key == pygame.K_2:
+                            action = 0.2
+                        elif event.key == pygame.K_3:
+                            action = 0.3
+                        elif event.key == pygame.K_4:
+                            action = 0.4
+                        elif event.key == pygame.K_5:
+                            action = 0.5
+                        elif event.key == pygame.K_6:
+                            action = 0.6
+                        elif event.key == pygame.K_7:
+                            action = 0.7
+                        elif event.key == pygame.K_8:
+                            action = 0.8
+                        elif event.key == pygame.K_9:
+                            action = 0.9
+                        elif event.key == pygame.K_0:
+                            action = 1
+
+                action = np.clip(action,0,1)
+                #action = np.clip(np.float(input())/10,0,1)
+
+                obs, reward, done, _ = self.env.step(action)
+                sum_r = sum_r + reward
+                self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
+
             else:
-                action = self.act_simple(self.env.character) #only works with type = "squished"
+                action = self.act_simple(self.env.character)
                 obs, reward, done, _ = self.env.step(action)
                 sum_r = sum_r + reward
 

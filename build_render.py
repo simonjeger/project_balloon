@@ -224,7 +224,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
         array_2 = np.arange(0,size_1,1)
         line_action = []
         for i in range(len(action)):
-            line_action.append(((array_2[i]*render_ratio + offset_1)*res, (dist_to_bottom-action[i])*res))
+            line_action.append(((array_2[i]*render_ratio + offset_1 + render_ratio)*res, (dist_to_bottom-action[i])*res))
         pygame.draw.lines(screen, 'red', False, line_action, 1)
 
     # write balloon
@@ -244,7 +244,7 @@ def display_movement(dim, screen, screen_width, screen_height, c_background, siz
     rec_target = pygame.Rect(pos_target[0] - size_target/2, pos_target[1] - size_target/2, size_target, size_target)
 
     # path
-    if len(roll_out) > 0:
+    if (len(roll_out) > 0) & (yaml_p['mode'] != 'game'):
         pygame.draw.lines(screen, c_path_roll_out, False, path_roll_out, 1)
 
     if len(path) > 1:
