@@ -19,7 +19,7 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 class character():
-    def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed):
+    def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed, train_or_test):
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
         self.radius_xy = radius_xy
         self.radius_z = radius_z
@@ -56,6 +56,8 @@ class character():
 
         self.world = world
         self.world_compressed = world_compressed
+
+        self.train_or_test = train_or_test
 
         self.position = copy.copy(self.start)
         self.velocity = np.array([0,0,0])
@@ -240,8 +242,9 @@ class character():
         return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
 
     def set_ceiling(self):
-        random.seed(self.seed)
-        self.seed +=1
+        if self.train_or_test == 'test':
+            random.seed(self.seed)
+            self.seed +=1
         self.ceiling = random.uniform(0.9, 1) * self.size_z
 
     def dist_to_ceiling(self):

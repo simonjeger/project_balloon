@@ -16,6 +16,7 @@ from descartes import PolygonPatch
 import pickle
 import logging
 import pygame
+from sys import exit
 
 import yaml
 import argparse
@@ -198,6 +199,10 @@ class Agent:
                         elif event.key == pygame.K_0:
                             action = 1
 
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+
                 action = np.clip(action,0,1)
 
                 obs, reward, done, _ = self.env.step(action)
@@ -306,8 +311,9 @@ class Agent:
         # Place target within shape
         target = [-10,-10,-10]
         while alpha_shape.contains(Point(target[0],target[1])) == False:
-            self.seed += 1
-            np.random.seed(self.seed)
+            if self.train_or_test == 'test':
+                np.random.seed(self.seed)
+                self.seed += 1
             target = [np.random.uniform(0,self.env.size_x), np.random.uniform(0,self.env.size_z), np.random.uniform(0,self.env.character.ceiling)]
             self.env.character.target = target
 
@@ -333,14 +339,18 @@ class Agent:
 
     def random_roll_out(self):
         round = 0
+
+        if self.train_or_test == 'test':
+            np.random.seed(self.seed)
+            self.seed += 1
         action = np.random.uniform(0.1,0.9)
 
         while True:
             self.env.character.target = [-10,-10,-10] #set target outside map
 
             if self.train_or_test == 'test':
-                self.seed += 1
                 np.random.seed(self.seed)
+                self.seed += 1
 
             if abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.5: #x m/s, basically: did I reach the set altitude?
                 if np.random.uniform() < 0.25: # if yes, set a new one with a certain probability
