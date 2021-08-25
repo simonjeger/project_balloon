@@ -112,7 +112,7 @@ class character():
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
         self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
-        self.state = np.concatenate(((self.residual[0:2]/[self.size_x,self.size_y]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
+        self.state = np.concatenate(((self.residual[0:2]/[self.size_x - 1,self.size_y - 1]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
@@ -182,9 +182,9 @@ class character():
             self.t -= yaml_p['delta_t']/self.n
 
             # check if done or not
-            if (self.position[0] < 0) | (self.position[0] > self.size_x):
+            if (self.position[0] < 0) | (self.position[0] > self.size_x - 1):
                 not_done = False
-            if (self.position[1] < 0) | (self.position[1] > self.size_y):
+            if (self.position[1] < 0) | (self.position[1] > self.size_y - 1):
                 not_done = False
             if self.height_above_ground() < 0: #check if crashed into terrain
                 not_done = False
@@ -250,14 +250,15 @@ class character():
     def interpolate_wind(self, measurement=False):
         world = self.world_squished
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
-        coord_x = int(np.clip(self.position[0],0,self.size_x-1))
-        coord_y = int(np.clip(self.position[1],0,self.size_y-1))
+        coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
+        coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
         coord_z = int(np.clip(pos_z_squished,0,len(world[0,0,0,:])-1))
 
         x = self.position[0] - coord_x
         y = self.position[1] - coord_y
         z = pos_z_squished - coord_z
 
+        # I detect runnning out of bounds in a later stage
         if coord_x == self.size_x-1:
             coord_x -= 1
             x = 1

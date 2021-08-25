@@ -23,16 +23,9 @@ def visualize_world(tensor, position, ceiling):
     size_y = len(tensor[0][0])
     size_z = len(tensor[0][0][0])
 
-    pos_x = int(position[0])
-    pos_y = int(position[1])
-    pos_z = int(position[2])
-
-    pos_x = max(pos_x, 0)
-    pos_x = min(pos_x, size_x-1)
-    pos_y = max(pos_y, 0)
-    pos_y = min(pos_y, size_y-1)
-    pos_z = max(pos_z, 0)
-    pos_z = min(pos_z, size_z-1)
+    pos_x = int(np.clip(position[0],0,size_x - 1))
+    pos_y = int(np.clip(position[1],0,size_y - 1))
+    pos_z = int(np.clip(position[2],0,size_z - 1))
 
     render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
 

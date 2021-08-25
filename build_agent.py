@@ -156,7 +156,10 @@ class Agent:
         if importance is not None:
             self.env.character.importance = importance
 
-        action = 0.5 #for mode = game
+        if yaml_p['mode'] == 'game':
+            # If it's the beginning of a new round
+            action = self.env.render_machine.load_screen()
+
         while True:
             if yaml_p['render']:
                 self.env.render(mode=True)
@@ -196,7 +199,6 @@ class Agent:
                             action = 1
 
                 action = np.clip(action,0,1)
-                #action = np.clip(np.float(input())/10,0,1)
 
                 obs, reward, done, _ = self.env.step(action)
                 sum_r = sum_r + reward

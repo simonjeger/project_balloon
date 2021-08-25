@@ -1,7 +1,7 @@
-from build_render import build_render
 from human_autoencoder import HAE
 from build_autoencoder import VAE
 from build_character import character
+from build_render import render
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -73,6 +73,8 @@ class balloon3d(Env):
         self.reward_list = []
 
         self.path_reachability = []
+
+        self.render_machine = render(self.size_x, self.size_y, self.size_z)
 
     def step(self, action, roll_out=False):
         # Update compressed wind map
@@ -160,7 +162,7 @@ class balloon3d(Env):
         return done
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        build_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
+        self.render_machine.make_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
 
     def reset(self, roll_out=False):
         # load new world
