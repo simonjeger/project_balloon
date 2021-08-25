@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import pygame, sys
+from sys import exit
 
 from visualize_world import visualize_world
 from preprocess_wind import squish
@@ -341,4 +342,8 @@ class render():
                         action = 1
                     else:
                         wait = True #don't stop waiting if it was another key that was pressed
+
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
         return action

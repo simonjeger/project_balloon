@@ -169,10 +169,6 @@ class Agent:
                 action = self.agent.act(obs) #uses self.agent.model to decide next step
                 action = (action[0]+1)/2
 
-                obs, reward, done, _ = self.env.step(action)
-                sum_r = sum_r + reward
-                self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
-
             elif yaml_p['mode'] == 'game':
                 for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
@@ -203,16 +199,19 @@ class Agent:
                         pygame.quit()
                         exit()
 
+                _ = self.agent.act(obs) #this is only so it works in training mode
                 action = np.clip(action,0,1)
 
-                obs, reward, done, _ = self.env.step(action)
-                sum_r = sum_r + reward
-                self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
+            elif yaml_p['mode'] == 'simple':
+                _ = self.agent.act(obs) #this is only so it works in training mode
+                action = self.act_simple(self.env.character)
 
             else:
-                action = self.act_simple(self.env.character)
-                obs, reward, done, _ = self.env.step(action)
-                sum_r = sum_r + reward
+                print('ERROR: Please choose one of the available modes.')
+
+            obs, reward, done, _ = self.env.step(action)
+            sum_r = sum_r + reward
+            self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
 
             self.step_n += 1
             self.scheduler_policy.step()
