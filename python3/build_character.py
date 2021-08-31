@@ -33,12 +33,13 @@ class character():
         self.ll_controler = ll_controler()
 
         if yaml_p['balloon'] == 'outdoor_balloon':
-            self.mass_structure = 2 #kg
+            self.mass_structure = 1 #kg
             self.delta_f = yaml_p['delta_f'] #N
-            self.ascent_consumption = 1 #W
-            self.descent_consumption = 1 #W
+            self.ascent_consumption = 15 #W
+            self.descent_consumption = 15 #W
             self.rest_consumption = 0.5 #W
-            self.battery_capacity = 100000 #13187 #Ws
+            self.battery_capacity = 263736 #Ws #100000
+            
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 1.2 #kg
             self.delta_f = 0.01 #N
