@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info):
+def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, noise_mean, noise_std, wind_info, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -83,6 +83,8 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
     text = text + 'measurement_info: ' + str(measurement_info) + '\n'
+    text = text + 'noise_mean: ' + str(noise_mean) + '\n'
+    text = text + 'noise_std: ' + str(noise_std) + '\n'
     text = text + 'wind_info: ' + str(wind_info) + '\n'
 
     text = text + '\n' + '# logger' + '\n'
@@ -93,6 +95,9 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + 'fps: 15' + '\n'
     text = text + 'overview: True' + '\n'
     text = text + 'render: False' + '\n'
+
+    text = text + '\n' + '# temp' + '\n'
+    text = text + 'delta_f: 2' + '\n'
 
     file.write(text)
     file.close()
@@ -105,13 +110,13 @@ action = -0.005
 wind_info = True
 measurement_info = True
 
-process_nr = 99999
+process_nr = 5430
 
 for data_path in ['"data_big/"']:
     for min_proj_dist in [1]:
         for autoencoder in ['"HAE_avg"']:
-            for window_size in [4]:
-                for bottleneck in [2]:
+            for window_size in [2]:
+                for bottleneck in [2,4,8]:
                     if autoencoder == '"HAE_avg"':
                         vae_nr = 11111
                     elif autoencoder == '"HAE_ext"':
@@ -172,12 +177,14 @@ for data_path in ['"data_big/"']:
                             elif bottleneck == 30:
                                 vae_nr = 11155
                     for start_train in [[7,6,0]]:
-                        for curriculum_dist in [1]:
-                            for curriculum_rad in [1]:
-                                for curriculum_rad_dry in [1000]:
-                                    for lr in [0.006]:
-                                        for temperature_optimizer_lr in [0.00003]:
-                                            for replay_start_size in [1000]:
-                                                for repeat in range(1):
-                                                    write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, wind_info, measurement_info)
-                                                    process_nr += 1
+                        for noise_mean in [0,1,2,3]:
+                            for noise_std in [0,1,2,3]:
+                                for curriculum_dist in [1]:
+                                    for curriculum_rad in [1]:
+                                        for curriculum_rad_dry in [1000]:
+                                            for lr in [0.006]:
+                                                for temperature_optimizer_lr in [0.00003]:
+                                                    for replay_start_size in [1000]:
+                                                        for repeat in range(1):
+                                                            write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, noise_mean, noise_std, wind_info, measurement_info)
+                                                            process_nr += 1

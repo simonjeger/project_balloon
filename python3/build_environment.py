@@ -197,7 +197,7 @@ class balloon3d(Env):
         self.world_compressed = self.ae.compress(self.world, start, self.size_z)
 
         if yaml_p['environment'] == 'python3':
-            self.character = character(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test)
+            self.character = character(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test, self.seed)
 
             # avoid impossible szenarios
             min_space = self.size_z*yaml_p['min_space']
@@ -209,7 +209,7 @@ class balloon3d(Env):
             self.prev_int = [-1,-1]
 
         elif yaml_p['environment'] == 'xplane':
-            self.character = character_xplane(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test)
+            self.character = character_xplane(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test, self.seed)
 
         """
         # generate world_squished for rendering later

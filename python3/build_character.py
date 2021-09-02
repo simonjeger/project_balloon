@@ -1,7 +1,5 @@
 import numpy as np
 import scipy
-import random
-from random import gauss
 import copy
 from scipy.ndimage import gaussian_filter
 
@@ -19,7 +17,7 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 class character():
-    def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed, train_or_test):
+    def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed, train_or_test, seed):
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
         self.radius_xy = radius_xy
         self.radius_z = radius_z
@@ -39,7 +37,7 @@ class character():
             self.descent_consumption = 15 #W
             self.rest_consumption = 0.5 #W
             self.battery_capacity = 263736 #Ws #100000
-            
+
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 1.2 #kg
             self.delta_f = 0.01 #N
@@ -72,9 +70,11 @@ class character():
 
         self.f_terrain = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
 
-        self.seed = 0
+        self.seed = seed
         self.set_ceiling()
         self.world_squished = squish(self.world, self.ceiling)
+
+        self.set_noise()
 
         self.residual = self.target - self.position
         self.measurement = self.interpolate_wind(measurement=True)[0:3]
@@ -153,11 +153,7 @@ class character():
             y = np.arange(0,self.size_y,1)
             z = np.arange(0,self.size_z,1)
 
-            """
-            w_x += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
-            w_y += gauss(0,sig_xz/np.sqrt(self.n)) #is it /sqrt(n) or just /n?
-            w_z += gauss(0,sig_xz/np.sqrt(self.n))
-            """
+            w_x, w_y, w_z = self.add_noise(w_x, w_y, w_z)
 
             v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*self.delta_tn + p_x
             v_y = (np.sign(w_y - p_y) * (w_y - p_y)**2 * c + 0)*self.delta_tn + p_y
@@ -244,9 +240,25 @@ class character():
 
     def set_ceiling(self):
         if self.train_or_test == 'test':
-            random.seed(self.seed)
+            np.random.seed(self.seed)
             self.seed +=1
-        self.ceiling = random.uniform(0.9, 1) * self.size_z
+        self.ceiling = np.random.uniform(0.9, 1) * self.size_z
+
+    def set_noise(self):
+        if self.train_or_test == 'test':
+            np.random.seed(self.seed)
+            self.seed +=1
+        self.noise_mean = np.random.uniform(-yaml_p['noise_mean_xy'],yaml_p['noise_mean_xy'],2)
+        self.noise_mean = np.append(self.noise_mean, np.random.uniform(-yaml_p['noise_mean_z'],yaml_p['noise_mean_z'],1))
+
+    def add_noise(self, w_x, w_y, w_z):
+        if self.train_or_test == 'test':
+            np.random.seed(self.seed)
+            self.seed +=1
+        w_x += np.random.normal(self.noise_mean[0]/yaml_p['unit_xy'],yaml_p['noise_std_xy']/yaml_p['unit_xy'])
+        w_y += np.random.normal(self.noise_mean[1]/yaml_p['unit_xy'],yaml_p['noise_std_xy']/yaml_p['unit_xy'])
+        w_z += np.random.normal(self.noise_mean[2]/yaml_p['unit_z'],yaml_p['noise_std_z']/yaml_p['unit_z'])
+        return w_x, w_y, w_z
 
     def dist_to_ceiling(self):
         return self.ceiling - self.position[2]

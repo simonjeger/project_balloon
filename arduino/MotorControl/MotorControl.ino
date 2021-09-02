@@ -6,6 +6,6 @@ pinMode(10,OUTPUT);
 
 
 void loop() {
-  analogWrite(9,27);
+  analogWrite(9,100);
   digitalWrite(10,HIGH);
 }

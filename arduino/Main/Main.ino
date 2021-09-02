@@ -35,6 +35,8 @@ WiFiServer server(80);
 void setup() {
   Serial.begin(9600);      // initialize serial communication
   pinMode(13, OUTPUT);      // set the LED pin mode
+  pinMode(7,OUTPUT);        // set the PWM pin mode
+  pinMode(8,OUTPUT);       // set the direction pin mode
   pinMode(9,OUTPUT);        // set the PWM pin mode
   pinMode(10,OUTPUT);       // set the direction pin mode
 
@@ -132,9 +134,12 @@ void loop() {
     float pwm_bottom = 0;
     float pwm_top = 127;
     float pwm = (pwm_top - pwm_bottom)*action_f + pwm_bottom;
-    
+
+    analogWrite(6,HIGH);
     analogWrite(9,pwm);
     digitalWrite(10,action_d);
+    analogWrite(11,pwm);
+    digitalWrite(12,action_d);
 
     Serial.println("pwm: " + String(pwm));
     Serial.println("direction: " + String(action_d));
