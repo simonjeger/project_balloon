@@ -70,9 +70,14 @@ class render():
         t_residual = myfont.render('residual: ' + str([round(num, 3) for num in character.state[0:3].tolist()]), False, pygame.Color('LightGray'))
         t_velocity = myfont.render('velocity: ' + str([round(num, 3) for num in character.state[3:6].tolist()]), False, pygame.Color('LightGray'))
 
-        t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:10].tolist()]), False, pygame.Color('LightGray'))
-        t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[10:13].tolist()]), False, pygame.Color('LightGray'))
-        t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[13:].tolist()]), False, pygame.Color('LightGray'))
+        if yaml_p['scrap_rel_position']:
+            t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:8].tolist()]), False, pygame.Color('LightGray'))
+            t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[8:10].tolist()]), False, pygame.Color('LightGray'))
+            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[10:].tolist()]), False, pygame.Color('LightGray'))
+        else:
+            t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:10].tolist()]), False, pygame.Color('LightGray'))
+            t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[10:12].tolist()]), False, pygame.Color('LightGray'))
+            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[12:].tolist()]), False, pygame.Color('LightGray'))
 
         start_text = 2*self.size_z*res
         space_text = 15

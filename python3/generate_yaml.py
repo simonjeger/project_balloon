@@ -10,7 +10,7 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     # Write submit command
     file = open(path + '/submit.txt', "a")
     #file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
-    file.write('bsub -n 2 -W 23:55 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
+    file.write('bsub -n 2 -W 23:55 -R "rusage[mem=10000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     #file.write('bsub -n 2 -W 23:55 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 agent_test.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
@@ -61,14 +61,14 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + 'n_times_update: 100' + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
-    text = text + 'data_path: python3' + '\n'
+    text = text + 'environment: python3' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
     text = text + 'T: 20000' + '\n'
     text = text + 'start_train: ' + str(start_train) + '\n'
     text = text + 'start_test: [7,6,0]' + '\n'
     text = text + 'target_train: "random"' + '\n'
     text = text + 'target_test: "random"' + '\n'
-    text = text + 'reachability_study: 100' + '\n'
+    text = text + 'reachability_study: 0' + '\n'
     text = text + 'set_reachable_target: True' + '\n'
     text = text + 'radius_xy: 15' + '\n'
     text = text + 'radius_z: 15' + '\n'
@@ -83,8 +83,10 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
     text = text + 'measurement_info: ' + str(measurement_info) + '\n'
-    text = text + 'noise_mean: ' + str(noise_mean) + '\n'
-    text = text + 'noise_std: ' + str(noise_std) + '\n'
+    text = text + 'noise_mean_xy: ' + str(noise_mean) + '\n'
+    text = text + 'noise_mean_z: ' + str(noise_mean) + '\n'
+    text = text + 'noise_std_xy: ' + str(noise_std) + '\n'
+    text = text + 'noise_std_z: ' + str(noise_std) + '\n'
     text = text + 'wind_info: ' + str(wind_info) + '\n'
 
     text = text + '\n' + '# logger' + '\n'
@@ -98,11 +100,12 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
 
     text = text + '\n' + '# temp' + '\n'
     text = text + 'delta_f: 2' + '\n'
+    text = text + 'scrap_rel_position: True' + '\n'
 
     file.write(text)
     file.close()
 
-balloon = '"indoor_balloon"'
+balloon = '"outdoor_balloon"'
 delta_t = 230
 time_train = 20*60*60
 step = -0.00003
@@ -110,7 +113,7 @@ action = -0.005
 wind_info = True
 measurement_info = True
 
-process_nr = 5430
+process_nr = 5520
 
 for data_path in ['"data_big/"']:
     for min_proj_dist in [1]:
@@ -177,14 +180,14 @@ for data_path in ['"data_big/"']:
                             elif bottleneck == 30:
                                 vae_nr = 11155
                     for start_train in [[7,6,0]]:
-                        for noise_mean in [0,1,2,3]:
-                            for noise_std in [0,1,2,3]:
+                        for noise_mean in [0,1,2]:
+                            for noise_std in [0,1,2]:
                                 for curriculum_dist in [1]:
                                     for curriculum_rad in [1]:
                                         for curriculum_rad_dry in [1000]:
                                             for lr in [0.006]:
                                                 for temperature_optimizer_lr in [0.00003]:
                                                     for replay_start_size in [1000]:
-                                                        for repeat in range(1):
+                                                        for repeat in range(3):
                                                             write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, noise_mean, noise_std, wind_info, measurement_info)
                                                             process_nr += 1

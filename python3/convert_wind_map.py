@@ -27,8 +27,8 @@ def convert_map():
     #size_x = 362
     #size_y = 252
 
-    size_x = 100 #50
-    size_y = 100 #50
+    size_x = 100
+    size_y = 100
     size_z = 105
 
     world = np.zeros(shape=(1+4,size_x,size_y,size_z))
@@ -61,35 +61,37 @@ def convert_map():
     highest = size_z*yaml_p['unit_z']
     step_z = (highest - lowest)/size_z
 
-    for i in range(size_x):
-        for j in range(size_y):
-            out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + j*step_lat, start_lon + i*step_lon, 3, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
-            for k in range(size_z):
-                # finding closest quadrant
-                q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
-                q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
+    time = np.random.randint(0,23)
+    for t in range(23):
+        for i in range(size_x):
+            for j in range(size_y):
+                out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + j*step_lat, start_lon + i*step_lon, t, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
+                for k in range(size_z):
+                    # finding closest quadrant
+                    q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
+                    q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
 
-                # write terrain
-                world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
+                    # write terrain
+                    world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
 
-                if step_z*k < out['z'][-1,q_lat,q_lon] - lowest:
-                    world[-4,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
-                    world[-3,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
-                    world[-2,i,j,k] = np.mean(out['wind_z'][0,q_lat,q_lon])
-                    #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
-                else:
-                    idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*k))
-                    world[-4,i,j,k] = np.mean(out['wind_x'][idx,q_lat,q_lon])
-                    world[-3,i,j,k] = np.mean(out['wind_y'][idx,q_lat,q_lon])
-                    world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
-                    #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
+                    if step_z*k < out['z'][-1,q_lat,q_lon] - lowest:
+                        world[-4,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
+                        world[-3,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
+                        world[-2,i,j,k] = np.mean(out['wind_z'][0,q_lat,q_lon])
+                        #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
+                    else:
+                        idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*k))
+                        world[-4,i,j,k] = np.mean(out['wind_x'][idx,q_lat,q_lon])
+                        world[-3,i,j,k] = np.mean(out['wind_y'][idx,q_lat,q_lon])
+                        world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
+                        #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
-        torch.save(world, 'data_cosmo/tensor/wind_map_intsave.pt')
-        print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
-    print('------- converted to tensor -------')
+            torch.save(world, 'data_cosmo/tensor/wind_map_intsave' + str(t) + '.pt')
+            print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
+        print('------- converted to tensor -------')
 
-    # save
-    torch.save(world, 'data_cosmo/tensor/wind_map_CH.pt')
+        # save
+        torch.save(world, 'data_cosmo/tensor/wind_map_CH_' + str(t) + '.pt')
 
 def dist(lat_1, lon_1, lat_2, lon_2):
     R = 6371*1000 #radius of earth in meters
@@ -251,5 +253,5 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map()
+convert_map()
 #build_set(500, 'test')

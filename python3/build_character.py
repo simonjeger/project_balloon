@@ -63,6 +63,7 @@ class character():
 
         self.n = int(yaml_p['delta_t']*1/0.5) #physics every 1/x seconds
         self.delta_tn = yaml_p['delta_t']/self.n
+        self.m = 1 #running mean step size
 
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
@@ -77,12 +78,14 @@ class character():
         self.set_noise()
 
         self.residual = self.target - self.position
-        self.measurement = self.interpolate_wind(measurement=True)[0:3]
+        self.measurement = np.array([0,0])
 
         self.importance = None
         self.set_state()
 
         self.path = [self.position.copy(), self.position.copy()]
+        self.velocity_hist = [self.velocity.copy()]
+
         self.min_proj_dist = np.inf
         self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
 
@@ -94,7 +97,7 @@ class character():
 
         # update state
         self.residual = self.target - self.position
-        self.measurement = self.interpolate_wind(measurement=True)[0:3]
+        self.set_measurement()
 
         self.set_state()
 
@@ -109,7 +112,11 @@ class character():
 
         rel_pos = self.height_above_ground()/(self.ceiling-(self.position[2]-self.height_above_ground()))
         total_z = (self.ceiling-(self.position[2]-self.height_above_ground()))/self.size_z
-        boundaries = np.array([rel_pos, total_z, self.position[0] - np.floor(self.position[0]), self.position[1] - np.floor(self.position[1])])
+
+        if yaml_p['scrap_rel_position']:
+            boundaries = np.array([rel_pos, total_z])
+        else:
+            boundaries = np.array([rel_pos, total_z, self.position[0] - np.floor(self.position[0]), self.position[1] - np.floor(self.position[1])])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
@@ -126,11 +133,10 @@ class character():
     def move_particle(self, roll_out):
         self.U = 0
         not_done = True
-        for _ in range(self.n):
+        for n in range(self.n):
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
             rel_pos = dist_bottom / (dist_top + dist_bottom)
-            velocity = self.velocity[2]
             u = self.ll_controler.bangbang(self.action,rel_pos)
 
             #update physics model
@@ -165,9 +171,6 @@ class character():
             p_y = v_y
             p_z = v_z
 
-            # set velocity for state
-            self.velocity = np.array([v_x, v_y, v_z])
-
             # write down path in history
             self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
 
@@ -193,6 +196,11 @@ class character():
                 not_done = False
             if self.battery_level < 0: #check if battery is empty
                 not_done = False
+
+            if n%self.m == 0:
+                self.velocity = (self.path[-1] - self.path[-self.m-1])/(self.m*self.delta_tn)
+                # set velocity for state
+                self.velocity_hist.append(self.velocity)
 
         return not_done
 
@@ -263,7 +271,13 @@ class character():
     def dist_to_ceiling(self):
         return self.ceiling - self.position[2]
 
-    def interpolate_wind(self, measurement=False):
+    def set_measurement(self):
+        v_t = self.velocity_hist[-1]
+        v_prev = self.velocity_hist[-2]
+        v_w = np.sign(v_t - v_prev)*((abs(v_t - v_prev))*self.mass_total/(self.m*self.delta_tn)*2/(self.c_w*self.area*self.rho_air))**(1/2) + (v_t + v_prev)/2
+        self.measurement = v_w[0:2]
+
+    def interpolate_wind(self):
         world = self.world_squished
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
         coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
@@ -297,11 +311,10 @@ class character():
         wind = f_000*(1-x)*(1-y)*(1-z) + f_001*(1-x)*(1-y)*z + f_010*(1-x)*y*(1-z) + f_011*(1-x)*y*z + f_100*x*(1-y)*(1-z) + f_101*x*(1-y)*z + f_110*x*y*(1-z) + f_111*x*y*z
 
         w_x, w_y, w_z, sig_xz = wind
-        if not measurement:
-            w_x /= yaml_p['unit_xy']
-            w_y /= yaml_p['unit_xy']
-            w_z /= yaml_p['unit_z']
+        w_x /= yaml_p['unit_xy']
+        w_y /= yaml_p['unit_xy']
+        w_z /= yaml_p['unit_z']
         return np.array([w_x, w_y, w_z, sig_xz])
 
     def normalize(self,x):
-        return x/(abs(x)+3)
+        return x/(abs(x)+0.005)

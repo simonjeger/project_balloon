@@ -80,6 +80,7 @@ class balloon3d(Env):
         # Update compressed wind map
         if self.prev_int != [int(self.character.position[0]), int(self.character.position[1])]:
             self.world_compressed = self.ae.compress(self.world, self.character.position, self.character.ceiling)
+            self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in charater.py
             self.prev_int = [int(self.character.position[0]), int(self.character.position[1])]
 
         coord = [int(i) for i in np.round(self.character.position)] #convert position into int so I can use it as index
