@@ -73,11 +73,13 @@ class render():
         if yaml_p['scrap_rel_position']:
             t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:8].tolist()]), False, pygame.Color('LightGray'))
             t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[8:10].tolist()]), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[10:].tolist()]), False, pygame.Color('LightGray'))
+            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[10:10+yaml_p['bottleneck']*2].tolist()]), False, pygame.Color('LightGray'))
+            t_memo = myfont.render('memo: ' + str([round(num, 3) for num in character.state[-yaml_p['memo']-1:-1].tolist()]), False, pygame.Color('LightGray'))
         else:
             t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:10].tolist()]), False, pygame.Color('LightGray'))
             t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[10:12].tolist()]), False, pygame.Color('LightGray'))
-            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[12:].tolist()]), False, pygame.Color('LightGray'))
+            t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[12:12+yaml_p['bottleneck']*2].tolist()]), False, pygame.Color('LightGray'))
+            t_memo = myfont.render('memo: ' + str([round(num, 3) for num in character.state[-yaml_p['memo']-1:-1].tolist()]), False, pygame.Color('LightGray'))
 
         start_text = 2*self.size_z*res
         space_text = 15
@@ -92,6 +94,7 @@ class render():
             screen.blit(t_rel_pos,(space_text,start_text+9*space_text))
             screen.blit(t_measurement,(space_text,start_text+10*space_text))
             screen.blit(t_world_compressed,(space_text,start_text+11*space_text))
+            screen.blit(t_memo,(space_text,start_text+12*space_text))
 
         # updating the window
         pygame.display.flip()

@@ -86,12 +86,12 @@ def convert_map():
                         world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                         #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
-            torch.save(world, 'data_cosmo/tensor/wind_map_intsave' + str(t) + '.pt')
+            torch.save(world, 'data_cosmo/tensor/wind_map_intsave' + str(t).zfill(2) + '.pt')
             print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
         print('------- converted to tensor -------')
 
         # save
-        torch.save(world, 'data_cosmo/tensor/wind_map_CH_' + str(t) + '.pt')
+        torch.save(world, 'data_cosmo/tensor/wind_map_CH_' + str(t).zfill(2) + '.pt')
 
 def dist(lat_1, lon_1, lat_2, lon_2):
     R = 6371*1000 #radius of earth in meters
@@ -108,39 +108,49 @@ def step(lat, lon, step_x, step_y):
     lon = lon + (step_x/R) * (180/np.pi) / np.cos(lat*np.pi/180)
     return lat, lon
 
-def build_set(num, train_or_test):
-    tensor = torch.load('data_cosmo/tensor/wind_map_CH.pt')
-    size_c = len(tensor)
-    size_x = yaml_p['size_x']
-    size_y = yaml_p['size_y']
-    size_z = yaml_p['size_z']
+def build_set(num, n_h, train_or_test):
+    seed_overall = np.random.randint(-999,999)
+    for h in range(n_h):
+        tensor = torch.load('data_cosmo/tensor/wind_map_CH_' + str(h).zfill(2) + '.pt')
+        size_c = len(tensor)
+        size_x = yaml_p['size_x']
+        size_y = yaml_p['size_y']
+        size_z = yaml_p['size_z']
 
-    global_size_x = len(tensor[0])
-    global_size_y = len(tensor[0][0])
-    global_size_z = len(tensor[0][0][0])
+        global_size_x = len(tensor[0])
+        global_size_y = len(tensor[0][0])
+        global_size_z = len(tensor[0][0][0])
 
-    N = int(num/4)
-    for o in range(4):
-        if o == 0:
-            tensor_rot = tensor[:,:,:,:]
-        elif o == 1:
-            tensor_rot = tensor[:,::-1,:,:]
-            tensor_rot[-4,:,:,:] = -tensor_rot[-4,:,:,:]
-        elif o == 2:
-            tensor_rot = tensor[:,:,::-1,:]
-            tensor_rot[-3,:,:,:] = -tensor_rot[-3,:,:,:]
-        elif o == 3:
-            tensor_rot = tensor[:,::-1,::-1,:]
-            tensor_rot[-3:-1,:,:,:] = -tensor_rot[-3:-1,:,:,:]
+        seed = seed_overall
+        N = int(num/4)
+        for o in range(4):
+            if o == 0:
+                tensor_rot = tensor[:,:,:,:]
+            elif o == 1:
+                tensor_rot = tensor[:,::-1,:,:]
+                tensor_rot[-4,:,:,:] = -tensor_rot[-4,:,:,:]
+            elif o == 2:
+                tensor_rot = tensor[:,:,::-1,:]
+                tensor_rot[-3,:,:,:] = -tensor_rot[-3,:,:,:]
+            elif o == 3:
+                tensor_rot = tensor[:,::-1,::-1,:]
+                tensor_rot[-3:-1,:,:,:] = -tensor_rot[-3:-1,:,:,:]
 
-        for n in range(N):
-            idx_x = np.random.randint(0,global_size_x - size_x - 1)
-            idx_y = np.random.randint(0,global_size_y - size_y - 1)
+            for n in range(N):
+                np.random.seed(seed)
+                seed += 1
+                idx_x = np.random.randint(0,global_size_x - size_x - 1)
+                np.random.seed(seed)
+                seed += 1
+                idx_y = np.random.randint(0,global_size_y - size_y - 1)
 
-            world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
+                world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
 
-            torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '.pt')
-            print('generated ' + str(o*N + n) + ' of ' + str(num) + ' sets')
+                torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor_t/wind_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
+
+                if h == 0:
+                    torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '.pt')
+                print('generated ' + str(o*N + n + 1) + ' of ' + str(num) + ' sets')
 
 def visualize_real_data(dimension):
     # reading the nc file and creating Dataset
@@ -253,5 +263,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map()
-#build_set(500, 'test')
+#convert_map()
+
+build_set(100, 3, 'train')
+build_set(100, 3, 'test')

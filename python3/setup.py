@@ -1,9 +1,6 @@
 import matplotlib
 matplotlib.use('Agg') # this needs to be called at the very beginning on cluster server
 
-#from convert_wind_map import build_set
-from generate_world import generate_world
-
 from pathlib import Path
 import shutil
 
@@ -24,13 +21,10 @@ Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + 
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/map_test').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'train/image').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + 'train/tensor_t').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train/tensor').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'val').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'val/image').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'val/tensor').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'test').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'test/image').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + 'test/tensor_t').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'test/tensor').mkdir(parents=True, exist_ok=True)
 Path('render').mkdir(parents=True, exist_ok=True)
 
@@ -40,16 +34,9 @@ size_x = yaml_p['size_x']
 size_y = yaml_p['size_y']
 size_z = yaml_p['size_z']
 
-#build_set(5000, 'train')
-#build_set(500, 'val')
-#build_set(500, 'test')
-#generate_world(500, 'train')
-#generate_world(500, 'val')
-#generate_world(15, 'test')
-
 #import autoencoder_train
 #import autoencoder_test
 
 import agent_train
 import agent_test
-#import agent_importance
+import agent_importance

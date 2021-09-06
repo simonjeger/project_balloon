@@ -5,8 +5,6 @@ import warnings
 import xpc
 import os
 import copy
-import random
-from random import gauss
 
 from build_ll_controller import ll_controler
 
@@ -23,7 +21,7 @@ min_speed = 0
 max_speed = 0
 
 class character_xplane():
-    def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed):
+    def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed, seed):
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
         self.radius_xy = radius_xy
         self.radius_z = radius_z
@@ -56,13 +54,14 @@ class character_xplane():
         self.n = int(yaml_p['delta_t']*1/0.5) #physics every 1/x seconds
         self.delta_tn = yaml_p['delta_t']/self.n
 
-        self.seed = 0
+        self.seed = seed
         self.set_ceiling()
 
         self.residual = self.target - self.position
         self.measurement = [0,0,0] #TOCORRECT
 
         self.importance = None
+        self.memo = np.zeros(yaml_p['memo']) # in case that memo is used
 
         self.set_xplane()
 
@@ -248,8 +247,7 @@ class character_xplane():
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 
-        self.state = np.concatenate(((self.residual[0:2]/[self.size_x,self.size_y]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), self.boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
-
+        self.state = np.concatenate(((self.residual[0:2]/[self.size_x,self.size_y]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), self.boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten(), self.memo), axis=0)
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
 
@@ -279,10 +277,10 @@ class character_xplane():
         return d
 
     def set_ceiling(self):
-        random.seed(self.seed)
+        np.random.seed(self.seed)
         self.seed +=1
-        self.ceiling = random.uniform(0.9, 1) * self.size_z
+        self.ceiling = np.random.uniform(0.9, 1) * self.size_z
 
-    def normalize(self, x):
+    def normalize(self,x):
         x = np.array(x)
-        return x/(abs(x)+3)
+        return x/(abs(x)+0.005)

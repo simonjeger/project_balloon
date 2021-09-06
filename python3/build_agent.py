@@ -166,8 +166,10 @@ class Agent:
                 self.env.render(mode=True)
 
             if yaml_p['mode'] == 'reinforcement_learning':
-                action = self.agent.act(obs) #uses self.agent.model to decide next step
-                action = (action[0]+1)/2
+                all_actions = self.agent.act(obs) #uses self.agent.model to decide next step
+                action = (all_actions[0]+1)/2
+                memo = all_actions[1:]
+                self.env.character.memo = memo
 
             elif yaml_p['mode'] == 'game':
                 for event in pygame.event.get():
@@ -325,9 +327,18 @@ class Agent:
         for i in range(len(self.env.character.path)):
             coord_x.append(self.env.character.path[i][0])
             coord_y.append(self.env.character.path[i][1])
-        idx_x = np.random.uniform(min(coord_x),max(coord_x))
-        idx_y = np.random.uniform(min(coord_y),max(coord_y))
-        idx = np.argmin(np.sqrt(np.subtract(coord_x,idx_x)**2 + np.subtract(coord_y,idx_y)**2))
+
+        for _ in range(100): # if I can't find anything that's far enough from the start after n tries, just take the last one
+            if self.train_or_test == 'test':
+                np.random.seed(self.seed)
+                self.seed += 1
+            idx_x = np.random.uniform(min(coord_x),max(coord_x))
+            idx_y = np.random.uniform(min(coord_y),max(coord_y))
+            idx = np.argmin(np.sqrt(np.subtract(coord_x,idx_x)**2 + np.subtract(coord_y,idx_y)**2))
+
+            target = self.env.character.path[idx]
+            if np.sqrt((target[0] - self.env.character.start[0])**2 + (target[0] - self.env.character.start[1])**2)/yaml_p['unit_z']*yaml_p['unit_xy'] > yaml_p['radius_xy']:
+                break
 
         self.env.path_roll_out = self.env.character.path[0:idx]
         target = self.env.character.path[idx]

@@ -57,7 +57,7 @@ class balloon3d(Env):
         self.load_new_world()
 
         # action we can take: -1 to 1
-        self.action_space = Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float64) #continuous space
+        self.action_space = Box(low=-1.0, high=1.0, shape=(1 + int(yaml_p['memo']),), dtype=np.float64) #continuous space
 
         # set maximal duration of flight
         self.T = yaml_p['T']
@@ -77,17 +77,18 @@ class balloon3d(Env):
         self.render_machine = render(self.size_x, self.size_y, self.size_z)
 
     def step(self, action, roll_out=False):
+        # Interpolate the get the current world
+        self.interpolate_world(self.character.t)
+
         # Update compressed wind map
-        if self.prev_int != [int(self.character.position[0]), int(self.character.position[1])]:
-            self.world_compressed = self.ae.compress(self.world, self.character.position, self.character.ceiling)
-            self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in charater.py
-            self.prev_int = [int(self.character.position[0]), int(self.character.position[1])]
+        self.world_compressed = self.ae.compress(self.world, self.character.position, self.character.ceiling)
+        self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in character.py
 
         coord = [int(i) for i in np.round(self.character.position)] #convert position into int so I can use it as index
         done = False
 
         # move character
-        in_bounds = self.character.update(action, self.world_compressed, roll_out)
+        in_bounds = self.character.update(action, self.world, self.world_compressed, roll_out)
         done = self.cost(in_bounds)
 
         if not roll_out:
@@ -207,7 +208,6 @@ class balloon3d(Env):
             if (self.character.ceiling - self.world[0,pos_x,pos_y,0] < min_space) | (np.mean(self.character.ceiling - self.world[0,:,:,0]) < min_space):
                 self.reset(roll_out=roll_out)
             self.reward_list = []
-            self.prev_int = [-1,-1]
 
         elif yaml_p['environment'] == 'xplane':
             self.character = character_xplane(self.size_x, self.size_y, self.size_z, start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test, self.seed)
@@ -224,20 +224,45 @@ class balloon3d(Env):
     def load_new_world(self):
         # choose random world_map
         if self.train_or_test == 'test':
-            random.seed(self.seed)
+            np.random.seed(self.seed)
             self.seed +=1
-        self.world_name = random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
+        self.world_name = np.random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
 
         # remove suffix
         length = len(self.world_name)
         self.world_name = self.world_name[:length - 3]
-        # read in world_map
-        self.world = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '.pt')
+
+        # Interpolate the get the current world
+        if self.train_or_test == 'test':
+            np.random.seed(self.seed)
+            self.seed +=1
+        self.takeoff_time = np.random.randint(0,23*60*60 - yaml_p['T'])
+
+        self.interpolate_world(yaml_p['T'])
 
         # define world size
         self.size_x = len(self.world[-1,:,:])
         self.size_y = len(self.world[-1,:,:][0])
         self.size_z = len(self.world[-1,:,:][0][0])
+
+    def interpolate_world(self,t):
+        tss = yaml_p['T'] - t + self.takeoff_time
+
+        h = int(tss/60/60)
+        s = tss - h*60*60
+        p = s/60/60
+
+        if h < 23:
+            i = 1
+        else:
+            i = 0
+
+        self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor_t/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
+        self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor_t/' + self.world_name + '_'  + str(h+i).zfill(2) + '.pt')
+
+        self.world = p*(self.world_1 - self.world_0) + self.world_0
+        torch.save(self.world, yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '.pt')
+
 
     def set_start(self):
         border_x = self.size_x/(10*self.render_ratio)
@@ -259,6 +284,10 @@ class balloon3d(Env):
             start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
         else:
             start = np.array(yaml_start, dtype=float)
+            if self.train_or_test == 'test':
+                np.random.seed(self.seed)
+                self.seed +=1
+            start = np.floor(start) + np.append(np.random.uniform(0,1,2),[0]) #randomize start position without touching the z-axis
         return start
 
     def set_target(self, start):

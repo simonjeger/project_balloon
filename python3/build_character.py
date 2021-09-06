@@ -81,6 +81,7 @@ class character():
         self.measurement = np.array([0,0])
 
         self.importance = None
+        self.memo = np.zeros(yaml_p['memo']) # in case that memo is used
         self.set_state()
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -89,8 +90,9 @@ class character():
         self.min_proj_dist = np.inf
         self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
 
-    def update(self, action, world_compressed, roll_out=False):
+    def update(self, action, world, world_compressed, roll_out=False):
         self.action = action
+        self.world = world
         self.world_compressed = world_compressed
 
         not_done = self.move_particle(roll_out)
@@ -122,7 +124,7 @@ class character():
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
         self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
-        self.state = np.concatenate(((self.residual[0:2]/[self.size_x - 1,self.size_y - 1]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
+        self.state = np.concatenate(((self.residual[0:2]/[self.size_x - 1,self.size_y - 1]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten(), self.memo), axis=0)
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
@@ -317,4 +319,5 @@ class character():
         return np.array([w_x, w_y, w_z, sig_xz])
 
     def normalize(self,x):
+        x = np.array(x)
         return x/(abs(x)+0.005)

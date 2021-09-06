@@ -45,7 +45,7 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + 'num_epochs_test: 1000' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
-    text = text + 'mode: "reinforcement_learning"' + '\n'
+    text = text + 'mode: reinforcement_learning' + '\n'
     text = text + 'explorer_type: LinearDecayEpsilonGreedy' + '\n'
     text = text + 'width: 512' + '\n'
     text = text + 'depth: 2' + '\n'
@@ -82,12 +82,13 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
 
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
-    text = text + 'measurement_info: ' + str(measurement_info) + '\n'
     text = text + 'noise_mean_xy: ' + str(noise_mean) + '\n'
     text = text + 'noise_mean_z: ' + str(noise_mean) + '\n'
     text = text + 'noise_std_xy: ' + str(noise_std) + '\n'
     text = text + 'noise_std_z: ' + str(noise_std) + '\n'
+    text = text + 'measurement_info: ' + str(measurement_info) + '\n'
     text = text + 'wind_info: ' + str(wind_info) + '\n'
+    text = text + 'memo: 0' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
