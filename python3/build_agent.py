@@ -337,7 +337,12 @@ class Agent:
             idx = np.argmin(np.sqrt(np.subtract(coord_x,idx_x)**2 + np.subtract(coord_y,idx_y)**2))
 
             target = self.env.character.path[idx]
-            if np.sqrt((target[0] - self.env.character.start[0])**2 + (target[0] - self.env.character.start[1])**2)/yaml_p['unit_z']*yaml_p['unit_xy'] > yaml_p['radius_xy']:
+
+            not_to_close = np.sqrt((target[0] - self.env.character.start[0])**2 + (target[0] - self.env.character.start[1])**2) > yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy']
+            not_out_of_bounds_x = (0 < target[0]) & (target[0] < self.env.size_x - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
+            not_out_of_bounds_y = (0 < target[1]) & (target[1] < self.env.size_y - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
+
+            if not_to_close & not_out_of_bounds_x & not_out_of_bounds_y:
                 break
 
         self.env.path_roll_out = self.env.character.path[0:idx]

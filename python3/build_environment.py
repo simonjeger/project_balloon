@@ -170,6 +170,8 @@ class balloon3d(Env):
         # load new world
         if not roll_out:
             self.load_new_world()
+        else:
+            self.interpolate_world(yaml_p['T']) #still set back the world to time = takeoff_time
 
         self.reward_step = 0
         self.reward_epi = 0

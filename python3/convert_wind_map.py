@@ -265,5 +265,5 @@ def visualize_real_data(dimension):
 #visualize_real_data('time')
 #convert_map()
 
-build_set(100, 3, 'train')
-build_set(100, 3, 'test')
+build_set(1000, 4, 'train')
+build_set(1000, 4, 'test')
