@@ -81,7 +81,6 @@ class character():
         self.measurement = np.array([0,0])
 
         self.importance = None
-        self.memo = np.zeros(yaml_p['memo']) # in case that memo is used
         self.set_state()
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -115,16 +114,16 @@ class character():
         rel_pos = self.height_above_ground()/(self.ceiling-(self.position[2]-self.height_above_ground()))
         total_z = (self.ceiling-(self.position[2]-self.height_above_ground()))/self.size_z
 
-        if yaml_p['scrap_rel_position']:
-            boundaries = np.array([rel_pos, total_z])
+        if yaml_p['position_info']:
+            boundaries = np.array([self.position[0]/self.size_x, self.position[1]/self.size_y, rel_pos, total_z])
         else:
-            boundaries = np.array([rel_pos, total_z, self.position[0] - np.floor(self.position[0]), self.position[1] - np.floor(self.position[1])])
+            boundaries = np.array([rel_pos, total_z])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
         self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
-        self.state = np.concatenate(((self.residual[0:2]/[self.size_x - 1,self.size_y - 1]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten(), self.memo), axis=0)
+        self.state = np.concatenate(((self.residual[0:2]/[self.size_x - 1,self.size_y - 1]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)

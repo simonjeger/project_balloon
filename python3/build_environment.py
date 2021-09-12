@@ -57,7 +57,7 @@ class balloon3d(Env):
         self.load_new_world()
 
         # action we can take: -1 to 1
-        self.action_space = Box(low=-1.0, high=1.0, shape=(1 + int(yaml_p['memo']),), dtype=np.float64) #continuous space
+        self.action_space = Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float64) #continuous space
 
         # set maximal duration of flight
         self.T = yaml_p['T']
@@ -145,16 +145,16 @@ class balloon3d(Env):
                 self.success_n += 1
                 done = True
             else:
-                self.reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(self.character.U)*yaml_p['action']
+                self.reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(self.character.U)*yaml_p['action'] + np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2 + self.character.residual[1]**2)/init_proj_min*yaml['gradient']
                 done = False
 
             if self.character.t <= 0:
-                self.reward_step = yaml_p['overtime'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min * yaml_p['min_proj_dist']
+                self.reward_step = yaml_p['overtime'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min*yaml_p['min_proj_dist']
                 self.success = False
                 done = True
 
         else:
-            self.reward_step = yaml_p['bounds'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min * yaml_p['min_proj_dist']
+            self.reward_step = yaml_p['bounds'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min*yaml_p['min_proj_dist']
             self.character.t = 0
             self.success = False
             done = True
@@ -238,8 +238,8 @@ class balloon3d(Env):
         if self.train_or_test == 'test':
             np.random.seed(self.seed)
             self.seed +=1
-        self.takeoff_time = np.random.randint(0,23*60*60 - yaml_p['T'])
-
+        self.takeoff_time = np.random.randint(0,6*60*60 - yaml_p['T'])
+        #self.takeoff_time = 0
         self.interpolate_world(yaml_p['T'])
 
         # define world size

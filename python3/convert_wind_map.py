@@ -23,7 +23,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def convert_map():
+def convert_map(start_t):
     #size_x = 362
     #size_y = 252
 
@@ -61,8 +61,7 @@ def convert_map():
     highest = size_z*yaml_p['unit_z']
     step_z = (highest - lowest)/size_z
 
-    time = np.random.randint(0,23)
-    for t in range(23):
+    for t in np.arange(start_t,24):
         for i in range(size_x):
             for j in range(size_y):
                 out = extract_cosmo_data('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + j*step_lat, start_lon + i*step_lon, t, terrain_file='data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
@@ -86,8 +85,7 @@ def convert_map():
                         world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                         #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
-            torch.save(world, 'data_cosmo/tensor/wind_map_intsave' + str(t).zfill(2) + '.pt')
-            print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor')
+            print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor at ' + str(t).zfill(2) + ':00')
         print('------- converted to tensor -------')
 
         # save
@@ -109,7 +107,7 @@ def step(lat, lon, step_x, step_y):
     return lat, lon
 
 def build_set(num, n_h, train_or_test):
-    seed_overall = np.random.randint(-999,999)
+    seed_overall = np.random.randint(0,2**32 - 1)
     for h in range(n_h):
         tensor = torch.load('data_cosmo/tensor/wind_map_CH_' + str(h).zfill(2) + '.pt')
         size_c = len(tensor)
@@ -150,7 +148,7 @@ def build_set(num, n_h, train_or_test):
 
                 if h == 0:
                     torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '.pt')
-                print('generated ' + str(o*N + n + 1) + ' of ' + str(num) + ' sets')
+                print('generated ' + str(o*N + n + 1) + ' of ' + str(num) + ' maps at ' + str(h).zfill(2) + ':00')
 
 def visualize_real_data(dimension):
     # reading the nc file and creating Dataset
@@ -263,7 +261,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map()
+convert_map(7)
 
-build_set(1000, 4, 'train')
-build_set(1000, 4, 'test')
+#build_set(1000, 7, 'train')
+#build_set(1000, 7, 'test')

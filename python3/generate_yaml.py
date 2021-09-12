@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, noise_mean, noise_std, wind_info, measurement_info):
+def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, noise_mean, noise_std, wind_info, position_info, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -78,6 +78,7 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + 'action: ' + f'{action:.10f}' + '\n'
     text = text + 'overtime: -1' + '\n'
     text = text + 'min_proj_dist: ' + str(min_proj_dist) + '\n'
+    text = text + 'gradient: ' + str(gradient) + '\n'
     text = text + 'bounds: -1' + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
@@ -86,9 +87,9 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + 'noise_mean_z: ' + str(noise_mean) + '\n'
     text = text + 'noise_std_xy: ' + str(noise_std) + '\n'
     text = text + 'noise_std_z: ' + str(noise_std) + '\n'
+    text = text + 'position_info: ' + str(position_info) + '\n'
     text = text + 'measurement_info: ' + str(measurement_info) + '\n'
     text = text + 'wind_info: ' + str(wind_info) + '\n'
-    text = text + 'memo: 0' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
@@ -101,7 +102,6 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
 
     text = text + '\n' + '# temp' + '\n'
     text = text + 'delta_f: 2' + '\n'
-    text = text + 'scrap_rel_position: True' + '\n'
 
     file.write(text)
     file.close()
@@ -114,9 +114,9 @@ action = -0.005
 wind_info = True
 measurement_info = True
 
-process_nr = 5520
+process_nr = 5650
 
-for data_path in ['"data_big/"']:
+for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
     for min_proj_dist in [1]:
         for autoencoder in ['"HAE_avg"']:
             for window_size in [2]:
@@ -181,14 +181,19 @@ for data_path in ['"data_big/"']:
                             elif bottleneck == 30:
                                 vae_nr = 11155
                     for start_train in [[7,6,0]]:
-                        for noise_mean in [0,1,2]:
-                            for noise_std in [0,1,2]:
-                                for curriculum_dist in [1]:
-                                    for curriculum_rad in [1]:
-                                        for curriculum_rad_dry in [1000]:
-                                            for lr in [0.006]:
-                                                for temperature_optimizer_lr in [0.00003]:
-                                                    for replay_start_size in [1000]:
-                                                        for repeat in range(3):
-                                                            write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, min_proj_dist, balloon, noise_mean, noise_std, wind_info, measurement_info)
-                                                            process_nr += 1
+                        for noise_mean in [0]:
+                            for noise_std in [0]:
+                                for position_info in [False, True]:
+                                    #for gradient in np.array([0, 0.1, 0.5, 1])*abs(step + action):
+                                    for gradient in [0]:
+                                        if gradient != 0:
+                                            min_proj_dist = 0
+                                        for curriculum_dist in [1]:
+                                            for curriculum_rad in [1]:
+                                                for curriculum_rad_dry in [1000]:
+                                                    for lr in [0.006]:
+                                                        for temperature_optimizer_lr in [0.00003]:
+                                                            for replay_start_size in [1000]:
+                                                                for repeat in range(3):
+                                                                    write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, noise_mean, noise_std, position_info, wind_info, measurement_info)
+                                                                    process_nr += 1

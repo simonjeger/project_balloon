@@ -166,10 +166,8 @@ class Agent:
                 self.env.render(mode=True)
 
             if yaml_p['mode'] == 'reinforcement_learning':
-                all_actions = self.agent.act(obs) #uses self.agent.model to decide next step
-                action = (all_actions[0]+1)/2
-                memo = all_actions[1:]
-                self.env.character.memo = memo
+                action = self.agent.act(obs) #uses self.agent.model to decide next step
+                action = (action[0]+1)/2
 
             elif yaml_p['mode'] == 'game':
                 for event in pygame.event.get():

@@ -1,22 +1,21 @@
-#include <Servo.h>
-
-Servo myservo;  // create servo object to control a servo
-// twelve servo objects can be created on most boards
-
-int pos = 0;    // variable to store the servo position
-
+//Initializing LED Pin
+int led_pin = 13;
+int pwm_pin = 2;
 void setup() {
-  myservo.attach(9);  // attaches the servo on pin 9 to the servo object
+  //Declaring LED pin as output
+  pinMode(led_pin, OUTPUT);
+  pinMode(pwm_pin, OUTPUT);
 }
-
 void loop() {
-  for (pos = 70; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(20);                       // waits 15ms for the servo to reach the position
+  //Fading the LED
+  for(int i=0; i<255; i++){
+    analogWrite(led_pin, i);
+    analogWrite(pwm_pin, i);
+    delay(10);
   }
-  for (pos = 180; pos >= 70; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(20);                       // waits 15ms for the servo to reach the position
+  for(int i=255; i>0; i--){
+    analogWrite(led_pin, i);
+    analogWrite(pwm_pin, i);
+    delay(10);
   }
 }
