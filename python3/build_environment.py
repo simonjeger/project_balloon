@@ -230,10 +230,11 @@ class balloon3d(Env):
                 np.random.seed(self.seed)
                 self.seed +=1
             self.world_name = np.random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
-            self.takeoff_time = np.random.randint(0,60)
 
             hour = int(self.world_name[-5:-3])
-            if hour < 23*60*60 - yaml_p['T']:
+            self.takeoff_time = hour*60*60 + np.random.randint(0,60)
+
+            if self.takeoff_time + yaml_p['T'] < 23*60*60:
                 break
 
         # remove suffix and timestamp
@@ -253,11 +254,6 @@ class balloon3d(Env):
         h = int(tss/60/60)
         s = tss - h*60*60
         p = s/60/60
-
-        if h < 23:
-            i = 1
-        else:
-            i = 0
 
         self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
         self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+i).zfill(2) + '.pt')
