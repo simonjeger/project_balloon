@@ -21,10 +21,8 @@ Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + 
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/map_test').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'train/tensor_t').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'train/tensor').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'test').mkdir(parents=True, exist_ok=True)
-Path(yaml_p['data_path'] + 'test/tensor_t').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + 'test/tensor').mkdir(parents=True, exist_ok=True)
 Path('render').mkdir(parents=True, exist_ok=True)
 

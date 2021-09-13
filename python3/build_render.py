@@ -48,7 +48,7 @@ class render():
                 sys.exit()
 
         # read in wind_map
-        world = torch.load(yaml_p['data_path'] + train_or_test + '/tensor/' + world_name + '.pt')
+        world = torch.load('render/' + world_name + '.pt')
         """
         world = torch.load('render/world_squished.pt')
         """

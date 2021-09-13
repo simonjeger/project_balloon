@@ -145,7 +145,7 @@ class balloon3d(Env):
                 self.success_n += 1
                 done = True
             else:
-                self.reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(self.character.U)*yaml_p['action'] + np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2 + self.character.residual[1]**2)/init_proj_min*yaml['gradient']
+                self.reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(self.character.U)*yaml_p['action'] + np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2 + self.character.residual[1]**2)/init_proj_min*yaml_p['gradient']
                 done = False
 
             if self.character.t <= 0:
@@ -224,22 +224,22 @@ class balloon3d(Env):
         return self.character.state
 
     def load_new_world(self):
-        # choose random world_map
-        if self.train_or_test == 'test':
-            np.random.seed(self.seed)
-            self.seed +=1
-        self.world_name = np.random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
+        while True:
+            # choose random world_map
+            if self.train_or_test == 'test':
+                np.random.seed(self.seed)
+                self.seed +=1
+            self.world_name = np.random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
+            self.takeoff_time = np.random.randint(0,60)
 
-        # remove suffix
-        length = len(self.world_name)
-        self.world_name = self.world_name[:length - 3]
+            hour = int(self.world_name[-5:-3])
+            if hour < 23*60*60 - yaml_p['T']:
+                break
+
+        # remove suffix and timestamp
+        self.world_name = self.world_name[:-6]
 
         # Interpolate the get the current world
-        if self.train_or_test == 'test':
-            np.random.seed(self.seed)
-            self.seed +=1
-        self.takeoff_time = np.random.randint(0,6*60*60 - yaml_p['T'])
-        #self.takeoff_time = 0
         self.interpolate_world(yaml_p['T'])
 
         # define world size
@@ -259,11 +259,11 @@ class balloon3d(Env):
         else:
             i = 0
 
-        self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor_t/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
-        self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor_t/' + self.world_name + '_'  + str(h+i).zfill(2) + '.pt')
+        self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
+        self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+i).zfill(2) + '.pt')
 
         self.world = p*(self.world_1 - self.world_0) + self.world_0
-        torch.save(self.world, yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '.pt')
+        torch.save(self.world, 'render/' + self.world_name + '.pt')
 
 
     def set_start(self):
