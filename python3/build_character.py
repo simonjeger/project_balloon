@@ -115,7 +115,7 @@ class character():
         total_z = (self.ceiling-(self.position[2]-self.height_above_ground()))/self.size_z
 
         if yaml_p['position_info']:
-            boundaries = np.array([self.position[0]/self.size_x, self.position[1]/self.size_y, rel_pos, total_z])
+            boundaries = np.array([self.normalize_map(self.position[0]), self.normalize_map(self.position[1]), rel_pos, total_z])
         else:
             boundaries = np.array([rel_pos, total_z])
 
@@ -123,7 +123,7 @@ class character():
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
         self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
 
-        self.state = np.concatenate(((self.residual[0:2]/[self.size_x - 1,self.size_y - 1]).flatten(),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
+        self.state = np.concatenate((self.normalize_map(self.residual[0:2]),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
@@ -320,3 +320,7 @@ class character():
     def normalize(self,x):
         x = np.array(x)
         return x/(abs(x)+0.005)
+
+    def normalize_map(self,x):
+        x = np.array(x)
+        return x/(abs(x)+5)
