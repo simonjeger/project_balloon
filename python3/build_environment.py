@@ -234,7 +234,8 @@ class balloon3d(Env):
             hour = int(self.world_name[-5:-3])
             self.takeoff_time = hour*60*60 + np.random.randint(0,60)
 
-            if self.takeoff_time + yaml_p['T'] < 23*60*60:
+            #if self.takeoff_time + yaml_p['T'] < 23*60*60:
+            if self.takeoff_time + yaml_p['T'] < 6*60*60:
                 break
 
         # remove suffix and timestamp
@@ -249,18 +250,15 @@ class balloon3d(Env):
         self.size_z = len(self.world[-1,:,:][0][0])
 
     def interpolate_world(self,t):
-        tss = yaml_p['T'] - t + self.takeoff_time
+        tss = self.takeoff_time + yaml_p['T'] - t #time since start
 
         h = int(tss/60/60)
-        s = tss - h*60*60
-        p = s/60/60
-
+        p = (tss - h*60*60)/60/60
         self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
-        self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+i).zfill(2) + '.pt')
+        self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+1).zfill(2) + '.pt')
 
         self.world = p*(self.world_1 - self.world_0) + self.world_0
         torch.save(self.world, 'render/' + self.world_name + '.pt')
-
 
     def set_start(self):
         border_x = self.size_x/(10*self.render_ratio)

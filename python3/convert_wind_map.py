@@ -107,6 +107,13 @@ def step(lat, lon, step_x, step_y):
     return lat, lon
 
 def build_set(num, n_h, train_or_test):
+    Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['data_path'] + 'train').mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['data_path'] + 'train/tensor').mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['data_path'] + 'test').mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['data_path'] + 'test/tensor').mkdir(parents=True, exist_ok=True)
+
+
     seed_overall = np.random.randint(0,2**32 - 1)
     for h in range(n_h):
         tensor = torch.load('data_cosmo/tensor/wind_map_CH_' + str(h).zfill(2) + '.pt')
@@ -144,10 +151,8 @@ def build_set(num, n_h, train_or_test):
 
                 world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
 
-                torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor_t/wind_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
-
-                if h == 0:
-                    torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '.pt')
+                torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
+                
                 print('generated ' + str(o*N + n + 1) + ' of ' + str(num) + ' maps at ' + str(h).zfill(2) + ':00')
 
 def visualize_real_data(dimension):
@@ -261,7 +266,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map(7)
+#convert_map(7)
 
-#build_set(1000, 7, 'train')
-#build_set(1000, 7, 'test')
+build_set(1000, 7, 'train')
+build_set(1000, 7, 'test')
