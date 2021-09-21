@@ -5,6 +5,7 @@ from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
 import cv2
 import random
+from pathlib import Path
 
 import yaml
 import argparse
@@ -17,6 +18,10 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 def generate_world(num, train_or_test):
+    Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
+
     size_x = yaml_p['size_x']
     size_y = yaml_p['size_y']
     size_z = yaml_p['size_z']

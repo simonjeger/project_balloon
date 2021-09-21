@@ -1,7 +1,8 @@
 import numpy as np
 import scipy
 import copy
-from scipy.ndimage import gaussian_filter
+import torch
+import os
 
 from preprocess_wind import squish
 from build_ll_controller import ll_controler
@@ -89,12 +90,12 @@ class character():
         self.min_proj_dist = np.inf
         self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
 
-    def update(self, action, world, world_compressed, roll_out=False):
+    def update(self, action, world, world_compressed):
         self.action = action
         self.world = world
         self.world_compressed = world_compressed
 
-        not_done = self.move_particle(roll_out)
+        not_done = self.move_particle()
 
         # update state
         self.residual = self.target - self.position
@@ -115,7 +116,7 @@ class character():
         total_z = (self.ceiling-(self.position[2]-self.height_above_ground()))/self.size_z
 
         if yaml_p['position_info']:
-            boundaries = np.array([self.normalize_map(self.position[0]), self.normalize_map(self.position[1]), rel_pos, total_z])
+            boundaries = np.array([self.normalize_map(self.position[0]-self.size_x/2), self.normalize_map(self.position[1]-self.size_y/2), rel_pos, total_z])
         else:
             boundaries = np.array([rel_pos, total_z])
 
@@ -131,7 +132,7 @@ class character():
         if self.importance is not None:
             self.state[self.importance] = np.random.uniform(-1,1)
 
-    def move_particle(self, roll_out):
+    def move_particle(self):
         self.U = 0
         not_done = True
         for n in range(self.n):
@@ -253,22 +254,6 @@ class character():
             self.seed +=1
         self.ceiling = np.random.uniform(0.9, 1) * self.size_z
 
-    def set_noise(self):
-        if self.train_or_test == 'test':
-            np.random.seed(self.seed)
-            self.seed +=1
-        self.noise_mean = np.random.uniform(-yaml_p['noise_mean_xy'],yaml_p['noise_mean_xy'],2)
-        self.noise_mean = np.append(self.noise_mean, np.random.uniform(-yaml_p['noise_mean_z'],yaml_p['noise_mean_z'],1))
-
-    def add_noise(self, w_x, w_y, w_z):
-        if self.train_or_test == 'test':
-            np.random.seed(self.seed)
-            self.seed +=1
-        w_x += np.random.normal(self.noise_mean[0]/yaml_p['unit_xy'],yaml_p['noise_std_xy']/yaml_p['unit_xy'])
-        w_y += np.random.normal(self.noise_mean[1]/yaml_p['unit_xy'],yaml_p['noise_std_xy']/yaml_p['unit_xy'])
-        w_z += np.random.normal(self.noise_mean[2]/yaml_p['unit_z'],yaml_p['noise_std_z']/yaml_p['unit_z'])
-        return w_x, w_y, w_z
-
     def dist_to_ceiling(self):
         return self.ceiling - self.position[2]
 
@@ -316,6 +301,36 @@ class character():
         w_y /= yaml_p['unit_xy']
         w_z /= yaml_p['unit_z']
         return np.array([w_x, w_y, w_z, sig_xz])
+
+    def set_noise(self):
+        if self.train_or_test == 'test':
+            np.random.seed(self.seed)
+            self.seed +=1
+        path = yaml_p['noise_path'] + self.train_or_test + '/tensor_' + str(yaml_p['W_20'])
+        noise_name = np.random.choice(os.listdir(path))
+        self.noise = torch.load(path + '/' + noise_name)
+
+    def add_noise(self, w_x, w_y, w_z):
+        size_n_x = len(self.noise[0])
+        size_n_y = len(self.noise[0][0])
+        size_n_z = len(self.noise[0][0][0])
+
+        if (round(size_n_x/self.render_ratio) != self.size_x) | (round(size_n_y/self.render_ratio) != self.size_y) | (round(size_n_z) != self.size_z):
+            print("ERROR: size of noise map doesn't match the one of the world map")
+
+        position_n = self.position*[self.render_ratio, self.render_ratio, 1]
+
+        position_n[0] = np.clip(position_n[0],0,size_n_x - 1)
+        position_n[1] = np.clip(position_n[1],0,size_n_y - 1)
+        position_n[2] = np.clip(position_n[2],0,size_n_z - 1)
+
+        coord_n = [int(i) for i in np.floor(position_n)]
+
+        w_x += self.noise[0][coord_n[0], coord_n[1], coord_n[2]]/yaml_p['unit_xy']
+        w_y += self.noise[1][coord_n[0], coord_n[1], coord_n[2]]/yaml_p['unit_xy']
+        w_z += self.noise[2][coord_n[0], coord_n[1], coord_n[2]]/yaml_p['unit_z']
+
+        return w_x, w_y, w_z
 
     def normalize(self,x):
         x = np.array(x)

@@ -108,10 +108,8 @@ def step(lat, lon, step_x, step_y):
 
 def build_set(num, n_h, train_or_test):
     Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
-    Path(yaml_p['data_path'] + 'train').mkdir(parents=True, exist_ok=True)
-    Path(yaml_p['data_path'] + 'train/tensor').mkdir(parents=True, exist_ok=True)
-    Path(yaml_p['data_path'] + 'test').mkdir(parents=True, exist_ok=True)
-    Path(yaml_p['data_path'] + 'test/tensor').mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
 
 
     seed_overall = np.random.randint(0,2**32 - 1)
@@ -152,7 +150,7 @@ def build_set(num, n_h, train_or_test):
                 world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
 
                 torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
-                
+
                 print('generated ' + str(o*N + n + 1) + ' of ' + str(num) + ' maps at ' + str(h).zfill(2) + ':00')
 
 def visualize_real_data(dimension):

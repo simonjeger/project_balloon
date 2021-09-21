@@ -259,7 +259,7 @@ class Agent:
             res = 10
             for i in range(yaml_p['reachability_study']):
                 self.random_roll_out()
-                self.env.reset(roll_out=True)
+                self.env.reset(keep_world=True)
 
                 x = []
                 y = []
@@ -347,7 +347,7 @@ class Agent:
         target = self.env.character.path[idx]
 
         self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
-        self.env.reset(roll_out=True)
+        self.env.reset(keep_world=True)
         self.env.character.target = target
 
     def random_roll_out(self):
@@ -369,7 +369,7 @@ class Agent:
                 if np.random.uniform() < 0.25: # if yes, set a new one with a certain probability
                     action = np.random.uniform(0.1,0.9)
 
-            _, _, done, _ = self.env.step(action, roll_out=True)
+            _, _, done, _ = self.env.step(action, keep_world=True)
             sucess = False
 
             if done:
