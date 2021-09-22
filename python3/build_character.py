@@ -122,7 +122,7 @@ class character():
         total_z = (self.ceiling-(self.position[2]-self.height_above_ground()))/self.size_z
 
         if yaml_p['position_info']:
-            boundaries = np.array([self.normalize_map(self.position[0]-self.size_x/2), self.normalize_map(self.position[1]-self.size_y/2), rel_pos, total_z])
+            boundaries = np.array([self.normalize_map(self.position[0]-self.start[0]), self.normalize_map(self.position[1]-self.start[1]), rel_pos, total_z])
         else:
             boundaries = np.array([rel_pos, total_z])
 
@@ -272,9 +272,6 @@ class character():
     def interpolate_wind(self):
         world = self.world_squished
 
-        #self.position = np.array([17.64790131, 6.73239527, 96.22801129])
-        self.position = np.array([16.64790131, 5.73239527, 95.22801129])
-
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
         coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
         coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
@@ -310,7 +307,7 @@ class character():
         w_x /= yaml_p['unit_xy']
         w_y /= yaml_p['unit_xy']
         w_z /= yaml_p['unit_z']
-        
+
         return np.array([w_x, w_y, w_z, sig_xz])
 
     def set_noise(self):
