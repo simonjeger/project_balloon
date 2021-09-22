@@ -202,7 +202,7 @@ class balloon3d(Env):
 
         if yaml_p['environment'] == 'python3':
             # avoid impossible szenarios
-            if (self.size_z - self.start[2]/yaml_p['unit_z']) < self.size_z*yaml_p['min_space']: #a bit cheeting because the ceiling isn't in that calculation. But like this I can initialize character after the recursion.
+            if (self.size_z - self.start[2]) < self.size_z*yaml_p['min_space']: #a bit cheeting because the ceiling isn't in that calculation. But like this I can initialize character after the recursion.
                 print('Not enough space to fly in ' + self.world_name + '. Loading new wind_map.')
                 self.reset(keep_world=keep_world)
 
