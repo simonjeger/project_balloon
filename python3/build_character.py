@@ -322,7 +322,9 @@ class character():
         if (round(size_n_x/self.render_ratio) != self.size_x) | (round(size_n_y/self.render_ratio) != self.size_y) | (round(size_n_z) != self.size_z):
             print("ERROR: size of noise map doesn't match the one of the world map")
 
-        position_n = self.position*[self.render_ratio, self.render_ratio, 1]
+        rel_pos = self.height_above_ground()/(self.ceiling-(self.position[2]-self.height_above_ground()))
+        position_n = self.position[0:2]*[self.render_ratio, self.render_ratio]
+        position_n = np.append(position_n, rel_pos*size_n_z)
 
         position_n[0] = np.clip(position_n[0],0,size_n_x - 1)
         position_n[1] = np.clip(position_n[1],0,size_n_y - 1)
