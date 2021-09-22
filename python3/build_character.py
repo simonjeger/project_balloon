@@ -91,6 +91,11 @@ class character():
         self.min_proj_dist = np.inf
         self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
 
+        #for move_particle (previous velocity is zero at the beginning)
+        self.p_x = 0
+        self.p_y = 0
+        self.p_z = 0
+
     def update(self, action, world, world_compressed):
         self.action = action
         self.world = world
@@ -146,9 +151,6 @@ class character():
             self.adapt_volume(u)
 
             c = self.area*self.rho_air*self.c_w/(2*self.mass_total)
-            p_x = (self.path[-1][0] - self.path[-2][0])/self.delta_tn
-            p_y = (self.path[-1][1] - self.path[-2][1])/self.delta_tn
-            p_z = (self.path[-1][2] - self.path[-2][2])/self.delta_tn
 
             b = self.net_force(u)/yaml_p['unit_z']**2/self.mass_total
             self.U += abs(u)/self.n
@@ -167,15 +169,15 @@ class character():
             if yaml_p['W_20'] != 0:
                 w_x, w_y, w_z = self.add_noise(w_x, w_y, w_z)
 
-            v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*self.delta_tn + p_x
-            v_y = (np.sign(w_y - p_y) * (w_y - p_y)**2 * c + 0)*self.delta_tn + p_y
-            v_z = (np.sign(w_z - p_z) * (w_z - p_z)**2 * c + b)*self.delta_tn + p_z
+            v_x = (np.sign(w_x - self.p_x) * (w_x - self.p_x)**2 * c + 0)*self.delta_tn + self.p_x
+            v_y = (np.sign(w_y - self.p_y) * (w_y - self.p_y)**2 * c + 0)*self.delta_tn + self.p_y
+            v_z = (np.sign(w_z - self.p_z) * (w_z - self.p_z)**2 * c + b)*self.delta_tn + self.p_z
 
             # update
             self.position += [v_x*self.delta_tn, v_y*self.delta_tn, v_z*self.delta_tn]
-            p_x = v_x
-            p_y = v_y
-            p_z = v_z
+            self.p_x = v_x
+            self.p_y = v_y
+            self.p_z = v_z
 
             # write down path in history
             self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
@@ -269,6 +271,10 @@ class character():
 
     def interpolate_wind(self):
         world = self.world_squished
+
+        #self.position = np.array([17.64790131, 6.73239527, 96.22801129])
+        self.position = np.array([16.64790131, 5.73239527, 95.22801129])
+
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
         coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
         coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
@@ -304,6 +310,7 @@ class character():
         w_x /= yaml_p['unit_xy']
         w_y /= yaml_p['unit_xy']
         w_z /= yaml_p['unit_z']
+        
         return np.array([w_x, w_y, w_z, sig_xz])
 
     def set_noise(self):
