@@ -145,7 +145,8 @@ class balloon3d(Env):
                 self.success_n += 1
                 done = True
             else:
-                self.reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(self.character.U)*yaml_p['action'] + np.sqrt(self.character.residual[0]**2 + self.character.residual[1]**2 + self.character.residual[1]**2)/init_proj_min*yaml_p['gradient']
+                residual = np.sqrt((self.character.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.character.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.character.residual[2]/self.radius_z)**2)
+                self.reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(self.character.U)*yaml_p['action'] + (init_proj_min - residual)/init_proj_min*yaml_p['gradient']
                 done = False
 
             if self.character.t <= 0:
