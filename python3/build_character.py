@@ -76,7 +76,8 @@ class character():
         self.set_ceiling()
         self.world_squished = squish(self.world, self.ceiling)
 
-        self.set_noise()
+        if yaml_p['W_20'] != 0:
+            self.set_noise()
 
         self.residual = self.target - self.position
         self.measurement = np.array([0,0])
@@ -157,11 +158,14 @@ class character():
             # calculate velocity at time step t
             w_x, w_y, w_z, sig_xz = self.interpolate_wind()
 
+            """
             x = np.arange(0,self.size_x,1)
             y = np.arange(0,self.size_y,1)
             z = np.arange(0,self.size_z,1)
+            """
 
-            w_x, w_y, w_z = self.add_noise(w_x, w_y, w_z)
+            if yaml_p['W_20'] != 0:
+                w_x, w_y, w_z = self.add_noise(w_x, w_y, w_z)
 
             v_x = (np.sign(w_x - p_x) * (w_x - p_x)**2 * c + 0)*self.delta_tn + p_x
             v_y = (np.sign(w_y - p_y) * (w_y - p_y)**2 * c + 0)*self.delta_tn + p_y

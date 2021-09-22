@@ -83,10 +83,8 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
 
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
-    text = text + 'noise_mean_xy: ' + str(noise_mean) + '\n'
-    text = text + 'noise_mean_z: ' + str(noise_mean) + '\n'
-    text = text + 'noise_std_xy: ' + str(noise_std) + '\n'
-    text = text + 'noise_std_z: ' + str(noise_std) + '\n'
+    text = text + 'noise_path: "/cluster/scratch/sjeger/noise_14x12/"' + '\n'
+    text = text + 'W_20: 0' + '\n'
     text = text + 'position_info: ' + str(position_info) + '\n'
     text = text + 'measurement_info: ' + str(measurement_info) + '\n'
     text = text + 'wind_info: ' + str(wind_info) + '\n'
