@@ -277,29 +277,30 @@ class character():
         coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
         coord_z = int(np.clip(pos_z_squished,0,len(world[0,0,0,:])-1))
 
-        x = self.position[0] - coord_x
-        y = self.position[1] - coord_y
-        z = pos_z_squished - coord_z
+        x = np.clip(self.position[0] - coord_x,0,1)
+        y = np.clip(self.position[1] - coord_y,0,1)
+        z = np.clip(self.position[2] - coord_z,0,1)
 
         # I detect runnning out of bounds in a later stage
+        i_x = 1
+        i_y = 1
+        i_z = 1
+
         if coord_x == self.size_x-1:
-            coord_x -= 1
-            x = 1
+            i_x = 0
         if coord_y == self.size_y-1:
-            coord_y -= 1
-            y = 1
+            i_y = 0
         if coord_z == self.size_z-1:
-            coord_z -= 1
-            z = 1
+            i_z = 0
 
         f_000 = world[-4::,coord_x,coord_y,coord_z]
-        f_001 = world[-4::,coord_x,coord_y,coord_z+1]
-        f_010 = world[-4::,coord_x,coord_y+1,coord_z]
-        f_011 = world[-4::,coord_x,coord_y+1,coord_z+1]
-        f_100 = world[-4::,coord_x+1,coord_y,coord_z]
-        f_101 = world[-4::,coord_x+1,coord_y,coord_z+1]
-        f_110 = world[-4::,coord_x+1,coord_y+1,coord_z]
-        f_111 = world[-4::,coord_x+1,coord_y+1,coord_z+1]
+        f_001 = world[-4::,coord_x,coord_y,coord_z+i_z]
+        f_010 = world[-4::,coord_x,coord_y+i_y,coord_z]
+        f_011 = world[-4::,coord_x,coord_y+i_y,coord_z+i_z]
+        f_100 = world[-4::,coord_x+i_x,coord_y,coord_z]
+        f_101 = world[-4::,coord_x+i_x,coord_y,coord_z+i_z]
+        f_110 = world[-4::,coord_x+i_x,coord_y+i_y,coord_z]
+        f_111 = world[-4::,coord_x+i_x,coord_y+i_y,coord_z+i_z]
 
         wind = f_000*(1-x)*(1-y)*(1-z) + f_001*(1-x)*(1-y)*z + f_010*(1-x)*y*(1-z) + f_011*(1-x)*y*z + f_100*x*(1-y)*(1-z) + f_101*x*(1-y)*z + f_110*x*y*(1-z) + f_111*x*y*z
 

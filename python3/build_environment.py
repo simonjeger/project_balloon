@@ -8,10 +8,8 @@ import matplotlib.pyplot as plt
 from gym import Env, logger
 from gym.spaces import Discrete, Box
 import numpy as np
-import random
 import torch
 import scipy
-from random import gauss
 import os
 
 import yaml
@@ -268,20 +266,19 @@ class balloon3d(Env):
             yaml_start = yaml_p['start_train']
         else:
             yaml_start = yaml_p['start_test']
+            np.random.seed(self.seed)
+            self.seed +=1
 
         if yaml_start == 'random':
-            self.start = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+            self.start = np.array([border_x + np.random.uniform()*(self.size_x - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),border_z + np.random.uniform()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_start == 'random_low':
-            self.start = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
+            self.start = np.array([border_x + np.random.uniform()*(self.size_x - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),0], dtype=float)
         elif yaml_start == 'left':
-            self.start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+            self.start = np.array([border_x + np.random.uniform()*(self.size_x/2 - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),border_z + np.random.uniform()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_start == 'left_low':
-            self.start = np.array([border_x + random.random()*(self.size_x/2 - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
+            self.start = np.array([border_x + np.random.uniform()*(self.size_x/2 - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),0], dtype=float)
         else:
             self.start = np.array(yaml_start, dtype=float)
-            if self.train_or_test == 'test':
-                np.random.seed(self.seed)
-                self.seed +=1
             self.start = np.floor(self.start) + np.append(np.random.uniform(0,1,2),[0]) #randomize start position without touching the z-axis
 
     def set_target(self):
@@ -293,14 +290,16 @@ class balloon3d(Env):
             yaml_target = yaml_p['target_train']
         else:
             yaml_target = yaml_p['target_test']
+            np.random.seed(self.seed)
+            self.seed +=1
 
         if yaml_target == 'random':
-            self.target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+            self.target = np.array([border_x + np.random.uniform()*(self.size_x - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),border_z + np.random.uniform()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_target == 'random_low':
-            self.target = np.array([border_x + random.random()*(self.size_x - 2*border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
+            self.target = np.array([border_x + np.random.uniform()*(self.size_x - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),0], dtype=float)
         elif yaml_target == 'right':
-            self.target = np.array([self.start[0] + random.random()*(self.size_x - self.start[0] - border_x),border_y + random.random()*(self.size_y - 2*border_y),border_z + random.random()*(self.size_z - 2*border_z)], dtype=float)
+            self.target = np.array([self.start[0] + np.random.uniform()*(self.size_x - self.start[0] - border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),border_z + np.random.uniform()*(self.size_z - 2*border_z)], dtype=float)
         elif yaml_target == 'right_low':
-            self.target = np.array([self.start[0] + random.random()*(self.size_x - self.start[0] - border_x),border_y + random.random()*(self.size_y - 2*border_y),0], dtype=float)
+            self.target = np.array([self.start[0] + np.random.uniform()*(self.size_x - self.start[0] - border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),0], dtype=float)
         else:
             self.target = np.array(yaml_target, dtype=float)

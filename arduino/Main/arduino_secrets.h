@@ -2,4 +2,4 @@
 // #define SECRET_PASS "auhauhihc"
 
 #define SECRET_SSID "Simons iPhone"
-#define SECRET_PASS "a4z6z5fo7nzxb"
+#define SECRET_PASS "12340987"

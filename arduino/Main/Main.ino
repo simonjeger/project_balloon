@@ -35,10 +35,11 @@ WiFiServer server(80);
 void setup() {
   Serial.begin(9600);      // initialize serial communication
   pinMode(13, OUTPUT);      // set the LED pin mode
-  pinMode(7,OUTPUT);        // set the PWM pin mode
-  pinMode(8,OUTPUT);       // set the direction pin mode
-  pinMode(9,OUTPUT);        // set the PWM pin mode
-  pinMode(10,OUTPUT);       // set the direction pin mode
+  
+  pinMode(9,OUTPUT);        // set PWM
+  pinMode(10,OUTPUT);        // set phase
+  pinMode(11,OUTPUT);        // set PWM
+  pinMode(12,OUTPUT);        // set phase
 
   // check for the WiFi module:
   if (WiFi.status() == WL_NO_MODULE) {
@@ -57,13 +58,23 @@ void setup() {
     Serial.print("Attempting to connect to Network named: ");
     Serial.println(ssid);                   // print the network name (SSID);
 
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
+    digitalWrite(LED_BUILTIN, HIGH);      // blinking animation when attempting to connect
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     // wait 10 seconds for connection:
     delay(10000);
   }
   server.begin();                           // start the web server on port 80
   printWifiStatus();                        // you're connected now, so print out the status
+  digitalWrite(LED_BUILTIN, HIGH);      // light up LED
+
+  analogWrite(9,76);
+  analogWrite(10,76);
+  analogWrite(11,76);
+  analogWrite(12,76);
 }
 
 
@@ -71,7 +82,6 @@ void loop() {
   WiFiClient client = server.available();   // listen for incoming clients
 
   if (client) {                             // if you get a client,
-    // Serial.println("new client");           // print a message out the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
     bool read_now = false;                  // used to find the action command
     String action = "";                     // used to find the action command
@@ -122,35 +132,19 @@ void loop() {
 
     // convert and print action
     float action_f = abs(action.toFloat());
-    int action_d;
-    if (action.toFloat() >= 0){
-      action_d = HIGH;
-    }
-    else{
-      action_d = LOW;
-      }
     
-    // send action and direction
+    // send action
+    //float pwm_bottom = 170;
     float pwm_bottom = 0;
-    float pwm_top = 127;
+    float pwm_top = 255;
     float pwm = (pwm_top - pwm_bottom)*action_f + pwm_bottom;
 
-    analogWrite(6,HIGH);
     analogWrite(9,pwm);
-    digitalWrite(10,action_d);
+    analogWrite(10,pwm);
     analogWrite(11,pwm);
-    digitalWrite(12,action_d);
-
+    analogWrite(12,pwm);
+    
     Serial.println("pwm: " + String(pwm));
-    Serial.println("direction: " + String(action_d));
-
-    // turn on / off the LED
-    if (action_f < 0.5) {
-          digitalWrite(LED_BUILTIN, LOW);
-        }
-    if (action_f >= 0.5) {
-          digitalWrite(LED_BUILTIN, HIGH);
-        }
         
     // close the connection:
     client.stop();
