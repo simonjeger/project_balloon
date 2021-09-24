@@ -76,54 +76,56 @@ def generate_noise(W_20, num, train_or_test):
         # E_ij = np.zeros((nx, ny, nz))
         # E_sum = 0
 
-        for ikx in range(nx):
-            print('generated ' + str(n) + ' of ' + str(num) + ' noise maps, next one at ' + str(int(ikx/nx*100)) + '%')
-            for iky in range(ny):
-                for ikz in range(nz):
+        # sigma and L depend on height about ground
+        for ikz in range(nz):
+            print('generated ' + str(n) + ' of ' + str(num) + ' noise maps, next one at ' + str(int(ikz/nz*100)) + '%')
 
-                    # Lengthscale and sigma depend on altitude above ground
-                    h = ikz*dz/0.3048 #h is in ft
-                    if h < 1000: #changes from small to medium scale
-                        L = h/(0.177 + 0.000823*h)**1.2
-                        sigma_w = 0.1*W_20
-                        sigma_uv = sigma_w/(0.177 + 0.000823*h)**0.4
-                        sigma = np.array([sigma_uv,sigma_uv,sigma_w])
-                    elif 1000 <= h < 2000:
-                        L_1000 = 1000/((0.177 + 0.000823*1000)**1.2)
-                        L_2000 = 2500
-                        L = L_1000 + (L_2000 - L_1000)*(h-1000)/(2000 - 1000)
-                        sigma_w = 0.1*W_20
-                        sigma_uv = sigma_w
-                        sigma = np.array([sigma_uv,sigma_uv,sigma_w])
-                    else:
-                        L = L_2000
-                        if W_20 == 15:
-                            h_list = [1600, 9200, 17600]
-                            s_list = [0.1*W_20, 0.1*W_20, 0.914] #those values are all converted in m (from ft)
-                        elif W_20 == 30:
-                            h_list = [2000, 11600, 43600]
-                            s_list = [0.1*W_20, 0.1*W_20, 0.914]
-                        elif W_20 == 45:
-                            h_list = [2800, 4400, 20000, 80000]
-                            s_list = [0.1*W_20, 6.461, 6.461, 0.914]
-                        else:
-                            print('ERROR: Please choose one of the following W_20 values: 15, 30, 45')
+            h = ikz*dz/0.3048 #h is in ft
+            if h < 1000: #low altitude
+                L = h/(0.177 + 0.000823*h)**1.2
+                sigma_w = 0.1*W_20
+                sigma_uv = sigma_w/(0.177 + 0.000823*h)**0.4
+                sigma = np.array([sigma_uv,sigma_uv,sigma_w])
 
-                        sigma_w = np.interp(h, h_list, s_list)
-                        sigma_uv = sigma_w
-                        sigma = np.array([sigma_uv,sigma_uv,sigma_w])
+            elif 1000 <= h < 2000: #low to medium altitude
+                L_1000 = 1000/((0.177 + 0.000823*1000)**1.2)
+                L_2000 = 2500
+                L = L_1000 + (L_2000 - L_1000)*(h-1000)/(2000 - 1000)
+                sigma_w = 0.1*W_20
+                sigma_uv = sigma_w
+                sigma = np.array([sigma_uv,sigma_uv,sigma_w])
 
+            else: # medium and high altitude
+             # The following values are taken from: MIL-STD-1797A (1990), Flying Qualities of Piloted Aircraft (PDF). U.S. Department of Defense, Figure 262 on page 673 and converted from [ft] to [m]
+                L = L_2000
+                if W_20 == 15:
+                    h_list = [1600, 9200, 17600]
+                    s_list = [0.1*W_20, 0.1*W_20, 0.914]
+                elif W_20 == 30:
+                    h_list = [2000, 11600, 43600]
+                    s_list = [0.1*W_20, 0.1*W_20, 0.914]
+                elif W_20 == 45:
+                    h_list = [2800, 4400, 20000, 80000]
+                    s_list = [0.1*W_20, 6.461, 6.461, 0.914]
+                else:
+                    print('ERROR: Please choose one of the following W_20 values: 15, 30, 45')
+                sigma_w = np.interp(h, h_list, s_list)
+                sigma_uv = sigma_w
+                sigma = np.array([sigma_uv,sigma_uv,sigma_w])
+
+            for ikx in range(nx):
+                for iky in range(ny):
                     k = np.array([k_x[ikx], k_y[iky], k_z[ikz]])
                     k = np.transpose(k)
-                    if 0 < np.linalg.norm(k) <= max(k_x[-1], k_y[-1], k_z[-1]): #if the frequency is higher than the pixel with, it doesn't make sense to include that anymore (I added max(), it used to be only k_x)
+                    if 0 < np.linalg.norm(k) <= k_x[-1]:
                         # Phi_ij[:, :, ikx, iky, ikz] = spec_tens_iso_inc(k, L, sigma)
                         E = karman_E(k, L, sigma)
                         # E_ij[ikx, iky, ikz] = E
                         # E_sum = E_sum + E / (np.linalg.norm(k) ** 2 * 4 * np.pi) * dk_x * dk_y * dk_z
 
                         A_ij = np.sqrt(E / (4 * np.pi)) / (np.linalg.norm(k) ** 2) * np.array([[0, k[2], -k[1]],
-                                                                                                 [- k[2], 0, k[0]],
-                                                                                                 [k[1], -k[0], 0]])
+                                                                                                     [- k[2], 0, k[0]],
+                                                                                                     [k[1], -k[0], 0]])
                         C_ij[:, :, ikx, iky, ikz] = np.sqrt(dk_x * dk_y * dk_z) * np.array(A_ij)
 
         perc = 0
@@ -186,9 +188,22 @@ def generate_noise(W_20, num, train_or_test):
         UVW = np.stack((np.real(U), np.real(V), np.real(W)), axis=0)
         XYZ = np.stack((X, Y, Z), axis=0)
 
+        # save only at resolution that it will be actually used
+        size_c = len(UVW)
+        size_x = int(len(UVW[0])/2)
+        size_y = int(len(UVW[0][0])/2)
+        size_z = int(len(UVW[0][0][0]))
+
+        UVW_interp = np.zeros((size_c, yaml_p['size_x'], yaml_p['size_y'], yaml_p['size_z']))
+        for i in range(size_c):
+            for j in range(yaml_p['size_x']):
+                for k in range(yaml_p['size_y']):
+                    UVW_interp[i,j,k] = UVW[i,int(yaml_p['size_x']/size_x)*j,int(yaml_p['size_y']/size_y)*k]
+                    print(int(yaml_p['size_x']/size_x)*j)
+
         # save
-        plot(UVW,W_20,min(nx,ny,nz))
-        torch.save(UVW, yaml_p['noise_path'] + train_or_test + '/tensor_' + str(W_20) + '/noise_map' + str(n).zfill(5) + '.pt')
+        plot(UVW_interp,W_20,min(nx,ny,nz))
+        torch.save(UVW_interp, yaml_p['noise_path'] + train_or_test + '/tensor_' + str(W_20) + '/noise_map' + str(n).zfill(5) + '.pt')
 
 def karman_E(k, L, sigma):
     E = 1.4528 * L * sigma**2 * (L*np.linalg.norm(k))**4 / (1+(L*np.linalg.norm(k))**2)**(17/6)
@@ -235,5 +250,5 @@ def plot(UVW,t,N):
     plt.close()
 
 
-for W_20 in [15, 30, 45]:
-    generate_noise(W_20, 500, 'train')
+for W_20 in [15]:
+    generate_noise(W_20, 50, 'train')

@@ -158,16 +158,14 @@ class character():
             coord = [int(i) for i in np.floor(self.position)]
 
             # calculate velocity at time step t
-            w_x, w_y, w_z, sig_xz = self.interpolate_wind()
+            w_x, w_y, w_z = self.interpolate(self.world_squished)
 
-            """
-            x = np.arange(0,self.size_x,1)
-            y = np.arange(0,self.size_y,1)
-            z = np.arange(0,self.size_z,1)
-            """
-
+            # add noise
             if yaml_p['W_20'] != 0:
-                w_x, w_y, w_z = self.add_noise(w_x, w_y, w_z)
+                n_x, n_y, n_z = self.interpolate(self.noise)
+                w_x += n_x
+                w_y += n_y
+                w_z += n_z
 
             v_x = (np.sign(w_x - self.p_x) * (w_x - self.p_x)**2 * c + 0)*self.delta_tn + self.p_x
             v_y = (np.sign(w_y - self.p_y) * (w_y - self.p_y)**2 * c + 0)*self.delta_tn + self.p_y
@@ -269,9 +267,7 @@ class character():
         v_w = np.sign(v_t - v_prev)*((abs(v_t - v_prev))*self.mass_total/(self.m*self.delta_tn)*2/(self.c_w*self.area*self.rho_air))**(1/2) + (v_t + v_prev)/2
         self.measurement = v_w[0:2]
 
-    def interpolate_wind(self):
-        world = self.world_squished
-
+    def interpolate(self, world):
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
         coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
         coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
@@ -302,14 +298,14 @@ class character():
         f_110 = world[-4::,coord_x+i_x,coord_y+i_y,coord_z]
         f_111 = world[-4::,coord_x+i_x,coord_y+i_y,coord_z+i_z]
 
-        wind = f_000*(1-x)*(1-y)*(1-z) + f_001*(1-x)*(1-y)*z + f_010*(1-x)*y*(1-z) + f_011*(1-x)*y*z + f_100*x*(1-y)*(1-z) + f_101*x*(1-y)*z + f_110*x*y*(1-z) + f_111*x*y*z
+        interp = f_000*(1-x)*(1-y)*(1-z) + f_001*(1-x)*(1-y)*z + f_010*(1-x)*y*(1-z) + f_011*(1-x)*y*z + f_100*x*(1-y)*(1-z) + f_101*x*(1-y)*z + f_110*x*y*(1-z) + f_111*x*y*z
 
-        w_x, w_y, w_z, sig_xz = wind
+        w_x, w_y, w_z = interp[0:3] #don't care about the sigma from meteo swiss
         w_x /= yaml_p['unit_xy']
         w_y /= yaml_p['unit_xy']
         w_z /= yaml_p['unit_z']
 
-        return np.array([w_x, w_y, w_z, sig_xz])
+        return np.array([w_x, w_y, w_z])
 
     def set_noise(self):
         if self.train_or_test == 'test':
@@ -319,29 +315,12 @@ class character():
         noise_name = np.random.choice(os.listdir(path))
         self.noise = torch.load(path + '/' + noise_name)
 
-    def add_noise(self, w_x, w_y, w_z):
         size_n_x = len(self.noise[0])
         size_n_y = len(self.noise[0][0])
         size_n_z = len(self.noise[0][0][0])
 
-        if (round(size_n_x/self.render_ratio) != self.size_x) | (round(size_n_y/self.render_ratio) != self.size_y) | (round(size_n_z) != self.size_z):
+        if (size_n_x != self.size_x) | (size_n_y != self.size_y) | (size_n_z != self.size_z):
             print("ERROR: size of noise map doesn't match the one of the world map")
-
-        rel_pos = self.height_above_ground()/(self.ceiling-(self.position[2]-self.height_above_ground()))
-        position_n = self.position[0:2]*[self.render_ratio, self.render_ratio]
-        position_n = np.append(position_n, rel_pos*size_n_z)
-
-        position_n[0] = np.clip(position_n[0],0,size_n_x - 1)
-        position_n[1] = np.clip(position_n[1],0,size_n_y - 1)
-        position_n[2] = np.clip(position_n[2],0,size_n_z - 1)
-
-        coord_n = [int(i) for i in np.floor(position_n)]
-
-        w_x += self.noise[0][coord_n[0], coord_n[1], coord_n[2]]/yaml_p['unit_xy']
-        w_y += self.noise[1][coord_n[0], coord_n[1], coord_n[2]]/yaml_p['unit_xy']
-        w_z += self.noise[2][coord_n[0], coord_n[1], coord_n[2]]/yaml_p['unit_z']
-
-        return w_x, w_y, w_z
 
     def normalize(self,x):
         x = np.array(x)
