@@ -6,6 +6,7 @@ import os
 
 from preprocess_wind import squish
 from build_ll_controller import ll_controler
+from utils.ekf import ekf
 
 import yaml
 import argparse
@@ -30,6 +31,9 @@ class character():
         self.target = target.astype(float)
 
         self.ll_controler = ll_controler()
+        self.est_x = ekf(yaml_p['delta_t'])
+        self.est_y = ekf(yaml_p['delta_t'])
+        self.est_z = ekf(yaml_p['delta_t'])
 
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 1 #kg
@@ -64,7 +68,6 @@ class character():
 
         self.n = int(yaml_p['delta_t']*1/0.5) #physics every 1/x seconds
         self.delta_tn = yaml_p['delta_t']/self.n
-        self.m = 1 #running mean step size
 
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
@@ -86,7 +89,6 @@ class character():
         self.set_state()
 
         self.path = [self.position.copy(), self.position.copy()]
-        self.velocity_hist = [self.velocity.copy()]
 
         self.min_proj_dist = np.inf
         self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
@@ -203,10 +205,14 @@ class character():
             if self.battery_level < 0: #check if battery is empty
                 not_done = False
 
-            if n%self.m == 0:
-                self.velocity = (self.path[-1] - self.path[-self.m-1])/(self.m*self.delta_tn)
-                # set velocity for state
-                self.velocity_hist.append(self.velocity)
+            self.est_x.predict(0,c)
+            self.est_x.correct(self.position[0])
+            self.est_y.predict(0,c)
+            self.est_y.correct(self.position[0])
+            self.est_z.predict(u,c)
+            self.est_z.correct(self.position[0])
+
+        self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t']
 
         return not_done
 
@@ -262,10 +268,7 @@ class character():
         return self.ceiling - self.position[2]
 
     def set_measurement(self):
-        v_t = self.velocity_hist[-1]
-        v_prev = self.velocity_hist[-2]
-        v_w = np.sign(v_t - v_prev)*((abs(v_t - v_prev))*self.mass_total/(self.m*self.delta_tn)*2/(self.c_w*self.area*self.rho_air))**(1/2) + (v_t + v_prev)/2
-        self.measurement = v_w[0:2]
+        self.measurement = [self.est_x.wind(), self.est_y.wind()]
 
     def interpolate(self, world):
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])

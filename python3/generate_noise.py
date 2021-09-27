@@ -36,9 +36,12 @@ def generate_noise(W_20, num, train_or_test):
     check_statistics=False
 
     # the smallest element is of unit_z
-    nx = int(np.round(yaml_p['size_x']*yaml_p['unit_xy']/yaml_p['unit_z']))
-    ny = int(np.round(yaml_p['size_y']*yaml_p['unit_xy']/yaml_p['unit_z']))
-    nz = int(np.round(yaml_p['size_z']))
+    #nx = int(np.round(yaml_p['size_x']*yaml_p['unit_xy']/yaml_p['unit_z']))
+    #ny = int(np.round(yaml_p['size_y']*yaml_p['unit_xy']/yaml_p['unit_z']))
+    #nz = int(np.round(yaml_p['size_z']))
+    nx = yaml_p['size_x']
+    ny = yaml_p['size_y']
+    nz = yaml_p['size_z']
     dx = yaml_p['unit_z']
     dy = yaml_p['unit_z']
     dz = yaml_p['unit_z']
@@ -78,7 +81,7 @@ def generate_noise(W_20, num, train_or_test):
 
         # sigma and L depend on height about ground
         for ikz in range(nz):
-            print('generated ' + str(n) + ' of ' + str(num) + ' noise maps, next one at ' + str(int(ikz/nz*100)) + '%')
+            print('W_20 = ' + str(W_20) + ', generated ' + str(n) + ' of ' + str(num) + ' noise maps, next one at ' + str(int(ikz/nz*100)) + '%')
 
             h = ikz*dz/0.3048 #h is in ft
             if h < 1000: #low altitude
@@ -194,16 +197,9 @@ def generate_noise(W_20, num, train_or_test):
         size_y = int(len(UVW[0][0])/2)
         size_z = int(len(UVW[0][0][0]))
 
-        UVW_interp = np.zeros((size_c, yaml_p['size_x'], yaml_p['size_y'], yaml_p['size_z']))
-        for i in range(size_c):
-            for j in range(yaml_p['size_x']):
-                for k in range(yaml_p['size_y']):
-                    UVW_interp[i,j,k] = UVW[i,int(yaml_p['size_x']/size_x)*j,int(yaml_p['size_y']/size_y)*k]
-                    print(int(yaml_p['size_x']/size_x)*j)
-
         # save
-        plot(UVW_interp,W_20,min(nx,ny,nz))
-        torch.save(UVW_interp, yaml_p['noise_path'] + train_or_test + '/tensor_' + str(W_20) + '/noise_map' + str(n).zfill(5) + '.pt')
+        #plot(UVW,W_20,100)
+        torch.save(UVW, yaml_p['noise_path'] + train_or_test + '/tensor_' + str(W_20) + '/noise_map' + str(n).zfill(5) + '.pt')
 
 def karman_E(k, L, sigma):
     E = 1.4528 * L * sigma**2 * (L*np.linalg.norm(k))**4 / (1+(L*np.linalg.norm(k))**2)**(17/6)
@@ -235,9 +231,9 @@ def plot(UVW,t,N):
     axs[2].set_xlabel('W: y @x=0')
     axs[2].set_ylabel('W: z @x=0')
 
-    axs[0].set_aspect(1)
-    axs[1].set_aspect(1)
-    axs[2].set_aspect(1)
+    axs[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+    axs[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+    axs[2].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
 
     axs[3].axis('off')
     cbar = plt.colorbar(img, ax=axs[3], orientation='horizontal')
@@ -250,5 +246,6 @@ def plot(UVW,t,N):
     plt.close()
 
 
-for W_20 in [15]:
-    generate_noise(W_20, 50, 'train')
+for W_20 in [15,30,45]:
+    generate_noise(W_20, 500, 'train')
+    generate_noise(W_20, 500, 'test')

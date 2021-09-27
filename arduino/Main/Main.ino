@@ -41,6 +41,11 @@ void setup() {
   pinMode(11,OUTPUT);        // set PWM
   pinMode(12,OUTPUT);        // set phase
 
+  analogWrite(9,0);       // start everything with throttle at 0
+  digitalWrite(10,0);
+  analogWrite(11,0);
+  digitalWrite(12,0);
+
   // check for the WiFi module:
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
@@ -70,11 +75,6 @@ void setup() {
   server.begin();                           // start the web server on port 80
   printWifiStatus();                        // you're connected now, so print out the status
   digitalWrite(LED_BUILTIN, HIGH);      // light up LED
-
-  analogWrite(9,76);
-  analogWrite(10,76);
-  analogWrite(11,76);
-  analogWrite(12,76);
 }
 
 
@@ -132,6 +132,10 @@ void loop() {
 
     // convert and print action
     float action_f = abs(action.toFloat());
+    int dir = HIGH;
+    if (action.toFloat() <= 0){
+      dir = LOW;
+      }
     
     // send action
     //float pwm_bottom = 170;
@@ -140,11 +144,11 @@ void loop() {
     float pwm = (pwm_top - pwm_bottom)*action_f + pwm_bottom;
 
     analogWrite(9,pwm);
-    analogWrite(10,pwm);
+    digitalWrite(10,dir);
     analogWrite(11,pwm);
-    analogWrite(12,pwm);
+    digitalWrite(12,dir);
     
-    Serial.println("pwm: " + String(pwm));
+    Serial.println("pwm: " + String(pwm) + ", dir: " + String(dir));
         
     // close the connection:
     client.stop();
