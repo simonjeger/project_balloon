@@ -8,6 +8,7 @@ yaml*/
 process*/
 autoencoder/
 data*/
+noise*/
 render/
 intel_wind-master/
 vae/

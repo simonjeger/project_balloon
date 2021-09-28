@@ -48,7 +48,7 @@ class ekf():
         self.P_0 = (np.eye((len(self.xhat_0))) - self.K_0*self.H_0)*self.P_0
 
 
-    def predict(self, u_0,c):
+    def predict(self, u_0, c):
         self.c = c
         self.u_0 = u_0
         self.project_state()
@@ -62,8 +62,9 @@ class ekf():
         self.update_covariance()
 
 
-    def generate_observations(self):
-        print('do stuff')
+    def one_cycle(self, u_0, c, z_0):
+        self.predict(u_0, c)
+        self.correct(z_0)
 
     def wind(self):
         block = (self.u_0*self.delta_t + self.xhat_min1[1] - self.xhat_0[1])/(self.delta_t*self.c)

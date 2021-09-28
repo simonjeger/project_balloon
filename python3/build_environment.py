@@ -79,10 +79,10 @@ class balloon3d(Env):
         self.interpolate_world(self.character.t)
 
         # Update compressed wind map
-        self.world_compressed = self.ae.compress(self.world, self.character.position, self.character.ceiling)
+        self.world_compressed = self.ae.compress(self.world, self.character.position_est, self.character.ceiling)
         self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in character.py
 
-        coord = [int(i) for i in np.round(self.character.position)] #convert position into int so I can use it as index
+        coord = [int(i) for i in np.round(self.character.position_est)] #convert position into int so I can use it as index
         done = False
 
         # move character

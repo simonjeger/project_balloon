@@ -64,6 +64,7 @@ class character():
         self.train_or_test = train_or_test
 
         self.position = copy.copy(self.start)
+        self.position_est = copy.copy(self.position)
         self.velocity = np.array([0,0,0])
 
         self.n = int(yaml_p['delta_t']*1/0.5) #physics every 1/x seconds
@@ -120,17 +121,17 @@ class character():
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 
-        rel_pos = self.height_above_ground()/(self.ceiling-(self.position[2]-self.height_above_ground()))
-        total_z = (self.ceiling-(self.position[2]-self.height_above_ground()))/self.size_z
+        rel_pos = self.height_above_ground(est=True)/(self.ceiling-(self.position[2]-self.height_above_ground(est=True)))
+        total_z = (self.ceiling-(self.position[2]-self.height_above_ground(est=True)))/self.size_z
 
         if yaml_p['position_info']:
-            boundaries = np.array([self.normalize_map(self.position[0]-self.start[0]), self.normalize_map(self.position[1]-self.start[1]), rel_pos, total_z])
+            boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), rel_pos, total_z])
         else:
             boundaries = np.array([rel_pos, total_z])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
-        self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())
+        self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground(est=True) / (self.dist_to_ceiling(est=True) + self.height_above_ground(est=True))
 
         self.state = np.concatenate((self.normalize_map(self.residual[0:2]),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
 
@@ -205,12 +206,8 @@ class character():
             if self.battery_level < 0: #check if battery is empty
                 not_done = False
 
-            self.est_x.predict(0,c)
-            self.est_x.correct(self.position[0])
-            self.est_y.predict(0,c)
-            self.est_y.correct(self.position[0])
-            self.est_z.predict(u,c)
-            self.est_z.correct(self.position[0])
+            # update EKF
+            self.update_est(u,c)
 
         self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t']
 
@@ -255,8 +252,11 @@ class character():
         f_net = f_balloon + self.delta_f*u
         return f_net
 
-    def height_above_ground(self):
-        return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
+    def height_above_ground(self, est=False):
+        if est:
+            return self.position_est[2] - self.f_terrain(self.position_est[0], self.position_est[1])[0]
+        else:
+            return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
 
     def set_ceiling(self):
         if self.train_or_test == 'test':
@@ -264,8 +264,11 @@ class character():
             self.seed +=1
         self.ceiling = np.random.uniform(0.9, 1) * self.size_z
 
-    def dist_to_ceiling(self):
-        return self.ceiling - self.position[2]
+    def dist_to_ceiling(self, est=False):
+        if est:
+            return self.ceiling - self.position_est[2]
+        else:
+            return self.ceiling - self.position[2]
 
     def set_measurement(self):
         self.measurement = np.array([self.est_x.wind(), self.est_y.wind()])*yaml_p['unit_xy']
@@ -324,6 +327,12 @@ class character():
 
         if (size_n_x != self.size_x) | (size_n_y != self.size_y) | (size_n_z != self.size_z):
             print("ERROR: size of noise map doesn't match the one of the world map")
+
+    def update_est(self,u,c):
+        self.est_x.one_cycle(0,c,self.position[0])
+        self.est_y.one_cycle(0,c,self.position[1])
+        self.est_z.one_cycle(u,c,self.position[2])
+        self.position_est = [self.est_x.xhat_0[0], self.est_y.xhat_0[0], self.est_z.xhat_0[0]]
 
     def normalize(self,x):
         x = np.array(x)
