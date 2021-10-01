@@ -20,6 +20,9 @@ with open(args.yaml_file, 'rt') as fh:
 
 class character():
     def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed, train_or_test, seed):
+        self.n = int(yaml_p['delta_t']*1/0.5) #physics every 1/x seconds
+        self.delta_tn = yaml_p['delta_t']/self.n
+
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
         self.radius_xy = radius_xy
         self.radius_z = radius_z
@@ -31,9 +34,9 @@ class character():
         self.target = target.astype(float)
 
         self.ll_controler = ll_controler()
-        self.est_x = ekf(yaml_p['delta_t'])
-        self.est_y = ekf(yaml_p['delta_t'])
-        self.est_z = ekf(yaml_p['delta_t'])
+        self.est_x = ekf(self.delta_tn)
+        self.est_y = ekf(self.delta_tn)
+        self.est_z = ekf(self.delta_tn)
 
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 1 #kg
@@ -66,9 +69,6 @@ class character():
         self.position = copy.copy(self.start)
         self.position_est = copy.copy(self.position)
         self.velocity = np.array([0,0,0])
-
-        self.n = int(yaml_p['delta_t']*1/0.5) #physics every 1/x seconds
-        self.delta_tn = yaml_p['delta_t']/self.n
 
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
@@ -271,7 +271,7 @@ class character():
             return self.ceiling - self.position[2]
 
     def set_measurement(self):
-        self.measurement = np.array([self.est_x.wind(), self.est_y.wind()])*yaml_p['unit_xy']
+        self.measurement = np.array([self.est_x.wind(), self.est_y.wind()])
 
     def interpolate(self, world):
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])

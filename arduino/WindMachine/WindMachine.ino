@@ -71,10 +71,15 @@ void setup() {
   printWifiStatus();                        // you're connected now, so print out the status
   digitalWrite(LED_BUILTIN, HIGH);      // light up LED
 
-  analogWrite(9,76);
-  analogWrite(10,76);
-  analogWrite(11,76);
-  analogWrite(12,76);
+  analogWrite(9,255);                   // calibrate ESC
+  analogWrite(10,255);
+  analogWrite(11,255);
+  analogWrite(12,255);
+  delay(30000);
+  analogWrite(9,50);
+  analogWrite(10,50);
+  analogWrite(11,50);
+  analogWrite(12,50);
 }
 
 
@@ -134,8 +139,8 @@ void loop() {
     float action_f = abs(action.toFloat());
     
     // send action
-    float pwm_bottom = 170;
-    //float pwm_bottom = 0;
+    //float pwm_bottom = 170;
+    float pwm_bottom = 0;
     float pwm_top = 255;
     float pwm = (pwm_top - pwm_bottom)*action_f + pwm_bottom;
 
