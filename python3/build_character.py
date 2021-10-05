@@ -272,6 +272,7 @@ class character():
 
     def set_measurement(self):
         self.measurement = np.array([self.est_x.wind(), self.est_y.wind()])
+        #self.measurement = self.interpolate(self.world_squished)[0:2]
 
     def interpolate(self, world):
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])

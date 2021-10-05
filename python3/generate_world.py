@@ -17,7 +17,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def generate_world(num, train_or_test):
+def generate_world(num, n_t, train_or_test):
     Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
     Path(yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
     Path(yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
@@ -44,7 +44,8 @@ def generate_world(num, train_or_test):
                         world[-1,i,j,k] = wind[3][i,j,k]
 
         # save
-        torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(n).zfill(5) + '.pt')
+        for t in range(n_t):
+            torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(n).zfill(5) + '_' + str(t).zfill(2) + '.pt')
         print('generated ' + str(n+1) + ' of ' + str(num) + ' worlds')
 
 def generate_terrain(size_x, size_y, size_z):
@@ -67,18 +68,21 @@ def generate_terrain(size_x, size_y, size_z):
             terrain[i,j] = max(terrain[i,j], 0)
 
     # for homogeneous field
-    """
     terrain *= 0
-    """
     return terrain
 
 def generate_wind(size_x, size_y, size_z, terrain):
-    # generate mean & uncertainty
-    mean_x = np.ones(shape=(size_x,size_y,size_z))*0
-    mean_y = np.ones(shape=(size_x,size_y,size_z))*0
-    mean_z = np.ones(shape=(size_x,size_y,size_z))*0
-    sig = np.ones(shape=(size_x,size_y,size_z))*0.1
+    # parameters
+    m_abs = 5
+    w_min = 0.2
 
+    # generate mean & uncertainty
+    mean_x = np.ones(shape=(size_x,size_y,size_z))*np.random.uniform(-m_abs, m_abs)
+    mean_y = np.ones(shape=(size_x,size_y,size_z))*np.random.uniform(-m_abs, m_abs)
+    mean_z = np.ones(shape=(size_x,size_y,size_z))*0
+    sig = np.ones(shape=(size_x,size_y,size_z))*0
+
+    """
     magnitude = 1
     smear_xy = max(int(size_x),1)
     smear_z = max(int(size_z/10),1)
@@ -106,10 +110,33 @@ def generate_wind(size_x, size_y, size_z, terrain):
         mean_y[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_z:pos_z+smear_z] = gauss(magnitude*seed_y,10)
         mean_z[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_xy:pos_z+smear_xy] = gauss(0,2)
         sig[pos_x, pos_y, pos_z] = abs(gauss(1,1))
-    mean_x = gaussian_filter(mean_x, sigma = 15)
-    mean_y = gaussian_filter(mean_y, sigma = 15)
-    mean_z = gaussian_filter(mean_z, sigma = 15)
-    sig = gaussian_filter(sig, sigma = 15)
+    """
+
+    m_x = np.random.uniform(-m_abs, m_abs)
+    h_ix = -1
+    w_ix = 0
+    while (h_ix < 0) | (h_ix + w_ix >= size_z):
+        w = np.random.uniform(w_min, 1)
+        h = np.random.uniform()
+        w_ix = int(w*size_z)
+        h_ix = int(h*size_z)
+
+    m_y = np.random.uniform(-m_abs, m_abs)
+    h_iy = -1
+    w_iy = 0
+    while (h_iy < 0) | (h_iy + w_iy >= size_z):
+        w = np.random.uniform(w_min, 1)
+        h = np.random.uniform()
+        w_iy = int(w*size_z)
+        h_iy = int(h*size_z)
+
+    mean_x[:,:,h_ix:h_ix+w_ix] = -np.sign(mean_x[0,0,0])*abs(m_x)
+    mean_y[:,:,h_iy:h_iy+w_iy] = -np.sign(mean_y[0,0,0])*abs(m_y)
+
+    #mean_x = gaussian_filter(mean_x, sigma = 15)
+    #mean_y = gaussian_filter(mean_y, sigma = 15)
+    #mean_z = gaussian_filter(mean_z, sigma = 15)
+    #sig = gaussian_filter(sig, sigma = 15)
 
     # for homogeneous field
     """
@@ -125,4 +152,4 @@ def generate_wind(size_x, size_y, size_z, terrain):
 
     return [mean_x, mean_y, mean_z, sig]
 
-generate_world(500, 'train')
+generate_world(500, 7, 'test')

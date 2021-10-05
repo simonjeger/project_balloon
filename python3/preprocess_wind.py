@@ -53,7 +53,7 @@ def preprocess(data,ceiling):
     data_squished = np.array([data_squished_0, data_squished_1, data_squished_2, data_squished_3, data_squished_4])
     data = unsquish(data_squished,ceiling*res)
 
-    torch.save(data, 'render/world_squished.pt')
+    torch.save(data, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
     return data
 
 def squish(data, ceiling):

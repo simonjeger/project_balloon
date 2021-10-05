@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, position_info, measurement_info):
+def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, position_info, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -64,8 +64,8 @@ def write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, tim
     text = text + 'environment: python3' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
     text = text + 'T: 20000' + '\n'
-    text = text + 'start_train: ' + str(start_train) + '\n'
-    text = text + 'start_test: [7,6,0]' + '\n'
+    text = text + 'start_train: "center"' + '\n'
+    text = text + 'start_test: "center"' + '\n'
     text = text + 'target_train: "random"' + '\n'
     text = text + 'target_test: "random"' + '\n'
     text = text + 'reachability_study: 0' + '\n'
@@ -111,12 +111,12 @@ step = -0.00003
 action = -0.005
 measurement_info = True
 
-process_nr = 5960
+process_nr = 6100
 
-for data_path in ["/cluster/scratch/sjeger/data_14x12/"]:
+for data_path in ["/cluster/scratch/sjeger/data_10x10/"]:
     for min_proj_dist in [1]:
         for autoencoder in ['"HAE_avg"']:
-            for window_size in [4]:
+            for window_size in [0]:
                 for bottleneck in [2,4,8]:
                     if autoencoder == '"HAE_avg"':
                         vae_nr = 11111
@@ -177,19 +177,17 @@ for data_path in ["/cluster/scratch/sjeger/data_14x12/"]:
                                 vae_nr = 11154
                             elif bottleneck == 30:
                                 vae_nr = 11155
-                    #for W_20 in [15, 45]:
                     for W_20 in [0]:
-                        for start_train in [[7,6,0]]:
-                            for position_info in [True]:
-                                for wind_info in [True]:
-                                    #for gradient in np.array([0.1, 1, 10])*abs(step + action):
-                                    for gradient in [0]:
-                                        for curriculum_dist in [1]:
-                                            for curriculum_rad in [1]:
-                                                for curriculum_rad_dry in [1000]:
-                                                    for lr in [0.006]:
-                                                        for temperature_optimizer_lr in [0.00003]:
-                                                            for replay_start_size in [1000]:
-                                                                for repeat in range(3):
-                                                                    write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, start_train, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, position_info, wind_info, measurement_info)
-                                                                    process_nr += 1
+                        for position_info in [True]:
+                            for wind_info in [True]:
+                                #for gradient in np.array([0.1, 1, 10])*abs(step + action):
+                                for gradient in [0]:
+                                    for curriculum_dist in [1]:
+                                        for curriculum_rad in [1]:
+                                            for curriculum_rad_dry in [1000]:
+                                                for lr in [0.006]:
+                                                    for temperature_optimizer_lr in [0.00003]:
+                                                        for replay_start_size in [1000]:
+                                                            for repeat in range(3):
+                                                                write(process_nr, delta_t, autoencoder, vae_nr, window_size, bottleneck, time_train, lr, temperature_optimizer_lr, replay_start_size, data_path, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, position_info, measurement_info)
+                                                                process_nr += 1

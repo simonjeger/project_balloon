@@ -99,5 +99,5 @@ def visualize_world(tensor, position, ceiling):
             ax.quiver(X, Y, dir_x, dir_y, scale=yaml_p['unit_xy']/5, headwidth=2.5, width=0.005)
 
         # save figure
-        plt.savefig('render/wind_map_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/render_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close()

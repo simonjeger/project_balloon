@@ -255,13 +255,9 @@ class balloon3d(Env):
         self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+1).zfill(2) + '.pt')
 
         self.world = p*(self.world_1 - self.world_0) + self.world_0
-        torch.save(self.world, 'render/' + self.world_name + '.pt')
+        torch.save(self.world, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
 
     def set_start(self):
-        border_x = self.size_x/(10*self.render_ratio)
-        border_y = self.size_y/(10*self.render_ratio)
-        border_z = self.size_z/10
-
         if self.train_or_test == 'train':
             yaml_start = yaml_p['start_train']
         else:
@@ -269,17 +265,11 @@ class balloon3d(Env):
             np.random.seed(self.seed)
             self.seed +=1
 
-        if yaml_start == 'random':
-            self.start = np.array([border_x + np.random.uniform()*(self.size_x - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),border_z + np.random.uniform()*(self.size_z - 2*border_z)], dtype=float)
-        elif yaml_start == 'random_low':
-            self.start = np.array([border_x + np.random.uniform()*(self.size_x - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),0], dtype=float)
-        elif yaml_start == 'left':
-            self.start = np.array([border_x + np.random.uniform()*(self.size_x/2 - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),border_z + np.random.uniform()*(self.size_z - 2*border_z)], dtype=float)
-        elif yaml_start == 'left_low':
-            self.start = np.array([border_x + np.random.uniform()*(self.size_x/2 - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),0], dtype=float)
+        if yaml_start == 'center':
+            self.start = np.array([(self.size_x - 1)/2,(self.size_y - 1)/2,0], dtype=float)
         else:
             self.start = np.array(yaml_start, dtype=float)
-            self.start = np.floor(self.start) + np.append(np.random.uniform(0,1,2),[0]) #randomize start position without touching the z-axis
+        self.start = np.floor(self.start) + np.append(np.random.uniform(-1,1,2),[0]) #randomize start position without touching the z-axis
 
     def set_target(self):
         border_x = self.size_x/(10*self.render_ratio)

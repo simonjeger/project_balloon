@@ -2,7 +2,7 @@ import urllib.request
 
 def call(con):
     #url = "http://172.20.10.6/" + str(con)
-    url = "http://192.168.0.163/"  + str(con)
+    url = "http://192.168.0.238/"  + str(con)
     n = urllib.request.urlopen(url).read() # get the raw html data in bytes (sends request and warn our esp8266)
     n = n.decode("utf-8") # convert raw html bytes format to string :3
 

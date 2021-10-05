@@ -48,10 +48,7 @@ class render():
                 sys.exit()
 
         # read in wind_map
-        world = torch.load('render/' + world_name + '.pt')
-        """
-        world = torch.load('render/world_squished.pt')
-        """
+        world = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
 
         # generate the three windows
         visualize_world(world, character.position, character.ceiling)
@@ -168,7 +165,7 @@ class render():
             offset_2 = lower_border - position_2
 
         # write and display background
-        bg = pygame.image.load('render/wind_map_' + dim + '.png')
+        bg = pygame.image.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/render_' + dim + '.png')
         img_height = int(size_2*res)
         img_width = int(img_height*size_1/size_2)
         bg = pygame.transform.scale(bg, (img_width, img_height))
