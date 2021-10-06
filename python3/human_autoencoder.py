@@ -36,9 +36,11 @@ class HAE():
         self.box_size = int(self.size_z/yaml_p['bottleneck'])
 
         if yaml_p['autoencoder'] == 'HAE_avg':
-            self.bottleneck_wind = int(self.size_z/self.box_size)*2 #because we mainly look at wind in x direction
+            self.bottleneck_wind = int(self.size_z/self.box_size)*2 #because we mainly look at wind in x and y direction
         elif yaml_p['autoencoder'] == 'HAE_ext':
             self.bottleneck_wind = int(self.size_z/self.box_size)*2*self.window_size_total**2
+        elif yaml_p['autoencoder'] == 'HAE_bidir':
+            self.bottleneck_wind = 2*4
         else:
             print('ERROR: please choose one of the available HAE')
 
@@ -98,6 +100,8 @@ class HAE():
             wind = self.compress_wind_avg_squished(window, position, ceiling)
         elif yaml_p['autoencoder'] == 'HAE_ext':
             wind = self.compress_wind_ext_squished(window, position, ceiling)
+        elif yaml_p['autoencoder'] == 'HAE_bidir':
+            wind = self.compress_wind_bidir_squished(window, position, ceiling)
         return wind
 
     def compress_wind_avg(self, data, position):
@@ -232,6 +236,31 @@ class HAE():
         pred = np.concatenate((pred_x.flatten(), pred_y.flatten()))
         pred = torch.tensor(np.nan_to_num(pred,0))
 
+        return pred
+
+    def compress_wind_bidir_squished(self, data, position,ceiling):
+        apart = int(0.1/2*self.size_z)
+
+        pred = np.zeros(8) # two different wind directions
+
+        for d in ['u', 'v']:
+            if d == 'u':
+                wind = np.mean(np.array(data[-4]), axis=(0,1))
+                idx = [0,4]
+            if d == 'v':
+                wind = np.mean(np.array(data[-3]), axis=(0,1))
+                idx = [4,8]
+            grad = abs(np.gradient(wind))
+            b1 = np.argmax(grad)
+            grad[b1-apart:b1+apart] *= 0
+            b2 = np.argmax(grad)
+            h1 = min(b1, b2)
+            h2 = max(b1, b2)
+
+            m1 = wind[int(h1/2)]
+            m2 = wind[h1 + int((h2 - h1)/2)]
+
+            pred[idx[0]:idx[1]] = [h1/self.size_z,h2/self.size_z,m1,m2]
         return pred
 
 def load_tensor(path):

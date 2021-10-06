@@ -139,6 +139,7 @@ def generate_wind(size_x, size_y, size_z, terrain):
     #sig = gaussian_filter(sig, sigma = 15)
 
     # for homogeneous field
+    mean_y *= 0
     """
     mean_x *= 0
     mean_x += 0.33
@@ -152,4 +153,4 @@ def generate_wind(size_x, size_y, size_z, terrain):
 
     return [mean_x, mean_y, mean_z, sig]
 
-generate_world(500, 7, 'test')
+generate_world(500, 7, 'train')
