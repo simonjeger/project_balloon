@@ -198,6 +198,7 @@ class balloon3d(Env):
 
         # Initial compressed wind map
         self.world_compressed = self.ae.compress(self.world, self.start, self.size_z)
+        self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in character.py
 
         if yaml_p['environment'] == 'python3':
             # avoid impossible szenarios

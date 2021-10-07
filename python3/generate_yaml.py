@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train, width, depth, lr, temperature_optimizer_lr, replay_start_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, position_info, measurement_info):
+def write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train, width_depth, lr, temperature_optimizer_lr, replay_start_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, position_info, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -47,8 +47,8 @@ def write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train,
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'mode: reinforcement_learning' + '\n'
     text = text + 'explorer_type: LinearDecayEpsilonGreedy' + '\n'
-    text = text + 'width: ' + str(width) + '\n'
-    text = text + 'depth: ' + str(depth) + '\n'
+    text = text + 'width: ' + str(width_depth[0]) + '\n'
+    text = text + 'depth: ' + str(width_depth[1]) + '\n'
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'buffer_size: 100000000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
@@ -114,9 +114,8 @@ measurement_info = True
 process_nr = 6210
 
 for data_path in ["/cluster/scratch/sjeger/data_10x10/"]:
-    for width in [100, 500]:
-        for depth in [2, 4, 6]:
-            for radius_xy in [5,10,15]:
+    for radius_xy in [5,10,15]:
+        for width_depth in [[1000,5], [500,6], [500,4], [100,8], [100,4], [20,16], [20,8], [20,4]]:
                 for min_proj_dist in [1]:
                     for autoencoder in ['"HAE_bidir"']:
                         for window_size in [1]:
@@ -133,5 +132,5 @@ for data_path in ["/cluster/scratch/sjeger/data_10x10/"]:
                                                                 for temperature_optimizer_lr in [0.00003]:
                                                                     for replay_start_size in [1000]:
                                                                         for repeat in range(3):
-                                                                            write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train, width, depth, lr, temperature_optimizer_lr, replay_start_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, position_info, measurement_info)
+                                                                            write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train, width_depth, lr, temperature_optimizer_lr, replay_start_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, position_info, measurement_info)
                                                                             process_nr += 1

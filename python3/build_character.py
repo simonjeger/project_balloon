@@ -133,7 +133,13 @@ class character():
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
         self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground(est=True) / (self.dist_to_ceiling(est=True) + self.height_above_ground(est=True))
 
-        self.state = np.concatenate((self.normalize_map(self.residual[0:2]),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), self.normalize(self.world_compressed).flatten()), axis=0)
+        if yaml_p['autoencoder'] != 'HAE_bidir':
+            world_compressed = self.normalize(self.world_compressed)
+        else:
+            world_compressed = self.normalize(self.world_compressed)
+            world_compressed[0:2] = self.world_compressed[0:2]*yaml_p['unit_xy']
+            world_compressed[4:6] = self.world_compressed[4:6]*yaml_p['unit_xy']
+        self.state = np.concatenate((self.normalize_map(self.residual[0:2]),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), world_compressed), axis=0)
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
