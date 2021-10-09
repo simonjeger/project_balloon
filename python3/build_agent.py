@@ -264,6 +264,8 @@ class Agent:
                     self.HER_reward.append(reward)
                     self.HER_done.append(done)
 
+            self.HER_done[-1] = True #quickfix
+
             # put them into the buffer
             i = 0
             while True:
