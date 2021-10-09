@@ -124,10 +124,7 @@ class character():
         rel_pos = self.height_above_ground(est=True)/(self.ceiling-(self.position[2]-self.height_above_ground(est=True)))
         total_z = (self.ceiling-(self.position[2]-self.height_above_ground(est=True)))/self.size_z
 
-        if yaml_p['position_info']:
-            boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), rel_pos, total_z])
-        else:
-            boundaries = np.array([rel_pos, total_z])
+        boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), rel_pos, total_z])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))

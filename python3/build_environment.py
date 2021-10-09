@@ -38,7 +38,6 @@ class balloon3d(Env):
         self.radius_z = yaml_p['radius_z']
 
         # initialize state and time
-        self.success = False
         self.success_n = 0
         self.epi_n = epi_n
         self.step_n = step_n
@@ -87,7 +86,10 @@ class balloon3d(Env):
 
         # move character
         in_bounds = self.character.update(action, self.world, self.world_compressed)
-        done = self.cost(in_bounds)
+        self.reward_step, done, success = self.cost(self.character.start, self.character.target, self.character.residual, self.character.U, self.character.min_proj_dist, in_bounds)
+        self.success_n += success
+        self.reward_epi += self.reward_step
+        self.reward_list.append(self.reward_step)
 
         if not keep_world:
             # logger
@@ -132,35 +134,33 @@ class balloon3d(Env):
         # return step information
         return self.character.state, self.reward_step, done, info
 
-    def cost(self, in_bounds):
-        init_proj_min = np.sqrt(((self.character.target[0] - self.character.start[0])*self.render_ratio/self.radius_xy)**2 + ((self.character.target[1] - self.character.start[1])*self.render_ratio/self.radius_xy)**2 + ((self.character.target[2] - self.character.start[2])/self.radius_z)**2)
+    def cost(self, start, target, residual, U, min_proj_dist, in_bounds):
+        init_proj_min = np.sqrt(((target[0] - start[0])*self.render_ratio/self.radius_xy)**2 + ((target[1] - start[1])*self.render_ratio/self.radius_xy)**2 + ((target[2] - start[2])/self.radius_z)**2)
 
         if in_bounds:
             # calculate reward
-            if self.character.min_proj_dist <= 1:
-                self.reward_step = yaml_p['hit']
-                self.success = True
-                self.success_n += 1
+            if min_proj_dist <= 1:
+                reward_step = yaml_p['hit']
+                success = 1
                 done = True
             else:
-                residual = np.sqrt((self.character.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.character.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.character.residual[2]/self.radius_z)**2)
-                self.reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(self.character.U)*yaml_p['action'] + (init_proj_min - residual)/init_proj_min*yaml_p['gradient']
+                res = np.sqrt((residual[0]*self.render_ratio/self.radius_xy)**2 + (residual[1]*self.render_ratio/self.radius_xy)**2 + (residual[2]/self.radius_z)**2)
+                reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(U)*yaml_p['action'] + (init_proj_min - res)/init_proj_min*yaml_p['gradient']
+                success = 0
                 done = False
 
             if self.character.t <= 0:
-                self.reward_step = yaml_p['overtime'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min*yaml_p['min_proj_dist']
-                self.success = False
+                reward_step = yaml_p['overtime'] + (init_proj_min - min_proj_dist)/init_proj_min*yaml_p['min_proj_dist']
+                success = 0
                 done = True
 
         else:
-            self.reward_step = yaml_p['bounds'] + (init_proj_min - self.character.min_proj_dist)/init_proj_min*yaml_p['min_proj_dist']
+            reward_step = yaml_p['bounds'] + (init_proj_min - min_proj_dist)/init_proj_min*yaml_p['min_proj_dist']
             self.character.t = 0
-            self.success = False
+            success = 0
             done = True
 
-        self.reward_epi += self.reward_step
-        self.reward_list.append(self.reward_step)
-        return done
+        return reward_step, done, success
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
         self.render_machine.make_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)

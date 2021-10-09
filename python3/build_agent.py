@@ -161,6 +161,12 @@ class Agent:
             # If it's the beginning of a new round
             action = self.env.render_machine.load_screen()
 
+        self.HER_obs = [obs]
+        self.HER_pos = [self.env.character.start]
+        self.HER_action = []
+        self.HER_reward = []
+        self.HER_done = []
+
         while True:
             if yaml_p['render']:
                 self.env.render(mode=True)
@@ -217,6 +223,11 @@ class Agent:
             self.scheduler_policy.step()
             self.scheduler_qfunc.step()
 
+            # for hindsight experience replay
+            self.HER_obs.append(obs)
+            self.HER_pos.append(copy.copy(self.env.character.position))
+            self.HER_action.append(copy.copy(self.env.character.U))
+
             if done:
                 if yaml_p['render']:
                     self.env.render(mode=True)
@@ -230,6 +241,47 @@ class Agent:
 
                 self.epi_n += 1
                 break
+
+        # HER
+        if yaml_p['HER'] & (self.train_or_test == 'train'):
+            target = self.env.character.position
+            self.env.character.t = 1 #it can't be zero, otherwise the cost function thinks we are out of time
+
+            tar_x = int(np.clip(target[0],0,self.env.size_x - 1))
+            tar_y = int(np.clip(target[1],0,self.env.size_y - 1))
+            tar_z_squished = (target[2]-self.env.character.world[0,tar_x,tar_y,0])/(self.env.character.ceiling - self.env.character.world[0,tar_x,tar_y,0])
+
+            # fix all the state spaces
+            for i in range(len(self.HER_obs)):
+                position = self.HER_pos[i]
+                pos_z_squished = self.HER_obs[i][8]
+                residual = target - position
+                min_proj_dist = np.sqrt((residual[0]*self.render_ratio/self.env.character.radius_xy)**2 + (residual[1]*self.render_ratio/self.env.character.radius_xy)**2 + (residual[2]/self.env.character.radius_z)**2)
+
+                self.HER_obs[i][0:3] = np.append(residual[0:2]/yaml_p['unit_xy'], [tar_z_squished - pos_z_squished])
+                if i > 0:
+                    reward, done, success = self.env.cost(self.env.character.start, target, residual, self.HER_action[i-1], min_proj_dist, True)
+                    self.HER_reward.append(reward)
+                    self.HER_done.append(done)
+
+            # put them into the buffer
+            i = 0
+            while True:
+                self.agent.t += 1
+
+                self.agent.replay_buffer.append(state=self.HER_obs[i],
+                        action=self.HER_action[i],
+                        reward=self.HER_reward[i],
+                        next_state=self.HER_obs[i+1],
+                        next_action=None,
+                        is_state_terminal=self.HER_done[i],
+                        env_id=i)
+                i += 1
+
+                if self.HER_done[i]:
+                    self.agent.replay_buffer.stop_current_episode(env_id=i)
+                    self.agent.replay_updater.update_if_necessary(self.agent.t)
+                    break
 
         # mark in map_test if this was a success or not
         if (yaml_p['reachability_study'] > 0) & (self.train_or_test == 'test'):
