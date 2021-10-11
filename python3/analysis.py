@@ -282,12 +282,14 @@ def disp_overview():
                     mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, color=color_mean)
 
+                """
                 # mean_norm
                 df_mean_norm = pd.concat([df.iloc[:,x], df['rew_epi_norm_mean']], axis=1)
                 if df_mean_norm.columns[0] != df_mean_norm.columns[1]:
                     mean_rew_norm = df_mean_norm.groupby(df_mean_norm.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_norm.iloc[:,0], mean_rew_norm.iloc[:,1], s=0.1, color=color_norm)
-
+                """
+                
                 # success
                 df_mean_success = pd.concat([df.iloc[:,x], df['success_rate']], axis=1)
 

@@ -53,8 +53,8 @@ class balloon3d(Env):
         # load new world to get size_x, size_z
         self.load_new_world()
 
-        # action we can take: -1 to 1
-        self.action_space = Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float64) #continuous space
+        # action we can take: 0 to 1
+        self.action_space = Box(low=0, high=1.0, shape=(1,), dtype=np.float64) #continuous space
 
         # set maximal duration of flight
         self.T = yaml_p['T']
@@ -73,7 +73,7 @@ class balloon3d(Env):
 
         self.render_machine = render(self.size_x, self.size_y, self.size_z)
 
-    def step(self, action, keep_world=False):
+    def step(self, action, target=None):
         # Interpolate the get the current world
         self.interpolate_world(self.character.t)
 
@@ -91,38 +91,37 @@ class balloon3d(Env):
         self.reward_epi += self.reward_step
         self.reward_list.append(self.reward_step)
 
-        if not keep_world:
+        if (target is not None) & (self.writer is not None):
             # logger
-            if self.writer is not None:
-                if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
-                    self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
-                    self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-                    self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
-                    self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
-                    self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
-                if done:
-                    self.writer.add_scalar('step_n', self.step_n , self.step_n)
-                    self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
-                    self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-                    self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
-                    self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
+            if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
+                self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
+                self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
+                self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
+                self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
+                self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+            if done:
+                self.writer.add_scalar('step_n', self.step_n , self.step_n)
+                self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
+                self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
+                self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
+                self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
 
-                    self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
-                    self.writer.add_scalar('target_y', self.character.target[1], self.step_n)
-                    self.writer.add_scalar('target_z', self.character.target[2], self.step_n)
+                self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
+                self.writer.add_scalar('target_y', self.character.target[1], self.step_n)
+                self.writer.add_scalar('target_z', self.character.target[2], self.step_n)
 
-                    self.writer.add_scalar('size_x', self.size_x , self.step_n)
-                    self.writer.add_scalar('size_y', self.size_y , self.step_n)
-                    self.writer.add_scalar('size_z', self.size_z , self.step_n)
+                self.writer.add_scalar('size_x', self.size_x , self.step_n)
+                self.writer.add_scalar('size_y', self.size_y , self.step_n)
+                self.writer.add_scalar('size_z', self.size_z , self.step_n)
 
-                    self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
-                    self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
-                    if self.reward_roll_out is not None:
-                        self.writer.add_scalar('reward_epi_norm', self.reward_epi/self.reward_roll_out, self.step_n)
-                    else:
-                        self.writer.add_scalar('reward_epi_norm', 0, self.step_n)
+                self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+                self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
+                if self.reward_roll_out is not None:
+                    self.writer.add_scalar('reward_epi_norm', self.reward_epi/self.reward_roll_out, self.step_n)
+                else:
+                    self.writer.add_scalar('reward_epi_norm', 0, self.step_n)
 
-                    self.writer.add_scalar('success_n', self.success_n, self.step_n)
+                self.writer.add_scalar('success_n', self.success_n, self.step_n)
 
             self.step_n += 1
             if done:
@@ -165,9 +164,9 @@ class balloon3d(Env):
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
         self.render_machine.make_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
 
-    def reset(self, keep_world=False):
+    def reset(self, target=None):
         # load new world
-        if not keep_world:
+        if target is None:
             self.load_new_world()
         else:
             self.interpolate_world(yaml_p['T']) #still set back the world to time = takeoff_time
@@ -176,11 +175,12 @@ class balloon3d(Env):
         self.reward_epi = 0
 
         # Set problem
-        if not keep_world:
+        if target is None:
             self.set_start()
+            self.set_target()
         else:
             self.start = self.character.path[0]
-        self.set_target()
+            self.target = target
 
         # if started "under ground"
         above_ground_start = self.size_z/100
@@ -204,20 +204,13 @@ class balloon3d(Env):
             # avoid impossible szenarios
             if (self.size_z - self.start[2]) < self.size_z*yaml_p['min_space']: #a bit cheeting because the ceiling isn't in that calculation. But like this I can initialize character after the recursion.
                 print('Not enough space to fly in ' + self.world_name + '. Loading new wind_map.')
-                self.reset(keep_world=keep_world)
+                self.reset(target=target)
 
             self.character = character(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test, self.seed)
             self.reward_list = []
 
         elif yaml_p['environment'] == 'xplane':
             self.character = character_xplane(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test, self.seed)
-
-        """
-        # generate world_squished for rendering later
-        from preprocess_wind import preprocess
-        if yaml_p['render'] & (not keep_world):
-            preprocess(self.world, self.character.ceiling)
-        """
 
         return self.character.state
 

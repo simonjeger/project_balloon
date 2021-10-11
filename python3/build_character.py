@@ -107,17 +107,16 @@ class character():
         not_done = self.move_particle()
 
         # update state
-        self.residual = self.target - self.position
-        self.set_measurement()
-
         self.set_state()
-
         return not_done
 
     def set_state(self):
+        self.residual = self.target - self.position
+
         if not yaml_p['wind_info']:
             self.world_compressed *= 0
 
+        self.set_measurement()
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 

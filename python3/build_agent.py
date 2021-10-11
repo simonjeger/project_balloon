@@ -150,9 +150,9 @@ class Agent:
         sum_r = 0
 
         if (yaml_p['reachability_study'] > 0):
-            self.reachability_study()
+            obs = self.reachability_study()
         elif yaml_p['set_reachable_target']:
-            self.set_reachable_target()
+            obs = self.set_reachable_target()
 
         if importance is not None:
             self.env.character.importance = importance
@@ -164,16 +164,20 @@ class Agent:
         self.HER_obs = [obs]
         self.HER_pos = [self.env.character.start]
         self.HER_action = []
+        self.HER_U = []
         self.HER_reward = []
         self.HER_done = []
+        self.HER_target = []
+        self.HER_residual = []
 
         while True:
             if yaml_p['render']:
                 self.env.render(mode=True)
 
             if yaml_p['mode'] == 'reinforcement_learning':
-                action = self.agent.act(obs) #uses self.agent.model to decide next step
-                action = (action[0]+1)/2
+                action_RL = self.agent.act(obs) #uses self.agent.model to decide next step
+                action = np.clip(action_RL,0,1) #gym sometimes violates the conditions set in the environment
+                #action = action[0]
 
             elif yaml_p['mode'] == 'game':
                 for event in pygame.event.get():
@@ -218,7 +222,6 @@ class Agent:
             obs, reward, done, _ = self.env.step(action)
             sum_r = sum_r + reward
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
-
             self.step_n += 1
             self.scheduler_policy.step()
             self.scheduler_qfunc.step()
@@ -226,7 +229,10 @@ class Agent:
             # for hindsight experience replay
             self.HER_obs.append(obs)
             self.HER_pos.append(copy.copy(self.env.character.position))
-            self.HER_action.append(copy.copy(self.env.character.U))
+            self.HER_action.append(action_RL)
+            self.HER_U.append(copy.copy(self.env.character.U))
+            self.HER_target.append(copy.copy(self.env.character.target))
+            self.HER_residual.append(copy.copy(self.env.character.residual))
 
             if done:
                 if yaml_p['render']:
@@ -242,48 +248,11 @@ class Agent:
                 self.epi_n += 1
                 break
 
-        # HER
         if yaml_p['HER'] & (self.train_or_test == 'train'):
-            target = self.env.character.position
-            self.env.character.t = 1 #it can't be zero, otherwise the cost function thinks we are out of time
-
-            tar_x = int(np.clip(target[0],0,self.env.size_x - 1))
-            tar_y = int(np.clip(target[1],0,self.env.size_y - 1))
-            tar_z_squished = (target[2]-self.env.character.world[0,tar_x,tar_y,0])/(self.env.character.ceiling - self.env.character.world[0,tar_x,tar_y,0])
-
-            # fix all the state spaces
-            for i in range(len(self.HER_obs)):
-                position = self.HER_pos[i]
-                pos_z_squished = self.HER_obs[i][8]
-                residual = target - position
-                min_proj_dist = np.sqrt((residual[0]*self.render_ratio/self.env.character.radius_xy)**2 + (residual[1]*self.render_ratio/self.env.character.radius_xy)**2 + (residual[2]/self.env.character.radius_z)**2)
-
-                self.HER_obs[i][0:3] = np.append(residual[0:2]/yaml_p['unit_xy'], [tar_z_squished - pos_z_squished])
-                if i > 0:
-                    reward, done, success = self.env.cost(self.env.character.start, target, residual, self.HER_action[i-1], min_proj_dist, True)
-                    self.HER_reward.append(reward)
-                    self.HER_done.append(done)
-
-            self.HER_done[-1] = True #quickfix
-
-            # put them into the buffer
-            i = 0
-            while True:
-                self.agent.t += 1
-
-                self.agent.replay_buffer.append(state=self.HER_obs[i],
-                        action=self.HER_action[i],
-                        reward=self.HER_reward[i],
-                        next_state=self.HER_obs[i+1],
-                        next_action=None,
-                        is_state_terminal=self.HER_done[i],
-                        env_id=i)
-                i += 1
-
-                if self.HER_done[i]:
-                    self.agent.replay_buffer.stop_current_episode(env_id=i)
-                    self.agent.replay_updater.update_if_necessary(self.agent.t)
-                    break
+            idx = self.idx_on_path(self.env.character.path, self.env.character.start)
+            target = self.env.character.path[idx] #set target at last position that was reached, but still within bounds
+            print(target)
+            self.HER(target)
 
         # mark in map_test if this was a success or not
         if (yaml_p['reachability_study'] > 0) & (self.train_or_test == 'test'):
@@ -313,7 +282,7 @@ class Agent:
             res = 10
             for i in range(yaml_p['reachability_study']):
                 self.random_roll_out()
-                self.env.reset(keep_world=True)
+                self.env.reset(target=[-10,-10,-10])
 
                 x = []
                 y = []
@@ -368,41 +337,19 @@ class Agent:
                 np.random.seed(self.seed)
                 self.seed += 1
             target = [np.random.uniform(0,self.env.size_x), np.random.uniform(0,self.env.size_z), np.random.uniform(0,self.env.character.ceiling)]
-            self.env.character.target = target
+            obs = self.env.reset(target=target)
+            return obs
 
     def set_reachable_target(self):
         self.random_roll_out()
-
-        # write down path and set target
-        coord_x = []
-        coord_y = []
-        for i in range(len(self.env.character.path)):
-            coord_x.append(self.env.character.path[i][0])
-            coord_y.append(self.env.character.path[i][1])
-
-        for _ in range(100): # if I can't find anything that's far enough from the start after n tries, just take the last one
-            if self.train_or_test == 'test':
-                np.random.seed(self.seed)
-                self.seed += 1
-            idx_x = np.random.uniform(min(coord_x),max(coord_x))
-            idx_y = np.random.uniform(min(coord_y),max(coord_y))
-            idx = np.argmin(np.sqrt(np.subtract(coord_x,idx_x)**2 + np.subtract(coord_y,idx_y)**2))
-
-            target = self.env.character.path[idx]
-
-            not_to_close = np.sqrt((target[0] - self.env.character.start[0])**2 + (target[0] - self.env.character.start[1])**2) > yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy']
-            not_out_of_bounds_x = (0 < target[0]) & (target[0] < self.env.size_x - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
-            not_out_of_bounds_y = (0 < target[1]) & (target[1] < self.env.size_y - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
-
-            if not_to_close & not_out_of_bounds_x & not_out_of_bounds_y:
-                break
+        idx = self.idx_on_path(self.env.character.path, self.env.character.start)
 
         self.env.path_roll_out = self.env.character.path[0:idx]
         target = self.env.character.path[idx]
 
         self.env.reward_roll_out = sum(self.env.reward_list[0:int(idx/self.env.character.n)]) + 1 #because the physics simmulation takes n timesteps)
-        self.env.reset(keep_world=True)
-        self.env.character.target = target
+        obs = self.env.reset(target=target)
+        return obs
 
     def random_roll_out(self):
         round = 0
@@ -423,7 +370,7 @@ class Agent:
                 if np.random.uniform() < 0.25: # if yes, set a new one with a certain probability
                     action = np.random.uniform(0.1,0.9)
 
-            _, _, done, _ = self.env.step(action, keep_world=True)
+            _, _, done, _ = self.env.step(action, target=None)
             sucess = False
 
             if done:
@@ -431,6 +378,33 @@ class Agent:
 
         # write down path for reachability study
         self.env.path_reachability.append([self.env.character.path])
+
+    def idx_on_path(self, path, start):
+        # write down path and set target
+        coord_x = []
+        coord_y = []
+        for i in range(len(path)):
+            coord_x.append(path[i][0])
+            coord_y.append(path[i][1])
+
+        for _ in range(100): # if I can't find anything that's far enough from the start after n tries, just take the last one
+            if self.train_or_test == 'test':
+                np.random.seed(self.seed)
+                self.seed += 1
+            idx_x = np.random.uniform(min(coord_x),max(coord_x))
+            idx_y = np.random.uniform(min(coord_y),max(coord_y))
+            idx = np.argmin(np.sqrt(np.subtract(coord_x,idx_x)**2 + np.subtract(coord_y,idx_y)**2))
+
+            target = path[idx]
+
+            not_to_close = np.sqrt((target[0] - start[0])**2 + (target[0] - start[1])**2) > yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy']
+            not_out_of_bounds_x = (0 < target[0]) & (target[0] < self.env.size_x - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
+            not_out_of_bounds_y = (0 < target[1]) & (target[1] < self.env.size_y - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
+
+            if not_to_close & not_out_of_bounds_x & not_out_of_bounds_y:
+                break
+
+        return idx
 
     def map_test(self):
         if os.path.isfile(self.path_mt_pkl):
@@ -453,6 +427,62 @@ class Agent:
         with open(self.path_mt_pkl,'wb') as fid:
             pickle.dump(ax, fid)
         plt.close()
+
+    def HER(self, target):
+        self.env.character.t = 1 #it can't be zero, otherwise the cost function thinks we are out of time
+
+        tar_x = int(np.clip(target[0],0,self.env.size_x - 1))
+        tar_y = int(np.clip(target[1],0,self.env.size_y - 1))
+        tar_z_squished = (target[2]-self.env.character.world[0,tar_x,tar_y,0])/(self.env.character.ceiling - self.env.character.world[0,tar_x,tar_y,0])
+
+        # fix all the state spaces
+        min_proj_dist = np.inf
+        for i in range(len(self.HER_obs)):
+            position = self.HER_pos[i]
+
+            pos_z_squished = self.HER_obs[i][8]
+            residual = target - position
+
+            #this is only an approximation because I don't look at all the points
+            min_proj_dist_prop = np.sqrt((residual[0]*self.render_ratio/self.env.character.radius_xy)**2 + (residual[1]*self.render_ratio/self.env.character.radius_xy)**2 + (residual[2]/self.env.character.radius_z)**2)
+            if min_proj_dist > min_proj_dist_prop:
+                min_proj_dist = min_proj_dist_prop
+
+            self.HER_obs[i][0:3] = np.append(self.env.character.normalize_map(residual[0:2]), [tar_z_squished - pos_z_squished])
+
+            if i > 0:
+                in_bounds = True
+                if (self.HER_pos[i][0] < 0) | (self.HER_pos[i][0] > self.env.size_x - 1):
+                    in_bounds = False
+                if (self.HER_pos[i][1] < 0) | (self.HER_pos[i][1] > self.env.size_y - 1):
+                    in_bounds = False
+                if (self.HER_pos[i][2] < 0) | (self.HER_pos[i][2] > self.env.size_z - 1): #not totally complete, because terrain and ceiling
+                    in_bounds = False
+
+                reward, done, success = self.env.cost(self.env.character.start, target, residual, self.HER_U[i-1], min_proj_dist, in_bounds)
+                self.HER_reward.append(reward)
+                self.HER_done.append(done)
+
+        if not self.HER_done[-1]:
+            self.HER_done[-1] = True
+
+        # put them into the buffer
+        i = 0
+        while len(self.HER_done) > 1:
+            self.agent.t += 1
+            self.agent.replay_buffer.append(state=self.HER_obs[i],
+                    action=self.HER_action[i],
+                    reward=self.HER_reward[i],
+                    next_state=self.HER_obs[i+1],
+                    next_action=None,
+                    is_state_terminal=self.HER_done[i],
+                    env_id=i)
+
+            if self.HER_done[i]:
+                self.agent.replay_buffer.stop_current_episode(env_id=i)
+                self.agent.replay_updater.update_if_necessary(self.agent.t)
+                break
+            i += 1
 
     def weights_init(self, m):
         if isinstance(m, torch.nn.Linear):
