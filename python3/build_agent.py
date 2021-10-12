@@ -219,7 +219,7 @@ class Agent:
             else:
                 print('ERROR: Please choose one of the available modes.')
 
-            obs, reward, done, _ = self.env.step(action)
+            obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
             sum_r = sum_r + reward
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
             self.step_n += 1
@@ -370,7 +370,7 @@ class Agent:
                 if np.random.uniform() < 0.25: # if yes, set a new one with a certain probability
                     action = np.random.uniform(0.1,0.9)
 
-            _, _, done, _ = self.env.step(action, target=None)
+            _, _, done, _ = self.env.step(action,skip=True)
             sucess = False
 
             if done:

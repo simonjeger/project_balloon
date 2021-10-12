@@ -73,7 +73,7 @@ class balloon3d(Env):
 
         self.render_machine = render(self.size_x, self.size_y, self.size_z)
 
-    def step(self, action, target=None):
+    def step(self, action, skip=False):
         # Interpolate the get the current world
         self.interpolate_world(self.character.t)
 
@@ -91,7 +91,7 @@ class balloon3d(Env):
         self.reward_epi += self.reward_step
         self.reward_list.append(self.reward_step)
 
-        if (target is not None) & (self.writer is not None):
+        if (not skip) & (self.writer is not None):
             # logger
             if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
                 self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
