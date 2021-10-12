@@ -251,7 +251,6 @@ class Agent:
         if yaml_p['HER'] & (self.train_or_test == 'train'):
             idx = self.idx_on_path(self.env.character.path, self.env.character.start)
             target = self.env.character.path[idx] #set target at last position that was reached, but still within bounds
-            print(target)
             self.HER(target)
 
         # mark in map_test if this was a success or not
@@ -371,6 +370,7 @@ class Agent:
                     action = np.random.uniform(0.1,0.9)
 
             _, _, done, _ = self.env.step(action,skip=True)
+            #self.env.render(mode=True)
             sucess = False
 
             if done:
@@ -397,7 +397,7 @@ class Agent:
 
             target = path[idx]
 
-            not_to_close = np.sqrt((target[0] - start[0])**2 + (target[0] - start[1])**2) > yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy']
+            not_to_close = np.sqrt((target[0] - start[0])**2 + (target[1] - start[1])**2) > yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy']*2 #I want to be at least two radius away from the start
             not_out_of_bounds_x = (0 < target[0]) & (target[0] < self.env.size_x - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
             not_out_of_bounds_y = (0 < target[1]) & (target[1] < self.env.size_y - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
 
