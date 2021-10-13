@@ -113,25 +113,17 @@ def generate_wind(size_x, size_y, size_z, terrain):
     """
 
     m_x = np.random.uniform(-m_abs, m_abs)
-    h_ix = -1
-    w_ix = 0
-    while (h_ix < 0) | (h_ix + w_ix >= size_z):
-        w = np.random.uniform(w_min, 1)
-        h = np.random.uniform()
-        w_ix = int(w*size_z)
-        h_ix = int(h*size_z)
-
     m_y = np.random.uniform(-m_abs, m_abs)
-    h_iy = -1
-    w_iy = 0
-    while (h_iy < 0) | (h_iy + w_iy >= size_z):
-        w = np.random.uniform(w_min, 1)
+    h = -1
+    w = 0
+    while (h < 0) | (h + w >= size_z):
+        w = np.random.uniform(w_min, 1 - w_min)
         h = np.random.uniform()
-        w_iy = int(w*size_z)
-        h_iy = int(h*size_z)
+        w_i = int(w*size_z)
+        h_i = int(h*size_z)
 
-    mean_x[:,:,h_ix:h_ix+w_ix] = -np.sign(mean_x[0,0,0])*abs(m_x)
-    mean_y[:,:,h_iy:h_iy+w_iy] = -np.sign(mean_y[0,0,0])*abs(m_y)
+    mean_x[:,:,h_i:h_i+w_i] = -np.sign(mean_x[0,0,0])*abs(m_x)
+    mean_y[:,:,h_i:h_i+w_i] = -np.sign(mean_y[0,0,0])*abs(m_y)
 
     #mean_x = gaussian_filter(mean_x, sigma = 15)
     #mean_y = gaussian_filter(mean_y, sigma = 15)
@@ -139,7 +131,6 @@ def generate_wind(size_x, size_y, size_z, terrain):
     #sig = gaussian_filter(sig, sigma = 15)
 
     # for homogeneous field
-    mean_y *= 0
     """
     mean_x *= 0
     mean_x += 0.33
@@ -153,4 +144,4 @@ def generate_wind(size_x, size_y, size_z, terrain):
 
     return [mean_x, mean_y, mean_z, sig]
 
-generate_world(500, 7, 'train')
+generate_world(1, 7, 'train')

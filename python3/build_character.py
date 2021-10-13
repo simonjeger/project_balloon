@@ -38,6 +38,10 @@ class character():
         self.est_y = ekf(self.delta_tn)
         self.est_z = ekf(self.delta_tn)
 
+        self.esterror_pos = 0
+        self.esterror_vel = 0
+        self.esterror_wind = 0
+
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 1 #kg
             self.delta_f = yaml_p['delta_f'] #N
@@ -69,6 +73,7 @@ class character():
         self.position = copy.copy(self.start)
         self.position_est = copy.copy(self.position)
         self.velocity = np.array([0,0,0])
+        self.velocity_est = np.array([0,0,0])
 
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
@@ -90,6 +95,7 @@ class character():
         self.set_state()
 
         self.path = [self.position.copy(), self.position.copy()]
+        self.path_est = [self.position.copy(), self.position.copy()]
 
         self.min_proj_dist = np.inf
         self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
@@ -112,6 +118,7 @@ class character():
 
     def set_state(self):
         self.residual = self.target - self.position
+        self.residual_est = self.target - self.position_est
 
         if not yaml_p['wind_info']:
             self.world_compressed *= 0
@@ -120,8 +127,8 @@ class character():
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 
-        rel_pos = self.height_above_ground(est=True)/(self.ceiling-(self.position[2]-self.height_above_ground(est=True)))
-        total_z = (self.ceiling-(self.position[2]-self.height_above_ground(est=True)))/self.size_z
+        rel_pos = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
+        total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
 
         boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), rel_pos, total_z])
 
@@ -135,7 +142,7 @@ class character():
             world_compressed = self.normalize(self.world_compressed)
             world_compressed[0:2] = self.world_compressed[0:2]*yaml_p['unit_xy']
             world_compressed[4:6] = self.world_compressed[4:6]*yaml_p['unit_xy']
-        self.state = np.concatenate((self.normalize_map(self.residual[0:2]),[self.res_z_squished], self.normalize(self.velocity).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), world_compressed), axis=0)
+        self.state = np.concatenate((self.normalize_map(self.residual_est[0:2]),[self.res_z_squished], self.normalize(self.velocity_est).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), world_compressed), axis=0)
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
@@ -184,6 +191,7 @@ class character():
 
             # write down path in history
             self.path.append(self.position.copy()) #because without copy otherwise it somehow overwrites it
+            self.path_est.append(self.position_est.copy()) #because without copy otherwise it somehow overwrites it
 
             # find min_proj_dist
             self.residual = self.target - self.position
@@ -212,6 +220,7 @@ class character():
             self.update_est(u,c)
 
         self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t']
+        self.velocity_est = (self.position_est - self.path_est[-self.n])/yaml_p['delta_t']
 
         return not_done
 
@@ -244,7 +253,7 @@ class character():
 
         # volume
         volume_init = self.mass_structure/(rho_air_init - rho_gas_init) #m^3
-        self.volume = pressure_init*volume_init/temp_init*temp/pressure #m^3
+        self.volume = volume_init*pressure_init/pressure*temp/temp_init #m^3
         self.diameter = 2*(self.volume*3/(4*np.pi))**(1/3) #m
         self.area = (self.diameter/2)**2*np.pi #m^2
         self.mass_total = self.mass_structure + volume_init*rho_gas_init #kg
@@ -274,7 +283,7 @@ class character():
 
     def set_measurement(self):
         self.measurement = np.array([self.est_x.wind(), self.est_y.wind()])
-        #self.measurement = self.interpolate(self.world_squished)[0:2]
+        self.esterror_wind = np.linalg.norm(self.interpolate(self.world_squished)[0:2] - self.measurement)
 
     def interpolate(self, world):
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
@@ -332,10 +341,19 @@ class character():
             print("ERROR: size of noise map doesn't match the one of the world map")
 
     def update_est(self,u,c):
-        self.est_x.one_cycle(0,c,self.position[0])
-        self.est_y.one_cycle(0,c,self.position[1])
-        self.est_z.one_cycle(u,c,self.position[2])
-        self.position_est = [self.est_x.xhat_0[0], self.est_y.xhat_0[0], self.est_z.xhat_0[0]]
+        std = 0 #sensor noise
+        if self.train_or_test == 'test':
+            np.random.seed(self.seed)
+            self.seed +=1
+        noise = np.random.normal(0,std,3)
+
+        self.est_x.one_cycle(0,c,self.position[0] + noise[0])
+        self.est_y.one_cycle(0,c,self.position[1] + noise[1])
+        self.est_z.one_cycle(u,c,self.position[2] + noise[2])
+        self.position_est = np.array([self.est_x.xhat_0[0], self.est_y.xhat_0[0], self.est_z.xhat_0[0]])
+
+        self.esterror_pos = np.linalg.norm(self.position - self.position_est)
+        self.esterror_vel = np.linalg.norm(self.velocity - self.velocity_est)
 
     def normalize(self,x):
         x = np.array(x)

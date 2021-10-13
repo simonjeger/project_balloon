@@ -70,6 +70,7 @@ class render():
         t_rel_pos = myfont.render('rel_pos: ' + str([round(num, 3) for num in character.state[6:10].tolist()]), False, pygame.Color('LightGray'))
         t_measurement = myfont.render('measurement: ' + str([round(num, 3) for num in character.state[10:12].tolist()]), False, pygame.Color('LightGray'))
         t_world_compressed = myfont.render('world_compressed: ' + str([round(num, 3) for num in character.state[12:12+yaml_p['bottleneck']*2].tolist()]), False, pygame.Color('LightGray'))
+        t_esterr = myfont.render('esterror_pos: ' + str([round(num, 3) for num in [character.esterror_pos, character.esterror_vel, character.esterror_wind]]), False, pygame.Color('LightGray'))
 
         start_text = 2*self.size_z*res
         space_text = 15
@@ -84,6 +85,7 @@ class render():
             screen.blit(t_rel_pos,(space_text,start_text+9*space_text))
             screen.blit(t_measurement,(space_text,start_text+10*space_text))
             screen.blit(t_world_compressed,(space_text,start_text+11*space_text))
+            screen.blit(t_esterr,(space_text,start_text+13*space_text))
 
         # updating the window
         pygame.display.flip()
@@ -173,7 +175,7 @@ class render():
         if dim != 'xy':
             # draw and display ceiling
             size_ceil_x = size_1*res
-            size_ceil_y = (size_2-ceiling)*res
+            size_ceil_y = max((size_2-ceiling)*res,1) #otherwise it can't render it for very small ceiling
             pos_ceil = [0, dist_to_top*res]
             rec_ceil = pygame.Rect(pos_ceil[0], pos_ceil[1], size_ceil_x, size_ceil_y)
             shape_surf = pygame.Surface(pygame.Rect(rec_ceil).size, pygame.SRCALPHA)
