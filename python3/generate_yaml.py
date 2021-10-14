@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, measurement_info):
+def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -33,6 +33,7 @@ def write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train,
     text = text + 'unit_xy: 1100' + '\n'
     text = text + 'unit_z: 30.48' + '\n'
     text = text + 'delta_t: ' + str(delta_t) + '\n'
+    text = text + 'delta_t_physics: ' + str(delta_t_physics) + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'
     text = text + 'autoencoder: ' + autoencoder + '\n'
@@ -55,15 +56,14 @@ def write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train,
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'lr_scheduler: 999999999999' + '\n'
     text = text + 'temperature_optimizer_lr: ' + f'{temperature_optimizer_lr:.10f}' + '\n'
-    text = text + 'max_grad_norm: 1' + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
-    text = text + 'update_interval: 20' + '\n'
-    text = text + 'minibatch_size: 800' + '\n'
-    text = text + 'n_times_update: 100' + '\n'
+    text = text + 'update_interval: ' + str(update_interval) + '\n'
+    text = text + 'minibatch_size: ' + str(minibatch_size) + '\n'
 
     text = text + '\n' + '# build_environment' + '\n'
     text = text + 'environment: python3' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
+    text = text + 'time_dependency: True' + '\n'
     text = text + 'T: 8000' + '\n'
     text = text + 'start_train: "center"' + '\n'
     text = text + 'start_test: "center"' + '\n'
@@ -106,17 +106,18 @@ def write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train,
 
 balloon = '"outdoor_balloon"'
 delta_t = 230
+delta_t_physics = 20
 time_train = 20*60*60
 step = -0.00003
 action = -0.005
 measurement_info = True
 
-process_nr = 6390
+process_nr = 6410
 
 for data_path in ["/cluster/scratch/sjeger/data_10x10/"]:
     for radius_xy in [10]:
         for HER in [False]:
-            for lr in [0.0006]:
+            for lr in [0.0006, 0.006, 0.06]:
                 for width_depth in [[20,4]]:
                     for min_proj_dist in [1]:
                         for autoencoder in ['"HAE_bidir"']:
@@ -130,7 +131,9 @@ for data_path in ["/cluster/scratch/sjeger/data_10x10/"]:
                                                     for curriculum_rad in [1]:
                                                         for curriculum_rad_dry in [1000]:
                                                             for temperature_optimizer_lr in [0.00003]:
-                                                                for replay_start_size in [1000]:
-                                                                    for repeat in range(3):
-                                                                        write(process_nr, delta_t, autoencoder, window_size, bottleneck, time_train, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, measurement_info)
-                                                                        process_nr += 1
+                                                                for replay_start_size in [10000]:
+                                                                    for update_interval in [1,10,100]:
+                                                                        for minibatch_size in [100,1000,10000]:
+                                                                            for repeat in range(3):
+                                                                                write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, measurement_info)
+                                                                                process_nr += 1

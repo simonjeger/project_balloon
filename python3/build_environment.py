@@ -75,7 +75,8 @@ class balloon3d(Env):
 
     def step(self, action, skip=False):
         # Interpolate the get the current world
-        self.interpolate_world(self.character.t)
+        if yaml_p['time_dependency']:
+            self.interpolate_world(self.character.t)
 
         # Update compressed wind map
         self.world_compressed = self.ae.compress(self.world, self.character.position_est, self.character.ceiling)
@@ -169,7 +170,8 @@ class balloon3d(Env):
         if target is None:
             self.load_new_world()
         else:
-            self.interpolate_world(yaml_p['T']) #still set back the world to time = takeoff_time
+            if yaml_p['time_dependency']:
+                self.interpolate_world(yaml_p['T']) #still set back the world to time = takeoff_time
 
         self.reward_step = 0
         self.reward_epi = 0

@@ -136,6 +136,7 @@ class Agent:
             replay_start_size=yaml_p['replay_start_size'],
             gpu=device,
             minibatch_size=yaml_p['minibatch_size'],
+            update_interval=yaml_p['update_interval'],
             burnin_action_func=burnin_action_func,
             entropy_target=-action_size,
             temperature_optimizer_lr=yaml_p['temperature_optimizer_lr'],
@@ -176,8 +177,7 @@ class Agent:
 
             if yaml_p['mode'] == 'reinforcement_learning':
                 action_RL = self.agent.act(obs) #uses self.agent.model to decide next step
-                action = np.clip(action_RL,0,1) #gym sometimes violates the conditions set in the environment
-                #action = action[0]
+                action = np.clip(action_RL[0],0,1) #gym sometimes violates the conditions set in the environment
 
             elif yaml_p['mode'] == 'game':
                 for event in pygame.event.get():
@@ -233,6 +233,12 @@ class Agent:
             self.HER_U.append(copy.copy(self.env.character.U))
             self.HER_target.append(copy.copy(self.env.character.target))
             self.HER_residual.append(copy.copy(self.env.character.residual))
+
+            if (len(self.agent.q_func1_loss_record) > 0) & (len(self.agent.q_func2_loss_record) > 0):
+                print(len(self.agent.q_func1_loss_record))
+                print(self.agent.q_func1_loss_record[-1])
+                print(self.agent.q_func2_loss_record[-1])
+                print('-------')
 
             if done:
                 if yaml_p['render']:

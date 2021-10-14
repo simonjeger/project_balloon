@@ -20,7 +20,7 @@ with open(args.yaml_file, 'rt') as fh:
 
 class character():
     def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed, train_or_test, seed):
-        self.n = int(yaml_p['delta_t']*1/0.5) #physics every 1/x seconds
+        self.n = int(yaml_p['delta_t']/yaml_p['delta_t_physics'])
         self.delta_tn = yaml_p['delta_t']/self.n
 
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
@@ -43,7 +43,7 @@ class character():
         self.esterror_wind = 0
 
         if yaml_p['balloon'] == 'outdoor_balloon':
-            self.mass_structure = 1 #kg
+            self.mass_structure = 0.6 #kg
             self.delta_f = yaml_p['delta_f'] #N
             self.ascent_consumption = 15 #W
             self.descent_consumption = 15 #W
@@ -157,7 +157,7 @@ class character():
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
             rel_pos = dist_bottom / (dist_top + dist_bottom)
-            u = self.ll_controler.bangbang(self.action,rel_pos)
+            u = self.ll_controler.pid(self.action,rel_pos, self.p_z)
 
             #update physics model
             self.adapt_volume(u)
