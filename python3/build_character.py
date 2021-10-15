@@ -273,7 +273,7 @@ class character():
         if self.train_or_test == 'test':
             np.random.seed(self.seed)
             self.seed +=1
-        self.ceiling = np.random.uniform(0.9, 1) * self.size_z
+        self.ceiling = np.random.uniform(1-yaml_p['ceiling_width'], 1) * self.size_z
 
     def dist_to_ceiling(self, est=False):
         if est:

@@ -84,6 +84,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
 
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
+    text = text + 'ceiling_width: 0.1' + '\n'
     text = text + 'noise_path: "/cluster/scratch/sjeger/noise_14x12/"' + '\n'
     text = text + 'W_20: 0' + '\n'
     text = text + 'measurement_info: ' + str(measurement_info) + '\n'
@@ -112,12 +113,12 @@ step = -0.00003
 action = -0.005
 measurement_info = True
 
-process_nr = 6410
+process_nr = 6500
 
 for data_path in ["/cluster/scratch/sjeger/data_10x10/"]:
     for radius_xy in [10]:
         for HER in [False]:
-            for lr in [0.0006, 0.006, 0.06]:
+            for lr in [0.006]:
                 for width_depth in [[20,4]]:
                     for min_proj_dist in [1]:
                         for autoencoder in ['"HAE_bidir"']:
@@ -131,9 +132,9 @@ for data_path in ["/cluster/scratch/sjeger/data_10x10/"]:
                                                     for curriculum_rad in [1]:
                                                         for curriculum_rad_dry in [1000]:
                                                             for temperature_optimizer_lr in [0.00003]:
-                                                                for replay_start_size in [10000]:
-                                                                    for update_interval in [1,10,100]:
-                                                                        for minibatch_size in [100,1000,10000]:
+                                                                for replay_start_size in [100000]:
+                                                                    for update_interval in [1]:
+                                                                        for minibatch_size in [10000]:
                                                                             for repeat in range(3):
                                                                                 write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, measurement_info)
                                                                                 process_nr += 1

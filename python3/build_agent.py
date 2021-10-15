@@ -115,8 +115,15 @@ class Agent:
         q_func1, q_func1_optimizer = make_q_func_with_optimizer()
         q_func2, q_func2_optimizer = make_q_func_with_optimizer()
 
+        self.action_burnin = None
         def burnin_action_func():
-            return np.random.uniform(acts.low, acts.high).astype(np.float32) #select random actions until model is updated one or more times
+            if self.action_burnin is None:
+                self.action_burnin = self.action_burnin = np.random.uniform(0.1,0.9)
+
+            elif abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.5: #x m/s, basically: did I reach the set altitude?
+                if np.random.uniform() < 0.25: # if yes, set a new one with a certain probability
+                    self.action_burnin = np.random.uniform(0.05,0.95)
+            return [self.action_burnin]
 
         if torch.cuda.is_available():
             device = 0
@@ -210,6 +217,7 @@ class Agent:
                         exit()
 
                 _ = self.agent.act(obs) #this is only so it works in training mode
+                action_RL = action #this is only so it works with HER
                 action = np.clip(action,0,1)
 
             elif yaml_p['mode'] == 'simple':
@@ -234,20 +242,15 @@ class Agent:
             self.HER_target.append(copy.copy(self.env.character.target))
             self.HER_residual.append(copy.copy(self.env.character.residual))
 
-            if (len(self.agent.q_func1_loss_record) > 0) & (len(self.agent.q_func2_loss_record) > 0):
-                print(len(self.agent.q_func1_loss_record))
-                print(self.agent.q_func1_loss_record[-1])
-                print(self.agent.q_func2_loss_record[-1])
-                print('-------')
-
             if done:
                 if yaml_p['render']:
                     self.env.render(mode=True)
 
                 # logger
                 if self.writer is not None:
-                    self.writer.add_scalar('epsilon', 0 , self.step_n-1) # because we do above self.step_n += 1
-                    self.writer.add_scalar('loss_qfunction', 0, self.step_n-1)
+                    if (len(self.agent.q_func1_loss_record) > 0):
+                        self.writer.add_scalar('q_func1_loss', self.agent.q_func1_loss_record[-1], self.step_n-1)
+                        self.writer.add_scalar('q_func2_loss', self.agent.q_func2_loss_record[-1], self.step_n-1)
                     self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n-1)
                     self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n-1)
 
@@ -371,10 +374,7 @@ class Agent:
                 np.random.seed(self.seed)
                 self.seed += 1
 
-            if abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.5: #x m/s, basically: did I reach the set altitude?
-                if np.random.uniform() < 0.25: # if yes, set a new one with a certain probability
-                    action = np.random.uniform(0.1,0.9)
-
+            action = self.agent.burnin_action_func()[0]
             _, _, done, _ = self.env.step(action,skip=True)
             #self.env.render(mode=True)
             sucess = False

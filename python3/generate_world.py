@@ -144,4 +144,5 @@ def generate_wind(size_x, size_y, size_z, terrain):
 
     return [mean_x, mean_y, mean_z, sig]
 
-generate_world(1, 7, 'train')
+generate_world(500, 7, 'train')
+generate_world(500, 7, 'test')
