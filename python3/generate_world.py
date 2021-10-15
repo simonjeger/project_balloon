@@ -98,10 +98,10 @@ def generate_wind(size_x, size_y, size_z, terrain):
     return [mean_x, mean_y, mean_z, sig]
 
 def generate_wind_indoor(size_x, size_y, size_z, terrain):
+    # TO BE COMPLETED
     pos = [0,0,0]
     angle = [0,0,0]
 
-    
     mean_x = np.zeros(shape=(size_x,size_y,size_z))
     mean_y = np.zeros(shape=(size_x,size_y,size_z))
     mean_z = np.zeros(shape=(size_x,size_y,size_z))

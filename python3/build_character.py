@@ -3,6 +3,7 @@ import scipy
 import copy
 import torch
 import os
+from scipy.interpolate import NearestNDInterpolator
 
 from preprocess_wind import squish
 from build_ll_controller import ll_controler
@@ -68,6 +69,11 @@ class character():
         self.world = world
         self.world_compressed = world_compressed
 
+        self.world_est = np.zeros_like(self.world_compressed)
+        self.measurement_hist_u = []
+        self.measurement_hist_v = []
+        self.moment_hist = []
+
         self.train_or_test = train_or_test
 
         self.position = copy.copy(self.start)
@@ -127,10 +133,9 @@ class character():
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 
-        rel_pos = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
-        total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
 
-        boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), rel_pos, total_z])
+        total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
+        boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), self.rel_pos_est, total_z])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
@@ -285,6 +290,10 @@ class character():
         self.measurement = np.array([self.est_x.wind(), self.est_y.wind()])
         self.esterror_wind = np.linalg.norm(self.interpolate(self.world_squished)[0:2] - self.measurement)
 
+        self.measurement_hist_u.append(self.est_x.wind())
+        self.measurement_hist_v.append(self.est_y.wind())
+        self.moment_hist.append([self.position_est[0], self.position_est[1], self.rel_pos_est, self.t])
+
     def interpolate(self, world):
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
         coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
@@ -351,9 +360,33 @@ class character():
         self.est_y.one_cycle(0,c,self.position[1] + noise[1])
         self.est_z.one_cycle(u,c,self.position[2] + noise[2])
         self.position_est = np.array([self.est_x.xhat_0[0], self.est_y.xhat_0[0], self.est_z.xhat_0[0]])
+        self.rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
 
         self.esterror_pos = np.linalg.norm(self.position - self.position_est)
         self.esterror_vel = np.linalg.norm(self.velocity - self.velocity_est)
+
+    def update_world_est(self):
+        # Not done yet
+        w_xy = 1
+        w_z = 1
+        w_t = 1
+
+        interp_u = NearestNDInterpolator(self.moment_hist, self.measurement_hist_u)
+        interp_v = NearestNDInterpolator(self.moment_hist, self.measurement_hist_v)
+
+        X = np.linspace(0, size_x*w_xy, size_x)
+        Y = np.linspace(0, size_y*w_xy, size_y)
+        Z = np.linspace(0, size_z*w_z, size_z)
+        T = np.linspace(0, 0, 1)
+        X, Y, Z, T = np.meshgrid(X, Y, Z, T)  # 3D grid for interpolation
+
+        U = interp_u(X, Y, Z, T)
+        V = interp_v(X, Y, Z, T)
+        W = np.zeros_like(U)
+        Sig = np.zeros_like(U)
+
+        self.world_est = [U,V,W,Sig]
+
 
     def normalize(self,x):
         x = np.array(x)
