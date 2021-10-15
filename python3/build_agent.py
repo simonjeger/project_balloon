@@ -120,8 +120,8 @@ class Agent:
             if self.action_burnin is None:
                 self.action_burnin = self.action_burnin = np.random.uniform(0.1,0.9)
 
-            elif abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.5: #x m/s, basically: did I reach the set altitude?
-                if np.random.uniform() < 0.25: # if yes, set a new one with a certain probability
+            elif abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.1: #x m/s, basically: did I reach the set altitude?
+                if np.random.uniform(0,yaml_p['alt_resample']) < yaml_p['delta_t']: # if yes, chances are N/delta_t that I choose a new altitude
                     self.action_burnin = np.random.uniform(0.05,0.95)
             return [self.action_burnin]
 
@@ -403,7 +403,7 @@ class Agent:
 
             target = path[idx]
 
-            not_to_close = np.sqrt((target[0] - start[0])**2 + (target[1] - start[1])**2) > yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy']*2 #I want to be at least two radius away from the start
+            not_to_close = np.sqrt((target[0] - start[0])**2 + (target[1] - start[1])**2) > yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy']*4 #I want to be at least 4 radius away from the start
             not_out_of_bounds_x = (0 < target[0]) & (target[0] < self.env.size_x - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
             not_out_of_bounds_y = (0 < target[1]) & (target[1] < self.env.size_y - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
 

@@ -82,36 +82,6 @@ def generate_wind(size_x, size_y, size_z, terrain):
     mean_z = np.ones(shape=(size_x,size_y,size_z))*0
     sig = np.ones(shape=(size_x,size_y,size_z))*0
 
-    """
-    magnitude = 1
-    smear_xy = max(int(size_x),1)
-    smear_z = max(int(size_z/10),1)
-    tunnel = size_z/10
-    m = int(size_z)
-    sign_x = random.choice([-1,1])
-    sign_y = random.choice([-1,1])
-    for i in range(m):
-        pos_x = random.randint(0,size_x-1)
-        pos_y = random.randint(0,size_y-1)
-        pos_z = random.randint(0,size_z-1)
-        if random.uniform(0, 1) < (pos_z+tunnel)/size_z:
-            seed_x = 1
-        else:
-            seed_x = -1
-
-        if random.uniform(0, 1) < (pos_z-tunnel)/size_z:
-            seed_y = 1
-        else:
-            seed_y = -1
-
-        seed_x *= sign_x
-        seed_y *= sign_y
-        mean_x[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_z:pos_z+smear_z] = gauss(magnitude*seed_x,10)
-        mean_y[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_z:pos_z+smear_z] = gauss(magnitude*seed_y,10)
-        mean_z[pos_x-smear_xy:pos_x+smear_xy, pos_y-smear_xy:pos_y+smear_xy, pos_z-smear_xy:pos_z+smear_xy] = gauss(0,2)
-        sig[pos_x, pos_y, pos_z] = abs(gauss(1,1))
-    """
-
     m_x = np.random.uniform(-m_abs, m_abs)
     m_y = np.random.uniform(-m_abs, m_abs)
     h = -1
@@ -125,24 +95,16 @@ def generate_wind(size_x, size_y, size_z, terrain):
     mean_x[:,:,h_i:h_i+w_i] = -np.sign(mean_x[0,0,0])*abs(m_x)
     mean_y[:,:,h_i:h_i+w_i] = -np.sign(mean_y[0,0,0])*abs(m_y)
 
-    #mean_x = gaussian_filter(mean_x, sigma = 15)
-    #mean_y = gaussian_filter(mean_y, sigma = 15)
-    #mean_z = gaussian_filter(mean_z, sigma = 15)
-    #sig = gaussian_filter(sig, sigma = 15)
-
-    # for homogeneous field
-    """
-    mean_x *= 0
-    mean_x += 0.33
-    #mean_x[:,5] += 0.33
-    mean_y *= 0
-    mean_y += 0.33
-    mean_z *= 0
-    sig *= 0
-    sig += 0.5
-    """
-
     return [mean_x, mean_y, mean_z, sig]
+
+def generate_wind_indoor(size_x, size_y, size_z, terrain):
+    pos = [0,0,0]
+    angle = [0,0,0]
+
+    
+    mean_x = np.zeros(shape=(size_x,size_y,size_z))
+    mean_y = np.zeros(shape=(size_x,size_y,size_z))
+    mean_z = np.zeros(shape=(size_x,size_y,size_z))
 
 generate_world(500, 7, 'train')
 generate_world(500, 7, 'test')

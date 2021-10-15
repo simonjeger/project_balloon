@@ -11,9 +11,9 @@ class ll_controler():
         #velocity = - velocity
         velocity = error - self.error_prev
         self.error_prev = error
-        k_p = 20 #1
+        k_p = 20 #20
         k_d = 120 #120
-        k_i = 0 #0.001
+        k_i = 0 #0
 
         u = k_p*error + k_d*velocity + k_i*self.error_int
         u = np.clip(u,-1,1)
