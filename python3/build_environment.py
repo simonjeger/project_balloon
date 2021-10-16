@@ -1,5 +1,3 @@
-from human_autoencoder import HAE
-from build_autoencoder import VAE
 from build_character import character
 from build_render import render
 
@@ -43,13 +41,6 @@ class balloon3d(Env):
         self.step_n = step_n
         self.seed = 0
 
-        # initialize autoencoder object
-        if yaml_p['autoencoder'][0:3] == 'HAE':
-            self.ae = HAE()
-        if yaml_p['autoencoder'] == 'VAE':
-            self.ae = VAE()
-            self.ae.load_weights('autoencoder/model_' + str(yaml_p['vae_nr']) + '.pt')
-
         # load new world to get size_x, size_z
         self.load_new_world()
 
@@ -78,15 +69,11 @@ class balloon3d(Env):
         if yaml_p['time_dependency']:
             self.interpolate_world(self.character.t)
 
-        # Update compressed wind map
-        self.world_compressed = self.ae.compress(self.world, self.character.position_est, self.character.ceiling)
-        self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in character.py
-
         coord = [int(i) for i in np.round(self.character.position_est)] #convert position into int so I can use it as index
         done = False
 
         # move character
-        in_bounds = self.character.update(action, self.world, self.world_compressed)
+        in_bounds = self.character.update(action, self.world)
         self.reward_step, done, success = self.cost(self.character.start, self.character.target, self.character.residual, self.character.U, self.character.min_proj_dist, in_bounds)
         self.success_n += success
         self.reward_epi += self.reward_step
@@ -100,6 +87,9 @@ class balloon3d(Env):
                 self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
                 self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
                 self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
+
+                if yaml_p['log_world_est_error']:
+                    self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
             if done:
                 self.writer.add_scalar('step_n', self.step_n , self.step_n)
                 self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
@@ -117,6 +107,10 @@ class balloon3d(Env):
 
                 self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
                 self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
+
+                if yaml_p['log_world_est_error']:
+                    self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
+
                 if self.reward_roll_out is not None:
                     self.writer.add_scalar('reward_epi_norm', self.reward_epi/self.reward_roll_out, self.step_n)
                 else:
@@ -163,12 +157,13 @@ class balloon3d(Env):
         return reward_step, done, success
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        self.render_machine.make_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.ae.window_size, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
+        self.render_machine.make_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
 
     def reset(self, target=None):
         # load new world
         if target is None:
             self.load_new_world()
+            self.seed += 1 #for set_ceiling in build_character
         else:
             if yaml_p['time_dependency']:
                 self.interpolate_world(yaml_p['T']) #still set back the world to time = takeoff_time
@@ -198,21 +193,16 @@ class balloon3d(Env):
         if self.target[2] <= f(self.target[0], self.target[1])[0] + above_ground_target:
             self.target[2] = f(self.target[0], self.target[1])[0] + above_ground_target
 
-        # Initial compressed wind map
-        self.world_compressed = self.ae.compress(self.world, self.start, self.size_z)
-        self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in character.py
-
         if yaml_p['environment'] == 'python3':
             # avoid impossible szenarios
             if (self.size_z - self.start[2]) < self.size_z*yaml_p['min_space']: #a bit cheeting because the ceiling isn't in that calculation. But like this I can initialize character after the recursion.
                 print('Not enough space to fly in ' + self.world_name + '. Loading new wind_map.')
                 self.reset(target=target)
-
-            self.character = character(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test, self.seed)
+            self.character = character(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.train_or_test, self.seed)
             self.reward_list = []
 
         elif yaml_p['environment'] == 'xplane':
-            self.character = character_xplane(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.world_compressed, self.train_or_test, self.seed)
+            self.character = character_xplane(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.train_or_test, self.seed)
 
         return self.character.state
 

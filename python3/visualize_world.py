@@ -18,7 +18,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def visualize_world(tensor, position, ceiling):
+def visualize_world(tensor, position, ceiling, debug=False):
     size_x = len(tensor[0])
     size_y = len(tensor[0][0])
     size_z = len(tensor[0][0][0])
@@ -79,14 +79,6 @@ def visualize_world(tensor, position, ceiling):
             dpi = 70
             ax.set_aspect(1)
 
-            """
-            #TypeError: Shapes of x (216, 252) and z (433, 505) do not match
-            dir_x = dir_x[1::2,1::2]
-            dir_y = dir_y[1::2,1::2]
-            local_size_x = int(local_size_x/2)
-            local_size_y = int(local_size_y/2)
-            """
-
             # plot contour lines
             x = np.arange(0, local_size_x, 1)
             y = np.arange(0, local_size_y, 1)
@@ -99,5 +91,8 @@ def visualize_world(tensor, position, ceiling):
             ax.quiver(X, Y, dir_x, dir_y, scale=yaml_p['unit_xy']/5, headwidth=2.5, width=0.005)
 
         # save figure
-        plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/render_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
+        if not debug:
+            plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/render_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
+        else:
+            plt.savefig('debug_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close()

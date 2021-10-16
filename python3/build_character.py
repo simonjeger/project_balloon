@@ -3,11 +3,14 @@ import scipy
 import copy
 import torch
 import os
+from human_autoencoder import HAE
+from build_autoencoder import VAE
 from scipy.interpolate import NearestNDInterpolator
 
 from preprocess_wind import squish
 from build_ll_controller import ll_controler
 from utils.ekf import ekf
+from visualize_world import visualize_world #for debugging only
 
 import yaml
 import argparse
@@ -20,7 +23,7 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 class character():
-    def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, world_compressed, train_or_test, seed):
+    def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, train_or_test, seed):
         self.n = int(yaml_p['delta_t']/yaml_p['delta_t_physics'])
         self.delta_tn = yaml_p['delta_t']/self.n
 
@@ -61,15 +64,23 @@ class character():
         else:
             print('ERROR: please choose one of the available balloons')
 
+        # initialize autoencoder object
+        if yaml_p['autoencoder'][0:3] == 'HAE':
+            self.ae = HAE()
+        if yaml_p['autoencoder'] == 'VAE':
+            self.ae = VAE()
+            self.ae.load_weights('autoencoder/model_' + str(yaml_p['vae_nr']) + '.pt')
+
         self.t = T
         self.battery_level = 1
         self.action = 1
         self.diameter = 0
 
         self.world = world
-        self.world_compressed = world_compressed
 
-        self.world_est = np.zeros_like(self.world_compressed)
+        self.world_est = np.zeros_like(self.world)
+        self.world_est[0] = self.world[0] #terrain is known
+
         self.measurement_hist_u = []
         self.measurement_hist_v = []
         self.moment_hist = []
@@ -111,10 +122,9 @@ class character():
         self.p_y = 0
         self.p_z = 0
 
-    def update(self, action, world, world_compressed):
+    def update(self, action, world):
         self.action = action
         self.world = world
-        self.world_compressed = world_compressed
 
         not_done = self.move_particle()
 
@@ -123,8 +133,24 @@ class character():
         return not_done
 
     def set_state(self):
+        # residual
         self.residual = self.target - self.position
         self.residual_est = self.target - self.position_est
+
+        # Update compressed wind map
+        if yaml_p['world_est']:
+            self.update_world_est()
+            self.world_compressed = self.ae.compress(self.world_est, self.position_est, self.ceiling)
+            if yaml_p['log_world_est_error']:
+                ground_truth = self.ae.compress(self.world, self.position_est, self.ceiling)
+                if np.linalg.norm(ground_truth) != 0:
+                    self.esterror_world = np.linalg.norm(self.world_compressed - ground_truth)/np.linalg.norm(ground_truth)
+                else:
+                    self.esterror_world = np.inf
+
+        else:
+            self.world_compressed = self.ae.compress(self.world, self.position_est, self.ceiling)
+        self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in character.py
 
         if not yaml_p['wind_info']:
             self.world_compressed *= 0
@@ -133,9 +159,9 @@ class character():
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 
-
+        rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
         total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
-        boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), self.rel_pos_est, total_z])
+        boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), rel_pos_est, total_z])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
@@ -275,9 +301,8 @@ class character():
             return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
 
     def set_ceiling(self):
-        if self.train_or_test == 'test':
-            np.random.seed(self.seed)
-            self.seed +=1
+        np.random.seed(self.seed) #this is needed so the same ceiling is used when the target is set
+        self.seed +=1
         self.ceiling = np.random.uniform(1-yaml_p['ceiling_width'], 1) * self.size_z
 
     def dist_to_ceiling(self, est=False):
@@ -288,11 +313,16 @@ class character():
 
     def set_measurement(self):
         self.measurement = np.array([self.est_x.wind(), self.est_y.wind()])
-        self.esterror_wind = np.linalg.norm(self.interpolate(self.world_squished)[0:2] - self.measurement)
+        if np.linalg.norm(self.measurement) != 0:
+            self.esterror_wind = np.linalg.norm(self.interpolate(self.world_squished)[0:2] - self.measurement) / np.linalg.norm(self.measurement)
+        else:
+            self.esterror_wind = np.inf
 
-        self.measurement_hist_u.append(self.est_x.wind())
-        self.measurement_hist_v.append(self.est_y.wind())
-        self.moment_hist.append([self.position_est[0], self.position_est[1], self.rel_pos_est, self.t])
+        self.measurement_hist_u.append(self.measurement[0])
+        self.measurement_hist_v.append(self.measurement[1])
+        self.moment_hist.append([self.position_est[0], self.position_est[1], self.position_est[2], self.t])
+
+        #self.est_x.plot() #for debugging
 
     def interpolate(self, world):
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
@@ -360,33 +390,37 @@ class character():
         self.est_y.one_cycle(0,c,self.position[1] + noise[1])
         self.est_z.one_cycle(u,c,self.position[2] + noise[2])
         self.position_est = np.array([self.est_x.xhat_0[0], self.est_y.xhat_0[0], self.est_z.xhat_0[0]])
-        self.rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
 
-        self.esterror_pos = np.linalg.norm(self.position - self.position_est)
-        self.esterror_vel = np.linalg.norm(self.velocity - self.velocity_est)
+        if np.linalg.norm(self.position) != 0:
+            self.esterror_pos = np.linalg.norm(self.position - self.position_est)/np.linalg.norm(self.position)
+        else:
+            self.esterror_pos = np.inf
+        if np.linalg.norm(self.velocity) != 0:
+            self.esterror_vel = np.linalg.norm(self.velocity - self.velocity_est)/np.linalg.norm(self.velocity)
+        else:
+            self.esterror_vel = np.inf
 
     def update_world_est(self):
         # Not done yet
-        w_xy = 1
+        w_xy = 1/10
         w_z = 1
-        w_t = 1
+        w_t = 1/100
 
-        interp_u = NearestNDInterpolator(self.moment_hist, self.measurement_hist_u)
-        interp_v = NearestNDInterpolator(self.moment_hist, self.measurement_hist_v)
+        if len(self.moment_hist) > 0:
+            interp_u = NearestNDInterpolator(self.moment_hist, self.measurement_hist_u)
+            interp_v = NearestNDInterpolator(self.moment_hist, self.measurement_hist_v)
 
-        X = np.linspace(0, size_x*w_xy, size_x)
-        Y = np.linspace(0, size_y*w_xy, size_y)
-        Z = np.linspace(0, size_z*w_z, size_z)
-        T = np.linspace(0, 0, 1)
-        X, Y, Z, T = np.meshgrid(X, Y, Z, T)  # 3D grid for interpolation
+            X = np.linspace(0, self.size_x*w_xy, self.size_x)
+            Y = np.linspace(0, self.size_y*w_xy, self.size_y)
+            Z = np.linspace(0, self.size_z*w_z, self.size_z)
+            T = self.t
+            X, Y, Z, T = np.meshgrid(X, Y, Z, T)  # 3D grid for interpolation
 
-        U = interp_u(X, Y, Z, T)
-        V = interp_v(X, Y, Z, T)
-        W = np.zeros_like(U)
-        Sig = np.zeros_like(U)
+            u = interp_u(X, Y, Z, T).reshape(self.size_x, self.size_y, self.size_z) #to trop the time dimension
+            v = interp_v(X, Y, Z, T).reshape(self.size_x, self.size_y, self.size_z)
 
-        self.world_est = [U,V,W,Sig]
-
+            self.world_est[1:3] = [u*yaml_p['unit_xy'],v*yaml_p['unit_xy']]
+            #visualize_world(self.world_est, self.position, self.ceiling, debug=True)
 
     def normalize(self,x):
         x = np.array(x)

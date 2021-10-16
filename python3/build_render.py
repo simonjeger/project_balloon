@@ -26,7 +26,7 @@ class render():
         self.size_y = (size_y - 1)*self.render_ratio
         self.size_z = size_z - 1
 
-    def make_render(self, character, reward_step, reward_epi, world_name, window_size, radius_xy, radius_z, train_or_test, roll_out):
+    def make_render(self, character, reward_step, reward_epi, world_name, radius_xy, radius_z, train_or_test, roll_out):
         # general setup
         pygame.init()
         clock = pygame.time.Clock()
@@ -46,6 +46,9 @@ class render():
             if event.type == pygame.QUIT: #does user click closing button
                 pygame.quit()
                 sys.exit()
+
+        # define window size
+        window_size = character.ae.window_size
 
         # read in wind_map
         world = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')

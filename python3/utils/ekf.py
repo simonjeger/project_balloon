@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt #for debugging only
 
 class ekf():
     def __init__(self, delta_t):
@@ -11,7 +12,9 @@ class ekf():
         self.P_0 = np.ones((4))                                             #error covariance (dim_x, dim_x)
         self.W_0 = np.ones((4))                                             #noise covariance (dim_x, dim_x)
         self.Q_0 = np.eye((4))                                              #process noise (dim_x, dim_x)
-        self.Q_0[2,2] = 1000                                                #the wind is not actually zero
+        self.Q_0[0,0] = 0.0001
+        self.Q_0[1,1] = 0.0001
+        self.Q_0[2,2] = 0.5                                                 #the wind is not actually zero
         self.Q_0[3,3] = 0.01                                                #but the wind comes from a uniform distribution
         self.R_0 = [1, self.delta_t, self.delta_t**2, self.delta_t**2]      #measurement noise (dim_z, dim_z)
         self.H_0 = np.eye((4))                                              #measurement function (dim_x, dim_x)
@@ -103,28 +106,27 @@ class ekf():
         return self.xhat_0[3]
 
     def plot(self):
-        import matplotlib.pyplot as plt
         fig, axs = plt.subplots(4)
-        axs[0].plot(self.meas_p[50:], color='red')
-        axs[0].plot(self.hist_p[50:], color='green')
+        axs[0].plot(self.meas_p, color='red')
+        axs[0].plot(self.hist_p, color='green')
         axs[0].set_ylabel('position')
 
-        axs[1].plot(np.diff(self.meas_p[50:])/self.delta_t, color='red')
-        axs[1].plot(self.hist_v[10:], color='green')
+        axs[1].plot(np.diff(self.meas_p)/self.delta_t, color='red')
+        axs[1].plot(self.hist_v, color='green')
         axs[1].scatter([0], [0], color='white')
         axs[1].set_ylabel('velocity')
 
         axs[2].plot(np.diff(np.diff(self.meas_p[50:]))/self.delta_t**2, color='red')
-        axs[2].plot(self.hist_a[50:], color='green')
+        axs[2].plot(self.hist_a, color='green')
         axs[2].scatter([0], [0], color='white')
         axs[2].set_ylabel('acceleration')
 
-        axs[3].plot(self.pred_basic[50:], color='red')
-        axs[3].plot(self.pred[50:], color='green')
+        axs[3].plot(self.pred_basic, color='red')
+        axs[3].plot(self.pred, color='green')
         axs[3].scatter([0], [0], color='white')
         axs[3].set_ylabel('offset')
 
-        plt.savefig('ekf.png')
+        plt.savefig('debug_ekf.png')
         plt.close()
 
         self.hist_p = []
