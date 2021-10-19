@@ -84,6 +84,9 @@ class character():
         self.measurement_hist_u = []
         self.measurement_hist_v = []
         self.moment_hist = []
+        self.w_est_xy = yaml_p['unit_xy']
+        self.w_est_z = yaml_p['unit_z']*100
+        self.w_est_t = yaml_p['delta_t']*0.00001
 
         self.train_or_test = train_or_test
 
@@ -106,7 +109,7 @@ class character():
             self.set_noise()
 
         self.residual = self.target - self.position
-        self.measurement = np.array([0,0])
+        self.measurement = self.interpolate(self.world_squished)[0:2]
 
         self.importance = None
         self.set_state()
@@ -125,6 +128,7 @@ class character():
     def update(self, action, world):
         self.action = action
         self.world = world
+        self.world_squished = squish(self.world, self.ceiling)
 
         not_done = self.move_particle()
 
@@ -140,7 +144,7 @@ class character():
         # Update compressed wind map
         if yaml_p['world_est']:
             self.update_world_est()
-            self.world_compressed = self.ae.compress(self.world_est, self.position_est, self.ceiling)
+            self.world_compressed = self.ae.compress_est(self.world_est, self.position_est, self.ceiling)
             if yaml_p['log_world_est_error']:
                 ground_truth = self.ae.compress(self.world, self.position_est, self.ceiling)
                 if np.linalg.norm(ground_truth) != 0:
@@ -155,7 +159,7 @@ class character():
         if not yaml_p['wind_info']:
             self.world_compressed *= 0
 
-        self.set_measurement()
+        #self.set_measurement() #already happened in update()
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 
@@ -249,6 +253,7 @@ class character():
 
             # update EKF
             self.update_est(u,c)
+            self.set_measurement()
 
         self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t']
         self.velocity_est = (self.position_est - self.path_est[-self.n])/yaml_p['delta_t']
@@ -320,9 +325,8 @@ class character():
 
         self.measurement_hist_u.append(self.measurement[0])
         self.measurement_hist_v.append(self.measurement[1])
-        self.moment_hist.append([self.position_est[0], self.position_est[1], self.position_est[2], self.t])
-
-        #self.est_x.plot() #for debugging
+        rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
+        self.moment_hist.append([self.position_est[0]*self.w_est_xy, self.position_est[1]*self.w_est_xy, rel_pos_est*self.size_z*self.w_est_z, self.t*self.w_est_t])
 
     def interpolate(self, world):
         pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
@@ -401,26 +405,39 @@ class character():
             self.esterror_vel = np.inf
 
     def update_world_est(self):
-        # Not done yet
-        w_xy = 1/10
-        w_z = 1
-        w_t = 1/100
+        if len(self.moment_hist) > self.n: #the first n measurements are rubbish, as the balloon didn't move yet
+            interp_u = NearestNDInterpolator(self.moment_hist[self.n::], self.measurement_hist_u[self.n::])
+            interp_v = NearestNDInterpolator(self.moment_hist[self.n::], self.measurement_hist_v[self.n::])
 
-        if len(self.moment_hist) > 0:
-            interp_u = NearestNDInterpolator(self.moment_hist, self.measurement_hist_u)
-            interp_v = NearestNDInterpolator(self.moment_hist, self.measurement_hist_v)
-
-            X = np.linspace(0, self.size_x*w_xy, self.size_x)
-            Y = np.linspace(0, self.size_y*w_xy, self.size_y)
-            Z = np.linspace(0, self.size_z*w_z, self.size_z)
-            T = self.t
+            X = np.linspace(0, self.size_x*self.w_est_xy, self.size_x)
+            Y = np.linspace(0, self.size_y*self.w_est_xy, self.size_y)
+            Z = np.linspace(0, self.size_z*self.w_est_z, self.size_z)
+            T = np.linspace(yaml_p['T']*self.w_est_t, self.t*self.w_est_t, max(int((yaml_p['T'] - self.t)/yaml_p['delta_t']),1))
             X, Y, Z, T = np.meshgrid(X, Y, Z, T)  # 3D grid for interpolation
 
-            u = interp_u(X, Y, Z, T).reshape(self.size_x, self.size_y, self.size_z) #to trop the time dimension
-            v = interp_v(X, Y, Z, T).reshape(self.size_x, self.size_y, self.size_z)
+            u = interp_u(X, Y, Z, T)[:,:,:,-1].reshape(self.size_x, self.size_y, self.size_z) #to drop the time dimension
+            v = interp_v(X, Y, Z, T)[:,:,:,-1].reshape(self.size_x, self.size_y, self.size_z)
 
             self.world_est[1:3] = [u*yaml_p['unit_xy'],v*yaml_p['unit_xy']]
-            #visualize_world(self.world_est, self.position, self.ceiling, debug=True)
+
+            """
+            import matplotlib.pyplot as plt
+            import seaborn as sns
+            cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+
+            for i in range(self.size_x):
+                fig, ax = plt.subplots(2)
+                for j in range(len(self.moment_hist[self.n::])):
+                    if i*self.w_est_xy <= int(self.moment_hist[j][0]) < (i+1)*self.w_est_xy:
+                        ax[0].scatter(self.moment_hist[j][0]/self.w_est_xy,self.moment_hist[j][2]/self.w_est_z, s=0.1, c='white') #c=self.measurement_hist_u[j]
+                ax[0].imshow(np.multiply(u[:,i,:].T,yaml_p['unit_xy']), origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
+                ax[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+
+
+                ax[1].plot(np.multiply(self.measurement_hist_u[self.n::],yaml_p['unit_xy']))
+                plt.savefig('debug_imshow_' + str(i) + '.png')
+                plt.close()
+            """
 
     def normalize(self,x):
         x = np.array(x)

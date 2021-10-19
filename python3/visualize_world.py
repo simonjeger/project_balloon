@@ -18,7 +18,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def visualize_world(tensor, position, ceiling, debug=False):
+def visualize_world(tensor, position, ceiling):
     size_x = len(tensor[0])
     size_y = len(tensor[0][0])
     size_z = len(tensor[0][0][0])
@@ -91,8 +91,5 @@ def visualize_world(tensor, position, ceiling, debug=False):
             ax.quiver(X, Y, dir_x, dir_y, scale=yaml_p['unit_xy']/5, headwidth=2.5, width=0.005)
 
         # save figure
-        if not debug:
-            plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/render_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
-        else:
-            plt.savefig('debug_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/render_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close()

@@ -33,7 +33,6 @@ def plot_reward():
     df = many_logs2pandas(name_list)
 
     rew_epi = np.array(df['reward_epi'].dropna())
-    qloss = np.array(df['loss_qfunction'].dropna())
     #rew_step = np.array(df['reward_step'])
 
     # plot mean reward
@@ -141,15 +140,6 @@ def plot_path():
 
         fig.suptitle(str(int(i/n_f*100)) + ' %')
         plt.subplots_adjust(wspace=0.5, hspace=1)
-
-        # plot epsilon
-        df = df.interpolate() #to fill the NaN values
-        axs[3].set_title('epsilon')
-        axs[3].plot(df['epsilon'].iloc[0:step], color='grey')
-        axs[3].set_xlabel('steps')
-        axs[3].set_ylabel('epsilon')
-        axs[3].set_xlim(0,step)
-        axs[3].set_ylim(0,1)
 
         # Build folder structure if it doesn't exist yet
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/temp'
@@ -289,7 +279,7 @@ def disp_overview():
                     mean_rew_norm = df_mean_norm.groupby(df_mean_norm.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_norm.iloc[:,0], mean_rew_norm.iloc[:,1], s=0.1, color=color_norm)
                 """
-                
+
                 # success
                 df_mean_success = pd.concat([df.iloc[:,x], df['success_rate']], axis=1)
 

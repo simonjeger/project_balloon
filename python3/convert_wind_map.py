@@ -140,14 +140,18 @@ def build_set(num, n_h, train_or_test):
                 tensor_rot[-3:-1,:,:,:] = -tensor_rot[-3:-1,:,:,:]
 
             for n in range(N):
-                np.random.seed(seed)
-                seed += 1
-                idx_x = np.random.randint(0,global_size_x - size_x - 1)
-                np.random.seed(seed)
-                seed += 1
-                idx_y = np.random.randint(0,global_size_y - size_y - 1)
+                world = np.ones(shape=(1+4,size_x,size_y,size_z))*size_z #so that it makes the first "while" for sure
+                center_x = int(len(world[0])/2)
+                center_y = int(len(world[0][0])/2)
+                while world[0][center_x,center_y,0] > (1 - yaml_p['min_space'])*size_z:
+                    np.random.seed(seed)
+                    seed += 1
+                    idx_x = np.random.randint(0,global_size_x - size_x - 1)
+                    np.random.seed(seed)
+                    seed += 1
+                    idx_y = np.random.randint(0,global_size_y - size_y - 1)
 
-                world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
+                    world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
 
                 torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
 

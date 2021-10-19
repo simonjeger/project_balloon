@@ -104,6 +104,16 @@ class HAE():
             wind = self.compress_wind_bidir_squished(window, position, ceiling)
         return wind
 
+    def compress_est(self, data, position, ceiling):
+        window = self.window(data, position)
+        if yaml_p['autoencoder'] == 'HAE_avg':
+            wind = self.compress_wind_avg_squished(window, position, ceiling)
+        elif yaml_p['autoencoder'] == 'HAE_ext':
+            wind = self.compress_wind_ext_squished(window, position, ceiling)
+        elif yaml_p['autoencoder'] == 'HAE_bidir':
+            wind = self.compress_wind_bidir_squished(window, position, ceiling)
+        return wind
+
     def compress_wind_avg(self, data, position):
         # get rid of wind data that's below the terrain
         loc_x = len(data[0,:,0,0])
