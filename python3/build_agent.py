@@ -51,6 +51,8 @@ class Agent:
         self.writer = writer
         self.seed = 0
 
+        self.clip = 0.01
+
         acts = env.action_space
         obs = env.observation_space
 
@@ -116,13 +118,14 @@ class Agent:
         q_func2, q_func2_optimizer = make_q_func_with_optimizer()
 
         self.action_burnin = None
+
         def burnin_action_func():
             if self.action_burnin is None:
-                self.action_burnin = self.action_burnin = np.random.uniform(0.1,0.9)
+                self.action_burnin = np.random.uniform(self.clip,1-self.clip)
 
             elif abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.1: #x m/s, basically: did I reach the set altitude?
                 if np.random.uniform(0,yaml_p['alt_resample']) < yaml_p['delta_t']: # if yes, chances are N/delta_t that I choose a new altitude
-                    self.action_burnin = np.random.uniform(0.05,0.95)
+                    self.action_burnin = np.random.uniform(self.clip,1-self.clip)
             return [self.action_burnin]
 
         if torch.cuda.is_available():
@@ -184,7 +187,7 @@ class Agent:
 
             if yaml_p['mode'] == 'reinforcement_learning':
                 action_RL = self.agent.act(obs) #uses self.agent.model to decide next step
-                action = np.clip(action_RL[0],0,1) #gym sometimes violates the conditions set in the environment
+                action = np.clip(action_RL[0],self.clip,1-self.clip) #gym sometimes violates the conditions set in the environment
 
             elif yaml_p['mode'] == 'game':
                 for event in pygame.event.get():
@@ -217,12 +220,17 @@ class Agent:
                         exit()
 
                 _ = self.agent.act(obs) #this is only so it works in training mode
+                action = np.clip(action,self.clip,1-self.clip)
                 action_RL = action #this is only so it works with HER
-                action = np.clip(action,0,1)
 
             elif yaml_p['mode'] == 'simple':
                 _ = self.agent.act(obs) #this is only so it works in training mode
                 action = self.act_simple(self.env.character)
+                action_RL = action #this is only so it works with HER
+
+            elif yaml_p['mode'] == 'hybrid':
+                action_RL = self.agent.act(obs) #this is only so it works in training mode
+                action = self.act_simple(self.env.character, action_RL[0])
 
             else:
                 print('ERROR: Please choose one of the available modes.')
@@ -490,17 +498,21 @@ class Agent:
                 break
             i += 1
 
-    def weights_init(self, m):
+    def weights_init(self, m): #currently not in use
         if isinstance(m, torch.nn.Linear):
             m.weight.data.normal_(0.0, 0.0001)
 
     def save_weights(self, path):
         self.agent.save(path + 'weights_agent')
+        self.agent.replay_buffer.save(path + 'buffer')
+        print('weights and buffer saved')
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
+        self.agent.replay_buffer.load(path + 'buffer')
+        print('weights and buffer loaded')
 
-    def act_simple(self, character):
+    def act_simple(self, character, p=None):
         pos_x = int(np.clip(character.position[0],0,self.env.size_x-1))
         pos_y = int(np.clip(character.position[1],0,self.env.size_y-1))
         pos_z = int(np.clip(character.position[2],0,self.env.size_z-1))
@@ -536,21 +548,24 @@ class Agent:
         wind_y = data_squished[-3,pos_x,pos_y,:]
         wind_y = gaussian_filter(wind_y,sigma=1)
 
-        k_1 = 5 #5
-        k_2 = 100 #100
+        if p is None:
+            k_1 = 5 #5
+            k_2 = 100 #100
 
-        p_1 = 1/abs(residual_x)*k_1
-        p_2 = 1/abs(residual_y)*k_1
-        p_3 = np.clip(vel_x*residual_x*k_2,0.1,np.inf)
-        p_4 = np.clip(vel_y*residual_y*k_2,0.1,np.inf)
-        p = np.clip(p_1*p_2*p_3*p_4,0,1)
+            p_1 = 1/abs(residual_x)*k_1
+            p_2 = 1/abs(residual_y)*k_1
+            p_3 = np.clip(vel_x*residual_x*k_2,0.1,np.inf)
+            p_4 = np.clip(vel_y*residual_y*k_2,0.1,np.inf)
+            p = np.clip(p_1*p_2*p_3*p_4,0,1)
 
-        p = np.round(p,0) #bang bang makes most sense here
-        #p = 1 #switch to heuristic_without_wind
+            p = np.round(p,0) #bang bang makes most sense here
+            #p = 1 #switch to heuristic_without_wind
+        else:
+            p = p
 
         norm_wind = np.sqrt(wind_x**2 + wind_y**2)
         projections = (residual_x*wind_x + residual_y*wind_y)/norm_wind
         action = np.argmax(projections)/len(projections)*(1-p) + tar_z_squished*p
-        action = np.clip(action,0.05,1) #avoid crashing into terrain
+        action = np.clip(action,self.clip,1-self.clip) #avoid crashing into terrain
 
         return action

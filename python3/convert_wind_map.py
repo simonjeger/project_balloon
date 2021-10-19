@@ -141,9 +141,10 @@ def build_set(num, n_h, train_or_test):
 
             for n in range(N):
                 world = np.ones(shape=(1+4,size_x,size_y,size_z))*size_z #so that it makes the first "while" for sure
-                center_x = int(len(world[0])/2)
-                center_y = int(len(world[0][0])/2)
-                while world[0][center_x,center_y,0] > (1 - yaml_p['min_space'])*size_z:
+                flat = 3
+                center_x = int(len(world[0])/2-flat/2)
+                center_y = int(len(world[0][0])/2-flat/2)
+                while np.max(world[0][center_x:center_x+flat,center_y:center_y+flat,0]) > (1 - yaml_p['min_space'])*size_z: #only generate maps with enough space
                     np.random.seed(seed)
                     seed += 1
                     idx_x = np.random.randint(0,global_size_x - size_x - 1)

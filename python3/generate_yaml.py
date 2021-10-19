@@ -46,7 +46,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'num_epochs_test: 300' + '\n'
 
     text = text + '\n' + '# build_agent' + '\n'
-    text = text + 'alt_resample: 1200' + '\n'
+    text = text + 'alt_resample: 1000' + '\n'
     text = text + 'mode: reinforcement_learning' + '\n'
     text = text + 'HER: ' + str(HER) + '\n'
     text = text + 'width: ' + str(width_depth[0]) + '\n'
@@ -64,7 +64,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'environment: python3' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
     text = text + 'time_dependency: True' + '\n'
-    text = text + 'T: 10000' + '\n'
+    text = text + 'T: 12000' + '\n'
     text = text + 'start_train: "center"' + '\n'
     text = text + 'start_test: "center"' + '\n'
     text = text + 'target_train: "random"' + '\n'
@@ -94,7 +94,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
     text = text + "reuse_weights: True" + '\n'
-    text = text + "log_world_est_error: True" + '\n'
+    text = text + "log_world_est_error: False" + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 15' + '\n'
@@ -115,17 +115,17 @@ step = -0.00003
 action = -0.005
 measurement_info = True
 
-process_nr = 6500
+process_nr = 6600
 
-for data_path in ["/cluster/scratch/sjeger/data_single/", "/cluster/scratch/sjeger/data_single/", "/cluster/scratch/sjeger/data_10x10/", "/cluster/scratch/sjeger/data_20x20/"]:
+for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
     for radius_xy in [10]:
         for HER in [False]:
             for lr in [0.006]:
-                for width_depth in [[20,4], [100,4], [500,4], [500,3], [1000,3], [1000,2], [5000,2]]:
+                for width_depth in [[20,6],[100,5],[500,4],[1000,3],[5000,2]]:
                     for min_proj_dist in [1]:
-                        for autoencoder in ['"HAE_bidir"']:
-                            for window_size in [1]:
-                                for bottleneck in [8]:
+                        for autoencoder in ['"HAE_avg"']:
+                            for window_size in [1,3]:
+                                for bottleneck in [1,2,8]:
                                     for W_20 in [0]:
                                         for wind_info in [True]:
                                             #for gradient in np.array([0.1, 1, 10])*abs(step + action):
@@ -134,7 +134,7 @@ for data_path in ["/cluster/scratch/sjeger/data_single/", "/cluster/scratch/sjeg
                                                     for curriculum_rad in [1]:
                                                         for curriculum_rad_dry in [1000]:
                                                             for temperature_optimizer_lr in [0.00003]:
-                                                                for replay_start_size in [100000]:
+                                                                for replay_start_size in [10000]:
                                                                     for update_interval in [1]:
                                                                         for minibatch_size in [1000]:
                                                                             for repeat in range(3):

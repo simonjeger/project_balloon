@@ -309,6 +309,7 @@ class character():
         np.random.seed(self.seed) #this is needed so the same ceiling is used when the target is set
         self.seed +=1
         self.ceiling = np.random.uniform(1-yaml_p['ceiling_width'], 1) * self.size_z
+        np.random.seed() #this is needed so the rest of the code is still random
 
     def dist_to_ceiling(self, est=False):
         if est:
