@@ -184,6 +184,10 @@ def write_overview():
     rew_epi_norm = np.array(df['reward_epi_norm'].dropna())
     mean_norm = np.mean(rew_epi_norm)
 
+    # std of action
+    action = np.array(df['action'].dropna())
+    action_std = np.std(action)
+
     # to pass in pandas	df
     dic_copy = yaml_p.copy()
     for i in dic_copy:
@@ -198,8 +202,9 @@ def write_overview():
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_norm_mean', mean_norm, True)
-
+    df_reward.insert(len(df_reward.columns),'action_std', action_std, True)
     df_reward.insert(len(df_reward.columns),'success_rate', success_rate, True)
+
     dirpath = Path('overview.csv')
     if dirpath.exists() and dirpath.is_file():
         df_reward.to_csv(dirpath, mode='a', header=False, index=False)
@@ -237,9 +242,8 @@ def disp_overview():
                 color_mean='Indigo'
                 color_norm='MediumSlateBlue'
                 color_success='violet'
-                color_slope='green'
-                color_intercept='orange'
                 color_score='pink'
+                color_action='green'
 
                 # scatter
                 """
@@ -286,6 +290,13 @@ def disp_overview():
                 if df_mean_success.columns[0] != df_mean_success.columns[1]:
                     mean_success = df_mean_success.groupby(df_mean_success.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_success.iloc[:,0], mean_success.iloc[:,1], s=0.1, color=color_success)
+
+                # action_std
+                df_action_std = pd.concat([df.iloc[:,x], df['action_std']], axis=1)
+
+                if df_action_std.columns[0] != df_action_std.columns[1]:
+                    action_std = df_action_std.groupby(df_action_std.columns[0]).mean().reset_index()
+                    axs[i,j].scatter(action_std.iloc[:,0], action_std.iloc[:,1], s=0.1, color=color_action)
 
                 """
                 df_mean_slope = pd.concat([df.iloc[:,x], df['linreg_slope']], axis=1)

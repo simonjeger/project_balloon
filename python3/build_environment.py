@@ -86,6 +86,7 @@ class balloon3d(Env):
                 self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
                 self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
                 self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
+                self.writer.add_scalar('action', action, self.step_n)
                 self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
 
                 if yaml_p['log_world_est_error']:
@@ -96,6 +97,7 @@ class balloon3d(Env):
                 self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
                 self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
                 self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
+                self.writer.add_scalar('action', action, self.step_n)
 
                 self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
                 self.writer.add_scalar('target_y', self.character.target[1], self.step_n)
