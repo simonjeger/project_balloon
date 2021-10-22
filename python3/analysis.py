@@ -269,6 +269,13 @@ def disp_overview():
                     axs[i,j].scatter(mean_rew_max.iloc[:,0], mean_rew_max.iloc[:,1], s=0.1, color=color_max)
                 """
 
+                # action_std
+                df_action_std = pd.concat([df.iloc[:,x], df['action_std']], axis=1)
+
+                if df_action_std.columns[0] != df_action_std.columns[1]:
+                    action_std = df_action_std.groupby(df_action_std.columns[0]).mean().reset_index()
+                    axs[i,j].scatter(action_std.iloc[:,0], action_std.iloc[:,1], s=0.1, color=color_action)
+
                 # mean
                 df_mean_mean = pd.concat([df.iloc[:,x], df['rew_epi_mean']], axis=1)
 
@@ -290,13 +297,6 @@ def disp_overview():
                 if df_mean_success.columns[0] != df_mean_success.columns[1]:
                     mean_success = df_mean_success.groupby(df_mean_success.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_success.iloc[:,0], mean_success.iloc[:,1], s=0.1, color=color_success)
-
-                # action_std
-                df_action_std = pd.concat([df.iloc[:,x], df['action_std']], axis=1)
-
-                if df_action_std.columns[0] != df_action_std.columns[1]:
-                    action_std = df_action_std.groupby(df_action_std.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(action_std.iloc[:,0], action_std.iloc[:,1], s=0.1, color=color_action)
 
                 """
                 df_mean_slope = pd.concat([df.iloc[:,x], df['linreg_slope']], axis=1)

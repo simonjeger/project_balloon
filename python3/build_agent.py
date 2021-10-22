@@ -119,13 +119,15 @@ class Agent:
 
         self.action_burnin = None
 
-        def burnin_action_func():
-            if self.action_burnin is None:
-                self.action_burnin = np.random.uniform(self.clip,1-self.clip)
-
-            elif abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.1: #x m/s, basically: did I reach the set altitude?
-                if np.random.uniform(0,yaml_p['alt_resample']) < yaml_p['delta_t']: # if yes, chances are N/delta_t that I choose a new altitude
+        def burnin_action_func(type=yaml_p['burnin']):
+            if type == 'advanced':
+                if self.action_burnin is None:
                     self.action_burnin = np.random.uniform(self.clip,1-self.clip)
+                elif abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.1: #x m/s, basically: did I reach the set altitude?
+                    if np.random.uniform(0,yaml_p['alt_resample']) < yaml_p['delta_t']: # if yes, chances are N/delta_t that I choose a new altitude
+                        self.action_burnin = np.random.uniform(self.clip,1-self.clip)
+            elif type == 'basic':
+                self.action_burnin = np.random.uniform(self.clip,1-self.clip)
             return [self.action_burnin]
 
         if torch.cuda.is_available():
@@ -381,8 +383,7 @@ class Agent:
             if self.train_or_test == 'test':
                 np.random.seed(self.seed)
                 self.seed += 1
-
-            action = self.agent.burnin_action_func()[0]
+            action = self.agent.burnin_action_func(type='advanced')[0]
             _, _, done, _ = self.env.step(action,skip=True)
             #self.env.render(mode=True)
             sucess = False
@@ -490,10 +491,10 @@ class Agent:
                     next_state=self.HER_obs[i+1],
                     next_action=None,
                     is_state_terminal=self.HER_done[i],
-                    env_id=i)
+                    env_id=0) #I don't fully understand what this does, but for the normal buffer it is = 0 as well
 
             if self.HER_done[i]:
-                self.agent.replay_buffer.stop_current_episode(env_id=i)
+                self.agent.replay_buffer.stop_current_episode(env_id=0)
                 self.agent.replay_updater.update_if_necessary(self.agent.t)
                 break
             i += 1
