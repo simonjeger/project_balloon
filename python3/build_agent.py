@@ -177,6 +177,7 @@ class Agent:
         self.HER_obs = [obs]
         self.HER_pos = [self.env.character.start]
         self.HER_action = []
+        self.HER_proj_action = []
         self.HER_U = []
         self.HER_reward = []
         self.HER_done = []
@@ -248,6 +249,7 @@ class Agent:
             self.HER_obs.append(obs)
             self.HER_pos.append(copy.copy(self.env.character.position))
             self.HER_action.append(action_RL)
+            self.HER_proj_action.append(self.env.character.proj_action(self.env.character.position, self.env.character.target))
             self.HER_U.append(copy.copy(self.env.character.U))
             self.HER_target.append(copy.copy(self.env.character.target))
             self.HER_residual.append(copy.copy(self.env.character.residual))
@@ -270,7 +272,8 @@ class Agent:
         if yaml_p['HER'] & (self.train_or_test == 'train'):
             idx = self.idx_on_path(self.env.character.path, self.env.character.start)
             target = self.env.character.path[idx] #set target at last position that was reached, but still within bounds
-            self.HER(target)
+            #self.HER(target)
+            self.HER(self.env.character.target)
 
         # mark in map_test if this was a success or not
         if (yaml_p['reachability_study'] > 0) & (self.train_or_test == 'test'):
@@ -473,8 +476,7 @@ class Agent:
                     in_bounds = False
                 if (self.HER_pos[i][2] < 0) | (self.HER_pos[i][2] > self.env.size_z - 1): #not totally complete, because terrain and ceiling
                     in_bounds = False
-
-                reward, done, success = self.env.cost(self.env.character.start, target, residual, self.HER_U[i-1], min_proj_dist, in_bounds)
+                reward, done, success = self.env.cost(self.env.character.start, position, target, self.HER_action[i-1][0], self.HER_U[i-1], min_proj_dist, in_bounds) #is slightly off on the part with the proj_action because the world is time depentent
                 self.HER_reward.append(reward)
                 self.HER_done.append(done)
 
@@ -514,9 +516,6 @@ class Agent:
         print('weights and buffer loaded')
 
     def act_simple(self, character, p=None):
-        pos_x = int(np.clip(character.position[0],0,self.env.size_x-1))
-        pos_y = int(np.clip(character.position[1],0,self.env.size_y-1))
-        pos_z = int(np.clip(character.position[2],0,self.env.size_z-1))
         tar_x = int(np.clip(character.target[0],0,self.env.size_x-1))
         tar_y = int(np.clip(character.target[1],0,self.env.size_y-1))
         tar_z = int(np.clip(character.target[2],0,self.env.size_z-1))
@@ -526,28 +525,6 @@ class Agent:
         tar_z_squished = (character.target[2]-character.world[0,tar_x,tar_y,0])/(character.ceiling - character.world[0,tar_x,tar_y,0])
         vel_x = character.velocity[0]
         vel_y = character.velocity[1]
-
-        # window_squished
-        data = character.world
-        res = self.env.size_z
-        data_squished = np.zeros((len(data),self.env.size_x,self.env.size_y,res))
-        for i in range(self.env.size_x):
-            for j in range(self.env.size_y):
-                bottom = data[0,i,j,0]
-                top = character.ceiling
-
-                x_old = np.arange(0,self.env.size_z,1)
-                x_new = np.linspace(bottom,top,res)
-                data_squished[0,:,:,:] = data[0,:,:,:] #terrain stays the same
-
-                for k in range(1,len(data)):
-                    data_squished[k,i,j,:] = np.interp(x_new,x_old,data[k,i,j,:])
-
-        wind_x = data_squished[-4,pos_x,pos_y,:]
-        wind_x = gaussian_filter(wind_x,sigma=1)
-
-        wind_y = data_squished[-3,pos_x,pos_y,:]
-        wind_y = gaussian_filter(wind_y,sigma=1)
 
         if p is None:
             k_1 = 5 #5
@@ -564,8 +541,9 @@ class Agent:
         else:
             p = p
 
-        norm_wind = np.sqrt(wind_x**2 + wind_y**2)
-        projections = (residual_x*wind_x + residual_y*wind_y)/norm_wind
+        projections = self.env.character.proj_action(character.position, character.target)
+        projections = gaussian_filter(projections,sigma=1)
+
         action = np.argmax(projections)/len(projections)*(1-p) + tar_z_squished*p
         action = np.clip(action,self.clip,1-self.clip) #avoid crashing into terrain
 

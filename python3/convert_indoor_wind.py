@@ -180,5 +180,5 @@ def generate_wind(size_x, size_y, size_z, terrain):
     wind = gaussian_filter(wind, sigma=0.1)
     return wind
 
-generate_world(10, 7, 'train')
-generate_world(10, 7, 'test')
+generate_world(500, 7, 'train')
+generate_world(500, 7, 'test')

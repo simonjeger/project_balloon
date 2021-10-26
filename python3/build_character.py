@@ -6,6 +6,7 @@ import os
 from human_autoencoder import HAE
 from build_autoencoder import VAE
 from scipy.interpolate import NearestNDInterpolator
+from scipy.ndimage import gaussian_filter
 
 from preprocess_wind import squish
 from build_ll_controller import ll_controler
@@ -329,15 +330,23 @@ class character():
         rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
         self.moment_hist.append([self.position_est[0]*self.w_est_xy, self.position_est[1]*self.w_est_xy, rel_pos_est*self.size_z*self.w_est_z, self.t*self.w_est_t])
 
-    def interpolate(self, world):
-        pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
-        coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
-        coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
-        coord_z = int(np.clip(pos_z_squished,0,len(world[0,0,0,:])-1))
+    def interpolate(self, world, position=None):
+        if position is None: #for self.proj_action()
+            pos_z_squished = self.height_above_ground() / (self.dist_to_ceiling() + self.height_above_ground())*len(world[0,0,0,:])
+            coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
+            coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
+            coord_z = int(np.clip(pos_z_squished,0,len(world[0,0,0,:])-1))
+            x = np.clip(self.position[0] - coord_x,0,1)
+            y = np.clip(self.position[1] - coord_y,0,1)
+            z = np.clip(self.position[2] - coord_z,0,1)
+        else:
+            coord_x = int(np.clip(position[0],0,self.size_x - 1))
+            coord_y = int(np.clip(position[1],0,self.size_y - 1))
+            coord_z = int(np.clip(position[2],0,len(world[0,0,0,:]) - 1))
+            x = np.clip(position[0] - coord_x,0,1)
+            y = np.clip(position[1] - coord_y,0,1)
+            z = np.clip(position[2] - coord_z,0,1)
 
-        x = np.clip(self.position[0] - coord_x,0,1)
-        y = np.clip(self.position[1] - coord_y,0,1)
-        z = np.clip(self.position[2] - coord_z,0,1)
 
         # I detect runnning out of bounds in a later stage
         i_x = 1
@@ -439,6 +448,16 @@ class character():
                 plt.savefig('debug_imshow_' + str(i) + '.png')
                 plt.close()
             """
+
+    def proj_action(self, position, target):
+        res = self.size_z
+        proj = []
+        for i in range(res):
+            pos_z = i/res*self.size_z
+            wind = self.interpolate(self.world_squished,position=[position[0], position[1], pos_z])[0:2]
+            residual = (target - position)[0:2]
+            proj.append(np.dot(wind, residual)/np.linalg.norm(residual)**2)
+        return proj
 
     def normalize(self,x):
         x = np.array(x)

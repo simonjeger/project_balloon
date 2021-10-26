@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, measurement_info):
+def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, W_20, wind_info, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -65,7 +65,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'environment: python3' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
     text = text + 'time_dependency: True' + '\n'
-    text = text + 'T: 12000' + '\n'
+    text = text + 'T: 15000' + '\n'
     text = text + 'start_train: "center"' + '\n'
     text = text + 'start_test: "center"' + '\n'
     text = text + 'target_train: "random"' + '\n'
@@ -79,9 +79,10 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'step: ' + f'{step:.10f}' + '\n'
     text = text + 'action: ' + f'{action:.10f}' + '\n'
     text = text + 'overtime: -1' + '\n'
+    text = text + 'bounds: -1' + '\n'
     text = text + 'min_proj_dist: ' + str(min_proj_dist) + '\n'
     text = text + 'gradient: ' + str(gradient) + '\n'
-    text = text + 'bounds: -1' + '\n'
+    text = text + 'proj_action: ' + str(proj_action) + '\n'
 
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
@@ -106,7 +107,6 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     file.close()
 
 balloon = '"outdoor_balloon"'
-delta_t = 230
 delta_t_physics = 20
 time_train = 20*60*60
 step = -0.00003
@@ -114,28 +114,27 @@ action = -0.005
 min_proj_dist = 1
 measurement_info = True
 
-process_nr = 7100
+process_nr = 7237
 
 for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
-    for radius_xy in [10]:
-        for burnin in ['advanced']:
-            for HER in [True]:
-                for lr in [0.003]:
-                    for width_depth in [[500,4], [100,8], [1000,4]]:
-                        for autoencoder in ['"HAE_avg"', '"HAE_ext"']:
-                            for window_size in [0,1,2]:
-                                for bottleneck in [2,8,16]:
-                                    for W_20 in [0]:
-                                        for wind_info in [True]:
-                                            #for gradient in np.array([0.1, 1, 10])*abs(step + action):
-                                            for gradient in [0]:
-                                                for curriculum_dist in [1]:
-                                                    for curriculum_rad in [1]:
-                                                        for curriculum_rad_dry in [1000]:
-                                                            for temperature_optimizer_lr in [0.00003]:
-                                                                for replay_start_size in [10000]:
-                                                                    for update_interval in [1]:
-                                                                        for minibatch_size in [1000]:
-                                                                            for repeat in range(2):
-                                                                                write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, curriculum_dist, curriculum_rad, curriculum_rad_dry, step, action, gradient, min_proj_dist, balloon, W_20, wind_info, measurement_info)
-                                                                                process_nr += 1
+    for delta_t in [100, 500, 1000]:
+        for radius_xy in [10]:
+            for burnin in ['advanced']:
+                for HER in [False]:
+                    for lr in [0.003]:
+                        for width_depth in [[500,4]]:
+                            for autoencoder in ['"HAE_avg"']:
+                                for window_size in [1]:
+                                    for bottleneck in [16]:
+                                        for W_20 in [0]:
+                                            for wind_info in [True]:
+                                                #for gradient in np.array([0.1, 1, 10])*abs(step + action):
+                                                for gradient in [0]:
+                                                    for proj_action in [0, 0.001, 0.01]:
+                                                        for temperature_optimizer_lr in [0.00003]:
+                                                            for replay_start_size in [10000]:
+                                                                for update_interval in [1]:
+                                                                    for minibatch_size in [1000]:
+                                                                        for repeat in range(2):
+                                                                            write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, HER, width_depth, lr, temperature_optimizer_lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, W_20, wind_info, measurement_info)
+                                                                            process_nr += 1
