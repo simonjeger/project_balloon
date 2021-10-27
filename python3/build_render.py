@@ -32,7 +32,7 @@ class render():
         clock = pygame.time.Clock()
 
         # setting up the main window
-        res = 1.5 #int(100/self.size_z)
+        res = 1.5*100/self.size_z #int(100/self.size_z)
         screen_width = int(3*self.size_z*res)
         screen_height = int((2*self.size_z)*res + screen_width)
         screen = pygame.display.set_mode((screen_width, screen_height))
@@ -228,7 +228,7 @@ class render():
             action = (ceiling - character.world[0,pos_x,:,0])*character.action + character.world[0,pos_x,:,0]
 
         if dim != 'xy':
-            array_2 = np.arange(0,size_1,1)
+            array_2 = np.arange(0,size_1+1,1)
             line_action = []
             for i in range(len(action)):
                 line_action.append(((array_2[i]*self.render_ratio + offset_1)*res, (dist_to_bottom-action[i])*res))

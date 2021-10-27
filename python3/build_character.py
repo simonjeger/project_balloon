@@ -456,7 +456,10 @@ class character():
             pos_z = i/res*self.size_z
             wind = self.interpolate(self.world_squished,position=[position[0], position[1], pos_z])[0:2]
             residual = (target - position)[0:2]
-            proj.append(np.dot(wind, residual)/np.linalg.norm(residual)**2)
+            if np.linalg.norm(residual) != 0:
+                proj.append(np.dot(wind, residual)/np.linalg.norm(residual)**2)
+            else:
+                proj.append(1)
         return proj
 
     def normalize(self,x):

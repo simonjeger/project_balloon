@@ -151,8 +151,11 @@ class Agent:
             update_interval=yaml_p['update_interval'],
             burnin_action_func=burnin_action_func,
             entropy_target=-action_size,
-            temperature_optimizer_lr=yaml_p['temperature_optimizer_lr'],
+            #temperature_optimizer_lr=yaml_p['temperature_optimizer_lr']
         )
+
+        self.global_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=yaml_p['buffer_size'])
+        self.old_buffer_size = 0
 
         self.epi_n = epi_n
         self.step_n = step_n
@@ -263,6 +266,7 @@ class Agent:
                     if (len(self.agent.q_func1_loss_record) > 0):
                         self.writer.add_scalar('q_func1_loss', self.agent.q_func1_loss_record[-1], self.step_n-1)
                         self.writer.add_scalar('q_func2_loss', self.agent.q_func2_loss_record[-1], self.step_n-1)
+                    self.writer.add_scalar('buffer_len', len(self.agent.replay_buffer.memory), self.step_n-1)
                     self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n-1)
                     self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n-1)
 
@@ -272,8 +276,7 @@ class Agent:
         if yaml_p['HER'] & (self.train_or_test == 'train'):
             idx = self.idx_on_path(self.env.character.path, self.env.character.start)
             target = self.env.character.path[idx] #set target at last position that was reached, but still within bounds
-            #self.HER(target)
-            self.HER(self.env.character.target)
+            self.HER(target)
 
         # mark in map_test if this was a success or not
         if (yaml_p['reachability_study'] > 0) & (self.train_or_test == 'test'):
@@ -508,11 +511,31 @@ class Agent:
     def save_weights(self, path):
         self.agent.save(path + 'weights_agent')
         self.agent.replay_buffer.save(path + 'buffer')
+
+        if yaml_p['global_buffer_nr']:
+            path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
+            if os.path.isfile(path + 'buffer'):
+                self.global_buffer.load(path + 'buffer')
+
+            for i in range(self.old_buffer_size,len(self.agent.replay_buffer.memory)):
+                self.global_buffer.memory.append(self.agent.replay_buffer.memory[i])
+            self.global_buffer.save(path + 'buffer')
+
+            self.agent.replay_buffer = copy.copy(self.global_buffer)
+            self.old_buffer_size = len(self.agent.replay_buffer.memory)
+
         print('weights and buffer saved')
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
         self.agent.replay_buffer.load(path + 'buffer')
+
+        path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
+        if yaml_p['global_buffer_nr'] & os.path.isfile(path + 'buffer'):
+            self.global_buffer.load(path + 'buffer')
+            self.agent.replay_buffer = copy.copy(self.global_buffer)
+            self.old_buffer_size = len(self.agent.replay_buffer.memory)
+
         print('weights and buffer loaded')
 
     def act_simple(self, character, p=None):

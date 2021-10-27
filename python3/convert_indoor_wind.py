@@ -80,9 +80,13 @@ def generate_world(num, n_t, train_or_test):
     size_y = yaml_p['size_y']
     size_z = yaml_p['size_z']
 
+    #interpolation
+    model,grid = approx_wind_machine()
+    interp = LinearNDInterpolator(grid, model, fill_value=0)
+
     for n in range(num):
         terrain = generate_terrain(size_x, size_y, size_z)
-        wind = generate_wind(size_x, size_y, size_z, terrain)
+        wind = generate_wind(size_x, size_y, size_z, terrain, model, grid, interp)
 
         world = np.zeros(shape=(1+4,size_x,size_y,size_z))
 
@@ -125,41 +129,39 @@ def generate_terrain(size_x, size_y, size_z):
     terrain *= 0
     return terrain
 
-def generate_wind(size_x, size_y, size_z, terrain):
+def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
     unit_wind_x = yaml_p['unit_xy']
     unit_wind_y = yaml_p['unit_xy']
     unit_wind_z = yaml_p['unit_z']
 
     wind = np.zeros((4, size_x, size_y, size_z))
-    model,grid = approx_wind_machine()
-    interp = LinearNDInterpolator(grid, model, fill_value=0)
 
     N = 2
     for n in range(N):
         side = np.random.randint(0,3)
-        location = np.random.uniform(0,1)
+        location = np.random.uniform(0.4,0.6)
         height = np.random.uniform(0,1)*size_z
-        angle = np.clip(np.random.normal(0,0.1)*np.pi/2,-np.pi/2, np.pi/2)
-        scale = np.random.uniform(0,1)
+        angle = np.random.uniform(-0.8, 0.8)*np.pi/4
+        scale = np.random.uniform(0.25,0.5)
 
         if side == 0:
-            o_x = 0*size_x
+            o_x = 0*size_x - abs(np.sin(angle))*18*0.1/unit_wind_y
             o_y = location*size_y
             o_angle = 0
 
         elif side == 1:
             o_x = location*size_x
-            o_y = 0*size_y
+            o_y = 0*size_y - abs(np.sin(angle))*18*0.1/unit_wind_x
             o_angle = np.pi/2
 
         elif side == 2:
-            o_x = 1*size_x
+            o_x = 1*size_x + abs(np.sin(angle))*18*0.1/unit_wind_y
             o_y = location*size_y
             o_angle = np.pi
 
         elif side == 3:
             o_x = location*size_x
-            o_y = 1*size_y
+            o_y = 1*size_y + abs(np.sin(angle))*18*0.1/unit_wind_x
             o_angle = np.pi*3/2
 
         a = np.cos(angle+o_angle)
