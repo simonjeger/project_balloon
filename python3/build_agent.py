@@ -17,6 +17,7 @@ import pickle
 import logging
 import pygame
 from sys import exit
+import time
 
 import yaml
 import argparse
@@ -512,7 +513,8 @@ class Agent:
         self.agent.save(path + 'weights_agent')
         self.agent.replay_buffer.save(path + 'buffer')
 
-        if yaml_p['global_buffer_nr']:
+        if (yaml_p['global_buffer_nr'] > 0):
+            self.wait_my_turn()
             path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
             if os.path.isfile(path + 'buffer'):
                 self.global_buffer.load(path + 'buffer')
@@ -531,12 +533,22 @@ class Agent:
         self.agent.replay_buffer.load(path + 'buffer')
 
         path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
-        if yaml_p['global_buffer_nr'] & os.path.isfile(path + 'buffer'):
+        if (yaml_p['global_buffer_nr'] > 0) & os.path.isfile(path + 'buffer'):
+            self.wait_my_turn()
             self.global_buffer.load(path + 'buffer')
             self.agent.replay_buffer.memory = copy.copy(self.global_buffer.memory)
             self.old_buffer_size = len(self.agent.replay_buffer.memory)
-
+            
         print('weights and buffer loaded')
+
+    def wait_my_turn(self): #to avoid differnt agents accessing the same file at the same time
+        number = int(str(yaml_p['process_nr'])[-1])
+        start = 60*number/10 #will allow for 100 different starting times
+        during = 2 #2 seconds for it to start
+        sec = time.localtime().tm_sec
+        while (sec < start) | (start+sec < sec):
+            sec = time.localtime().tm_sec
+            time.sleep(during/10)
 
     def act_simple(self, character, p=None):
         tar_x = int(np.clip(character.target[0],0,self.env.size_x-1))
