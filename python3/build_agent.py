@@ -521,7 +521,7 @@ class Agent:
                 self.global_buffer.memory.append(self.agent.replay_buffer.memory[i])
             self.global_buffer.save(path + 'buffer')
 
-            self.agent.replay_buffer = copy.copy(self.global_buffer)
+            self.agent.replay_buffer.memory = copy.copy(self.global_buffer.memory)
             self.old_buffer_size = len(self.agent.replay_buffer.memory)
 
         print('weights and buffer saved')
@@ -533,7 +533,7 @@ class Agent:
         path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
         if yaml_p['global_buffer_nr'] & os.path.isfile(path + 'buffer'):
             self.global_buffer.load(path + 'buffer')
-            self.agent.replay_buffer = copy.copy(self.global_buffer)
+            self.agent.replay_buffer.memory = copy.copy(self.global_buffer.memory)
             self.old_buffer_size = len(self.agent.replay_buffer.memory)
 
         print('weights and buffer loaded')
