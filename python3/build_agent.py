@@ -515,10 +515,6 @@ class Agent:
 
         if int(yaml_p['global_buffer_nr']) > 0:
             self.wait_my_turn()
-
-            print('start saving from ' + str(self.old_buffer_size) + ' to ' + str(len(self.agent.replay_buffer.memory)))
-            print(time.localtime())
-
             path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
             if os.path.isfile(path + 'buffer'):
                 self.global_buffer.load(path + 'buffer')
@@ -526,9 +522,6 @@ class Agent:
             for i in range(self.old_buffer_size,len(self.agent.replay_buffer.memory)):
                 self.global_buffer.memory.append(self.agent.replay_buffer.memory[i])
             self.global_buffer.save(path + 'buffer')
-
-            print('stop saving')
-            print(time.localtime())
 
             self.agent.replay_buffer.memory = copy.copy(self.global_buffer.memory)
             self.old_buffer_size = len(self.agent.replay_buffer.memory)
@@ -539,9 +532,6 @@ class Agent:
         self.agent.load(path + 'weights_agent')
         self.agent.replay_buffer.load(path + 'buffer')
 
-        print('start loading')
-        print(time.localtime())
-
         path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
         if (int(yaml_p['global_buffer_nr']) > 0) & os.path.isfile(path + 'buffer'):
             self.wait_my_turn()
@@ -549,17 +539,15 @@ class Agent:
             self.agent.replay_buffer.memory = copy.copy(self.global_buffer.memory)
             self.old_buffer_size = len(self.agent.replay_buffer.memory)
 
-        print('stop loading')
-        print(time.localtime())
-
         print('weights and buffer loaded')
 
     def wait_my_turn(self): #to avoid differnt agents accessing the same file at the same time
         timing = yaml_p['global_buffer_timing']
         slot = 30 #sec
         N = yaml_p['global_buffer_N']
-        start = int(N*slot*timing)
-        while int(time.time())%start != 0:
+        cycle = slot*N
+        offset = int(cycle*timing)
+        while int(time.time()%cycle)%offset != 0:
             time.sleep(0.3)
 
     def act_simple(self, character, p=None):

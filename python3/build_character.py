@@ -6,6 +6,7 @@ import os
 from human_autoencoder import HAE
 from build_autoencoder import VAE
 from scipy.interpolate import NearestNDInterpolator
+from sklearn.neighbors import BallTree
 from scipy.ndimage import gaussian_filter
 
 from preprocess_wind import squish
@@ -72,7 +73,9 @@ class character():
             self.ae = VAE()
             self.ae.load_weights('autoencoder/model_' + str(yaml_p['vae_nr']) + '.pt')
 
-        self.t = T
+        self.T = T
+        self.t = self.T
+
         self.battery_level = 1
         self.action = 1
         self.diameter = 0
@@ -86,7 +89,7 @@ class character():
         self.measurement_hist_v = []
         self.moment_hist = []
         self.w_est_xy = yaml_p['unit_xy']
-        self.w_est_z = yaml_p['unit_z']*100
+        self.w_est_z = yaml_p['unit_z']*15
         self.w_est_t = yaml_p['delta_t']*0.00001
 
         self.train_or_test = train_or_test
@@ -415,19 +418,26 @@ class character():
             self.esterror_vel = np.inf
 
     def update_world_est(self):
-        if len(self.moment_hist) > self.n: #the first n measurements are rubbish, as the balloon didn't move yet
-            interp_u = NearestNDInterpolator(self.moment_hist[self.n::], self.measurement_hist_u[self.n::])
-            interp_v = NearestNDInterpolator(self.moment_hist[self.n::], self.measurement_hist_v[self.n::])
+        start = int(self.n/4)
+        res = 1
 
-            X = np.linspace(0, self.size_x*self.w_est_xy, self.size_x)
-            Y = np.linspace(0, self.size_y*self.w_est_xy, self.size_y)
-            Z = np.linspace(0, self.size_z*self.w_est_z, self.size_z)
-            T = np.linspace(yaml_p['T']*self.w_est_t, self.t*self.w_est_t, max(int((yaml_p['T'] - self.t)/yaml_p['delta_t']),1))
-            X, Y, Z, T = np.meshgrid(X, Y, Z, T)  # 3D grid for interpolation
+        if len(self.moment_hist) > start: #the first n measurements are rubbish, as the balloon didn't move yet
+            moment_hist = self.moment_hist[start::res]
+            measurement_hist_u = self.measurement_hist_u[start::res]
+            measurement_hist_v = self.measurement_hist_v[start::res]
 
-            u = interp_u(X, Y, Z, T)[:,:,:,-1].reshape(self.size_x, self.size_y, self.size_z) #to drop the time dimension
-            v = interp_v(X, Y, Z, T)[:,:,:,-1].reshape(self.size_x, self.size_y, self.size_z)
+            T = int((self.T-self.t)/yaml_p['delta_t'])
+            world_est = list(np.ndindex(self.size_x,self.size_y,self.size_z,T))
+            world_est = np.multiply(world_est,[self.w_est_xy,self.w_est_xy,self.w_est_z,self.w_est_t])
 
+            tree = BallTree(moment_hist)
+            _, idx = tree.query(world_est, k=1)
+            idx = np.array(idx).reshape(-1)
+            u = np.array(measurement_hist_u)[idx]
+            v = np.array(measurement_hist_v)[idx]
+
+            u = np.array(u).reshape((self.size_x,self.size_y,self.size_z,T))[:,:,:,-1]
+            v = np.array(v).reshape((self.size_x,self.size_y,self.size_z,T))[:,:,:,-1]
             self.world_est[1:3] = [u*yaml_p['unit_xy'],v*yaml_p['unit_xy']]
 
             """
@@ -435,18 +445,21 @@ class character():
             import seaborn as sns
             cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
 
-            for i in range(self.size_x):
-                fig, ax = plt.subplots(2)
-                for j in range(len(self.moment_hist[self.n::])):
-                    if i*self.w_est_xy <= int(self.moment_hist[j][0]) < (i+1)*self.w_est_xy:
-                        ax[0].scatter(self.moment_hist[j][0]/self.w_est_xy,self.moment_hist[j][2]/self.w_est_z, s=0.1, c='white') #c=self.measurement_hist_u[j]
-                ax[0].imshow(np.multiply(u[:,i,:].T,yaml_p['unit_xy']), origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
-                ax[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+            coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
+            coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
+            coord_z = int(np.clip(self.position[2],0,self.size_z - 1))
 
+            fig, ax = plt.subplots(2)
+            for j in range(len(moment_hist)):
+                ax[0].scatter(moment_hist[j][1]/self.w_est_xy,moment_hist[j][2]/self.w_est_z, s=0.1, c='white') #c=self.measurement_hist_u[j]
+                ax[1].scatter(moment_hist[j][0]/self.w_est_xy,moment_hist[j][2]/self.w_est_z, s=0.1, c='white') #c=self.measurement_hist_u[j]
+            ax[1].imshow(np.multiply(u[:,coord_y,:].T,yaml_p['unit_xy']), origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
+            ax[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+            ax[0].imshow(np.multiply(v[:,coord_y,:].T,yaml_p['unit_xy']), origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
+            ax[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
 
-                ax[1].plot(np.multiply(self.measurement_hist_u[self.n::],yaml_p['unit_xy']))
-                plt.savefig('debug_imshow_' + str(i) + '.png')
-                plt.close()
+            plt.savefig('debug_imshow.png')
+            plt.close()
             """
 
     def proj_action(self, position, target):
