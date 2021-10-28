@@ -56,7 +56,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'global_buffer_nr: ' + str(global_buffer_nr) + '\n'
     text = text + 'global_buffer_N: ' + str(global_buffer_N) + '\n'
     text = text + 'global_buffer_timing: ' + str(global_buffer_timing) + '\n'
-    text = text + 'buffer_size: 10000000' + '\n'
+    text = text + 'buffer_size: 1000000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'lr_scheduler: 999999999999' + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
@@ -116,10 +116,10 @@ action = -0.005
 min_proj_dist = 1
 measurement_info = True
 
-process_nr = 7300
-global_buffer_N = 10
+process_nr = 7320
+global_buffer_N = 30
 global_buffer_nr = process_nr
-global_buffer_timing = 1/N
+global_buffer_timing = 1/global_buffer_N
 
 for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
     for delta_t in [500]:
@@ -143,6 +143,6 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                                                                         #global_buffer_nr = 0
                                                                         write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, global_buffer_timing, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, W_20, wind_info, measurement_info)
                                                                         process_nr += 1
-                                                                        buffer_timing += 1/global_buffer_N
+                                                                        global_buffer_timing += 1/global_buffer_N
                                                                     global_buffer_nr = process_nr
                                                                     global_buffer_timing = 1/global_buffer_N
