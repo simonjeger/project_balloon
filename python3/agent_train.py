@@ -65,7 +65,7 @@ while time.time() < init_time + yaml_p['time_train']:
     print('runtime: ' + str(h) + ':' + str(m) + ':' + str(s) + ' epoch: ' + str(epi_n) + ' reward: ' + str(log))
 
     # save weight as a backup every N episodes
-    if epi_n%100 == 0:
+    if epi_n%10 == 0:
         ag.save_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
     epi_n += 1
