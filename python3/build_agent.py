@@ -547,7 +547,7 @@ class Agent:
         N = yaml_p['global_buffer_N']
         cycle = slot*N
         offset = int(cycle*timing)
-        while int(time.time()%cycle)%offset != 0:
+        while int(time.time()%cycle) != offset:
             time.sleep(0.3)
 
     def act_simple(self, character, p=None):
