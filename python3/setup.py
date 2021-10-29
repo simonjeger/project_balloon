@@ -15,8 +15,6 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 # Build folder structure if it doesn't exist yet
-if int(yaml_p['global_buffer_nr']) > 0:
-    Path(yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5)).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5)).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/weights_agent').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/reachability_study').mkdir(parents=True, exist_ok=True)

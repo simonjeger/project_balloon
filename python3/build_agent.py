@@ -511,44 +511,59 @@ class Agent:
 
     def save_weights(self, path):
         self.agent.save(path + 'weights_agent')
-        self.agent.replay_buffer.save(path + 'buffer')
 
-        if int(yaml_p['global_buffer_nr']) > 0:
-            self.wait_my_turn()
-            path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
-            if os.path.isfile(path + 'buffer'):
-                self.global_buffer.load(path + 'buffer')
+        self.save_buffer(path)
+        self.load_buffer()
 
-            for i in range(self.old_buffer_size,len(self.agent.replay_buffer.memory)):
-                self.global_buffer.memory.append(self.agent.replay_buffer.memory[i])
-            self.global_buffer.save(path + 'buffer')
-
-            self.agent.replay_buffer.memory = copy.copy(self.global_buffer.memory)
-            self.old_buffer_size = len(self.agent.replay_buffer.memory)
-
-        print('weights and buffer saved')
+        print('weights and buffer saved at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
-        self.agent.replay_buffer.load(path + 'buffer')
 
-        path = yaml_p['process_path'] + 'buffer_' + str(yaml_p['global_buffer_nr']).zfill(5) + '/'
-        if (int(yaml_p['global_buffer_nr']) > 0) & os.path.isfile(path + 'buffer'):
-            self.wait_my_turn()
-            self.global_buffer.load(path + 'buffer')
-            self.agent.replay_buffer.memory = copy.copy(self.global_buffer.memory)
-            self.old_buffer_size = len(self.agent.replay_buffer.memory)
+        if self.train_or_test == 'train':
+            self.save_buffer(path)
+            self.load_buffer()
 
-        print('weights and buffer loaded')
+        print('weights and buffer loaded at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
-    def wait_my_turn(self): #to avoid differnt agents accessing the same file at the same time
-        timing = yaml_p['global_buffer_timing']
-        slot = 30 #sec
-        N = yaml_p['global_buffer_N']
-        cycle = slot*N
-        offset = int(cycle*timing)
-        while int(time.time()%cycle) != offset:
-            time.sleep(0.3)
+    def save_buffer(self, path):
+        if len(self.agent.replay_buffer.memory) > 0:
+            self.wait('save')
+
+            local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
+            if os.path.isfile(path + 'buffer'):
+                local_buffer.load(path + 'buffer')
+            for i in range(self.old_buffer_size,len(self.agent.replay_buffer.memory)):
+                local_buffer.memory.append(self.agent.replay_buffer.memory[i])
+            local_buffer.save(path + 'buffer')
+
+    def load_buffer(self):
+        self.wait('load')
+        start = yaml_p['global_buffer_nr']
+        end = start + yaml_p['global_buffer_N']
+
+        i_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']/yaml_p['global_buffer_N']))
+        local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
+        for i in range(start,end):
+            path = str(i).zfill(5) + '/'
+            if os.path.isfile(path + 'buffer'):
+                i_buffer.load(path + 'buffer')
+                local_buffer.memory.extend(i_buffer.memory)
+
+        self.agent.replay_buffer.memory = copy.copy(local_buffer.memory)
+        self.old_buffer_size = len(self.agent.replay_buffer.memory)
+
+    def wait(self, save_or_load):
+        save = 2 #s
+        pause = 60 #s
+        load = 2 #s
+        cycle = save + pause + load
+        if save_or_load == 'save':
+            while int(time.time()%cycle) >= save:
+                time.sleep(1)
+        elif save_or_load == 'load':
+            while int(time.time()%cycle) <= save + pause:
+                time.sleep(1)
 
     def act_simple(self, character, p=None):
         tar_x = int(np.clip(character.target[0],0,self.env.size_x-1))

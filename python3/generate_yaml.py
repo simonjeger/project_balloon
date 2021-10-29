@@ -116,8 +116,8 @@ action = -0.005
 min_proj_dist = 1
 measurement_info = True
 
-process_nr = 7320
-global_buffer_N = 30
+process_nr = 7360
+global_buffer_N = 100
 global_buffer_nr = process_nr
 global_buffer_timing = 1/global_buffer_N
 
