@@ -512,8 +512,7 @@ class Agent:
     def save_weights(self, path):
         self.agent.save(path + 'weights_agent')
 
-        self.save_buffer(path)
-        self.load_buffer()
+        self.update_buffer(path)
 
         print('weights and buffer saved at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
@@ -521,10 +520,16 @@ class Agent:
         self.agent.load(path + 'weights_agent')
 
         if self.train_or_test == 'train':
-            self.save_buffer(path)
-            self.load_buffer()
+            self.update_buffer(path)
 
         print('weights and buffer loaded at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
+
+    def update_buffer(self,path):
+        with open(path + 'pause_buffer.txt', 'w', encoding='utf-8') as f:
+            f.write('pause_buffer')
+        self.save_buffer(path)
+        os.remove(path + 'pause_buffer.txt')
+        self.load_buffer()
 
     def save_buffer(self, path):
         if len(self.agent.replay_buffer.memory) > 0:
@@ -538,22 +543,22 @@ class Agent:
             local_buffer.save(path + 'buffer')
 
     def load_buffer(self):
-        self.wait('load')
         start = yaml_p['global_buffer_nr']
         end = start + yaml_p['global_buffer_N']
 
         i_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']/yaml_p['global_buffer_N']))
         local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
         for i in range(start,end):
-            path = str(i).zfill(5) + '/'
+            path = "process" + str(i).zfill(5) + '/'
             if os.path.isfile(path + 'buffer'):
+                self.wait('load', path)
                 i_buffer.load(path + 'buffer')
                 local_buffer.memory.extend(i_buffer.memory)
 
         self.agent.replay_buffer.memory = copy.copy(local_buffer.memory)
         self.old_buffer_size = len(self.agent.replay_buffer.memory)
 
-    def wait(self, save_or_load):
+    def wait(self, save_or_load, path=None):
         save = 2 #s
         pause = 60 #s
         load = 2 #s
@@ -562,7 +567,7 @@ class Agent:
             while int(time.time()%cycle) >= save:
                 time.sleep(1)
         elif save_or_load == 'load':
-            while int(time.time()%cycle) <= save + pause:
+            while os.path.isfile(path + 'pause_buffer.txt'):
                 time.sleep(1)
 
     def act_simple(self, character, p=None):
