@@ -511,14 +511,12 @@ class Agent:
 
     def save_weights(self, path):
         self.agent.save(path + 'weights_agent')
-
         self.update_buffer(path)
 
         print('weights and buffer saved at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
     def load_weights(self, path):
         self.agent.load(path + 'weights_agent')
-
         if self.train_or_test == 'train':
             self.update_buffer(path)
 
@@ -538,9 +536,11 @@ class Agent:
             local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
             if os.path.isfile(path + 'buffer'):
                 local_buffer.load(path + 'buffer')
+            print('save_before: ' + str(len(local_buffer.memory)))
             for i in range(self.old_buffer_size,len(self.agent.replay_buffer.memory)):
                 local_buffer.memory.append(self.agent.replay_buffer.memory[i])
             local_buffer.save(path + 'buffer')
+            print('save_after: ' + str(len(local_buffer.memory)))
 
     def load_buffer(self):
         start = yaml_p['global_buffer_nr']
@@ -554,9 +554,11 @@ class Agent:
                 self.wait('load', path)
                 i_buffer.load(path + 'buffer')
                 local_buffer.memory.extend(i_buffer.memory)
+                print('load_during: ' + str(len(local_buffer.memory)))
 
         self.agent.replay_buffer.memory = copy.copy(local_buffer.memory)
         self.old_buffer_size = len(self.agent.replay_buffer.memory)
+        print('load after: ' + str(len(self.agent.replay_buffer.memory)))
 
     def wait(self, save_or_load, path=None):
         save = 2 #s
