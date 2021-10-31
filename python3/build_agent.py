@@ -160,6 +160,7 @@ class Agent:
 
         self.epi_n = epi_n
         self.step_n = step_n
+        self.old_step_n = self.step_n
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
 
     def run_epoch(self,importance=None):
@@ -536,11 +537,12 @@ class Agent:
             local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
             if os.path.isfile(path + 'buffer'):
                 local_buffer.load(path + 'buffer')
-            print('save_before: ' + str(len(local_buffer.memory)))
-            for i in range(self.old_buffer_size,len(self.agent.replay_buffer.memory)):
+            steps_taken = self.step_n - self.old_step_n
+            start = int(min(self.old_buffer_size, yaml_p['buffer_size'] - steps_taken))
+            end = int(min(self.old_buffer_size + steps_taken, yaml_p['buffer_size']))
+            for i in range(start,end):
                 local_buffer.memory.append(self.agent.replay_buffer.memory[i])
             local_buffer.save(path + 'buffer')
-            print('save_after: ' + str(len(local_buffer.memory)))
 
     def load_buffer(self):
         start = yaml_p['global_buffer_nr']
@@ -549,16 +551,15 @@ class Agent:
         i_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']/yaml_p['global_buffer_N']))
         local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
         for i in range(start,end):
-            path = "process" + str(i).zfill(5) + '/'
+            path = yaml_p['process_path'] + 'process' + str(i).zfill(5) + '/'
             if os.path.isfile(path + 'buffer'):
                 self.wait('load', path)
                 i_buffer.load(path + 'buffer')
                 local_buffer.memory.extend(i_buffer.memory)
-                print('load_during: ' + str(len(local_buffer.memory)))
 
         self.agent.replay_buffer.memory = copy.copy(local_buffer.memory)
         self.old_buffer_size = len(self.agent.replay_buffer.memory)
-        print('load after: ' + str(len(self.agent.replay_buffer.memory)))
+        self.old_step_n = self.step_n
 
     def wait(self, save_or_load, path=None):
         save = 2 #s
