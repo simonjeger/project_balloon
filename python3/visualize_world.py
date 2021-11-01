@@ -53,13 +53,18 @@ def visualize_world(tensor, position, ceiling):
         ax.set_axis_off()
 
         if dim != 'xy':
+            if yaml_p['balloon'] == 'outdoor_balloon':
+                ramge = 10
+            elif yaml_p['balloon'] == 'indoor_balloon':
+                range = 2.5
+            else:
+                print('ERROR: Choose an existing balloon type')
+
             cmap = sns.diverging_palette(145, 300, s=50, center="dark", as_cmap=True)
-            #ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=1, vmin=-5, vmax=5, interpolation='bilinear')
-            ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=1, vmin=-10, vmax=10)
+            ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=1, vmin=-range, vmax=range)
 
             cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-            #ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.7, vmin=-5, vmax=5, interpolation='bilinear')
-            ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
+            ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.7, vmin=-range, vmax=range)
 
         # draw terrain & coordinate system
         c_terrain = (161/255,135/255,93/255) #because plt uses values between 0 and 1

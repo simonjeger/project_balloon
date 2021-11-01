@@ -55,7 +55,7 @@ else:
 env = balloon3d(epi_n,step_n,'train',writer)
 ag = Agent(epi_n,step_n,'train',env,writer)
 if load_prev_weights:
-    ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
+    ag.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
 while time.time() < init_time + yaml_p['time_train']:
     log = ag.run_epoch()
@@ -65,13 +65,13 @@ while time.time() < init_time + yaml_p['time_train']:
     print('runtime: ' + str(h) + ':' + str(m) + ':' + str(s) + ' epoch: ' + str(int(epi_n)) + ' reward: ' + str(log))
 
     # save weight as a backup every N episodes
-    if epi_n%10 == 0:
-        ag.save_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
+    if epi_n%100 == 0:
+        ag.save(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
     epi_n += 1
 
 # save weights
-ag.save_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
+ag.save(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
 step_n = env.step_n
 

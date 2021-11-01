@@ -27,7 +27,7 @@ writer = SummaryWriter(yaml_p['process_path'] + 'process' + str(yaml_p['process_
 
 env = balloon3d(0,0,'test',writer)
 ag = Agent(0,0,'test',env,writer)
-ag.load_weights(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
+ag.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/')
 
 with ag.agent.eval_mode():
     for i in range(yaml_p['num_epochs_test']):

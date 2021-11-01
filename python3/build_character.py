@@ -169,19 +169,19 @@ class character():
 
         rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
         total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
-        boundaries = np.array([self.normalize_map(self.position_est[0]-self.start[0]), self.normalize_map(self.position_est[1]-self.start[1]), rel_pos_est, total_z])
+        boundaries = np.array([self.normalize_pos(self.position_est[0]-self.start[0]), self.normalize_pos(self.position_est[1]-self.start[1]), rel_pos_est, total_z])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
         self.res_z_squished = (self.target[2]-self.world[0,tar_x,tar_y,0])/(self.ceiling - self.world[0,tar_x,tar_y,0]) - self.height_above_ground(est=True) / (self.dist_to_ceiling(est=True) + self.height_above_ground(est=True))
 
         if yaml_p['autoencoder'] != 'HAE_bidir':
-            world_compressed = self.normalize(self.world_compressed)
+            world_compressed = self.normalize_world(self.world_compressed)
         else:
-            world_compressed = self.normalize(self.world_compressed)
+            world_compressed = self.normalize_world(self.world_compressed)
             world_compressed[0:2] = self.world_compressed[0:2]*yaml_p['unit_xy']
             world_compressed[4:6] = self.world_compressed[4:6]*yaml_p['unit_xy']
-        self.state = np.concatenate((self.normalize_map(self.residual_est[0:2]),[self.res_z_squished], self.normalize(self.velocity_est).flatten(), boundaries.flatten(), self.normalize(self.measurement).flatten(), world_compressed), axis=0)
+        self.state = np.concatenate((self.normalize_pos(self.residual_est[0:2]),[self.res_z_squished], self.normalize_world(self.velocity_est).flatten(), boundaries.flatten(), self.normalize_world(self.measurement).flatten(), world_compressed), axis=0)
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
@@ -475,10 +475,17 @@ class character():
                 proj.append(1)
         return proj
 
-    def normalize(self,x):
+    def normalize_world(self,x):
         x = np.array(x)
-        return x/(abs(x)+0.005)
+        if yaml_p['balloon'] == 'outdoor_balloon':
+            c = 0.005
+        elif yaml_p['balloon'] == 'indoor_balloon':
+            c = 0.5
+        else:
+            print('ERROR: Choose an existing balloon type')
+        return x/(abs(x) + c)
 
-    def normalize_map(self,x):
+    def normalize_pos(self,x):
         x = np.array(x)
-        return x/(abs(x)+5)
+        c = np.max([self.size_x,self.size_y])/4
+        return x/(abs(x) + c)

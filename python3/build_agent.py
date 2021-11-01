@@ -410,7 +410,7 @@ class Agent:
             coord_x.append(path[i][0])
             coord_y.append(path[i][1])
 
-        for _ in range(100): # if I can't find anything that's far enough from the start after n tries, just take the last one
+        for i in range(100): # if I can't find anything that's far enough from the start after n tries, just take one in the middle of the path
             if self.train_or_test == 'test':
                 np.random.seed(self.seed)
                 self.seed += 1
@@ -426,6 +426,8 @@ class Agent:
 
             if not_to_close & not_out_of_bounds_x & not_out_of_bounds_y:
                 break
+            if i == 99: #if we reach that point, just take the point in the middle of the path
+                idx = int(len(coord_x)/2)
 
         return idx
 
@@ -510,13 +512,13 @@ class Agent:
         if isinstance(m, torch.nn.Linear):
             m.weight.data.normal_(0.0, 0.0001)
 
-    def save_weights(self, path):
+    def save(self, path):
         self.agent.save(path + 'weights_agent')
         self.update_buffer(path)
 
         print('weights and buffer saved at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
-    def load_weights(self, path):
+    def load(self, path):
         self.agent.load(path + 'weights_agent')
         if self.train_or_test == 'train':
             self.update_buffer(path)

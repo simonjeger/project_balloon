@@ -85,21 +85,25 @@ def generate_world(num, n_t, train_or_test):
     interp = LinearNDInterpolator(grid, model, fill_value=0)
 
     for n in range(num):
-        terrain = generate_terrain(size_x, size_y, size_z)
-        wind = generate_wind(size_x, size_y, size_z, terrain, model, grid, interp)
-
         world = np.zeros(shape=(1+4,size_x,size_y,size_z))
+        center_x = int(len(world[0])/2)
+        center_y = int(len(world[0][0])/2)
 
-        for i in range(size_x):
-            for j in range(size_y):
-                world[0,i,j,0] = terrain[i,j]
+        terrain = generate_terrain(size_x, size_y, size_z)
 
-                for k in range(size_z):
-                    if k >= np.floor(terrain[i,j]):
-                        world[-4,i,j,k] = wind[0][i,j,k]
-                        world[-3,i,j,k] = wind[1][i,j,k]
-                        world[-2,i,j,k] = wind[2][i,j,k]
-                        world[-1,i,j,k] = wind[3][i,j,k]
+        while np.max(world[1:3,center_x,center_y,:]) < 0.4: #only generate maps with enough variaty above the orgin
+            wind = generate_wind(size_x, size_y, size_z, terrain, model, grid, interp)
+
+            for i in range(size_x):
+                for j in range(size_y):
+                    world[0,i,j,0] = terrain[i,j]
+
+                    for k in range(size_z):
+                        if k >= np.floor(terrain[i,j]):
+                            world[-4,i,j,k] = wind[0][i,j,k]
+                            world[-3,i,j,k] = wind[1][i,j,k]
+                            world[-2,i,j,k] = wind[2][i,j,k]
+                            world[-1,i,j,k] = wind[3][i,j,k]
 
         # save
         for t in range(n_t):
@@ -139,9 +143,9 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
     N = 2
     for n in range(N):
         side = np.random.randint(0,3)
-        location = np.random.uniform(0.4,0.6)
+        location = np.random.uniform(0,1)
         height = np.random.uniform(0,1)*size_z
-        angle = np.random.uniform(-0.8, 0.8)*np.pi/4
+        angle = np.random.uniform(-1,1)*np.pi/4
         scale = np.random.uniform(0.25,0.5)
 
         if side == 0:

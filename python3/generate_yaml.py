@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, global_buffer_timing, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, W_20, wind_info, measurement_info):
+def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, W_20, wind_info, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -55,7 +55,6 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'global_buffer_nr: ' + str(global_buffer_nr) + '\n'
     text = text + 'global_buffer_N: ' + str(global_buffer_N) + '\n'
-    text = text + 'global_buffer_timing: ' + str(global_buffer_timing) + '\n'
     text = text + 'buffer_size: 1000000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'lr_scheduler: 999999999999' + '\n'
@@ -116,10 +115,9 @@ action = -0.005
 min_proj_dist = 1
 measurement_info = True
 
-process_nr = 7360
-global_buffer_N = 100
+process_nr = 7460
+global_buffer_N = 30
 global_buffer_nr = process_nr
-global_buffer_timing = 1/global_buffer_N
 
 for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
     for delta_t in [500]:
@@ -128,9 +126,9 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                 for HER in [False]:
                     for lr in [0.003]:
                         for width_depth in [[500,4]]:
-                            for autoencoder in ['"HAE_avg"']:
+                            for autoencoder in ['"HAE_avg"', '"HAE_ext"']:
                                 for window_size in [1]:
-                                    for bottleneck in [8]:
+                                    for bottleneck in [8,16]:
                                         for W_20 in [0]:
                                             for wind_info in [True]:
                                                 #for gradient in np.array([0.1, 1, 10])*abs(step + action):
@@ -141,8 +139,6 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                                                                 for minibatch_size in [1000]:
                                                                     for repeat in range(global_buffer_N):
                                                                         #global_buffer_nr = 0
-                                                                        write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, global_buffer_timing, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, W_20, wind_info, measurement_info)
+                                                                        write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, W_20, wind_info, measurement_info)
                                                                         process_nr += 1
-                                                                        global_buffer_timing += 1/global_buffer_N
                                                                     global_buffer_nr = process_nr
-                                                                    global_buffer_timing = 1/global_buffer_N
