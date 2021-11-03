@@ -54,7 +54,7 @@ def visualize_world(tensor, position, ceiling):
 
         if dim != 'xy':
             if yaml_p['balloon'] == 'outdoor_balloon':
-                ramge = 10
+                range = 10
             elif yaml_p['balloon'] == 'indoor_balloon':
                 range = 2.5
             else:

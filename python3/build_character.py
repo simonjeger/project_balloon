@@ -51,10 +51,10 @@ class character():
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 0.6 #kg
             self.delta_f = 1 #N
-            self.ascent_consumption = 15 #W
-            self.descent_consumption = 15 #W
-            self.rest_consumption = 0.5 #W
-            self.battery_capacity = 263736 #Ws #100000
+            self.ascent_consumption = 23 #W
+            self.descent_consumption = 23 #W
+            self.rest_consumption = 2.5 #W
+            self.battery_capacity = 319680 #Ws
 
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 0.06 #kg

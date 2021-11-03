@@ -18,6 +18,7 @@ import logging
 import pygame
 from sys import exit
 import time
+from filelock import FileLock
 
 import yaml
 import argparse
@@ -526,25 +527,21 @@ class Agent:
         print('weights and buffer loaded at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
     def update_buffer(self,path):
-        with open(path + 'pause_buffer.txt', 'w', encoding='utf-8') as f:
-            f.write('pause_buffer')
         self.save_buffer(path)
-        os.remove(path + 'pause_buffer.txt')
         self.load_buffer()
 
     def save_buffer(self, path):
         if len(self.agent.replay_buffer.memory) > 0:
-            self.wait('save')
-
-            local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
-            if os.path.isfile(path + 'buffer'):
-                local_buffer.load(path + 'buffer')
-            steps_taken = self.step_n - self.old_step_n
-            start = int(min(self.old_buffer_size, yaml_p['buffer_size'] - steps_taken))
-            end = int(min(self.old_buffer_size + steps_taken, yaml_p['buffer_size']))
-            for i in range(start,end):
-                local_buffer.memory.append(self.agent.replay_buffer.memory[i])
-            local_buffer.save(path + 'buffer')
+            with FileLock(path + 'buffer' + '.lock'):
+                local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
+                if os.path.isfile(path + 'buffer'):
+                    local_buffer.load(path + 'buffer')
+                steps_taken = self.step_n - self.old_step_n
+                start = int(min(self.old_buffer_size, yaml_p['buffer_size'] - steps_taken))
+                end = int(min(self.old_buffer_size + steps_taken, yaml_p['buffer_size']))
+                for i in range(start,end):
+                    local_buffer.memory.append(self.agent.replay_buffer.memory[i])
+                local_buffer.save(path + 'buffer')
 
     def load_buffer(self):
         start = yaml_p['global_buffer_nr']
@@ -555,25 +552,13 @@ class Agent:
         for i in range(start,end):
             path = yaml_p['process_path'] + 'process' + str(i).zfill(5) + '/'
             if os.path.isfile(path + 'buffer'):
-                self.wait('load', path)
-                i_buffer.load(path + 'buffer')
-                local_buffer.memory.extend(i_buffer.memory)
+                with FileLock(path + 'buffer' + '.lock'):
+                    i_buffer.load(path + 'buffer')
+                    local_buffer.memory.extend(i_buffer.memory)
 
         self.agent.replay_buffer.memory = copy.copy(local_buffer.memory)
         self.old_buffer_size = len(self.agent.replay_buffer.memory)
         self.old_step_n = self.step_n
-
-    def wait(self, save_or_load, path=None):
-        save = 2 #s
-        pause = 60 #s
-        load = 2 #s
-        cycle = save + pause + load
-        if save_or_load == 'save':
-            while int(time.time()%cycle) >= save:
-                time.sleep(1)
-        elif save_or_load == 'load':
-            while os.path.isfile(path + 'pause_buffer.txt'):
-                time.sleep(1)
 
     def act_simple(self, character, p=None):
         tar_x = int(np.clip(character.target[0],0,self.env.size_x-1))
