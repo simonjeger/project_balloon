@@ -8,6 +8,7 @@ from build_autoencoder import VAE
 from scipy.interpolate import NearestNDInterpolator
 from sklearn.neighbors import BallTree
 from scipy.ndimage import gaussian_filter
+from scipy.interpolate import UnivariateSpline
 
 from preprocess_wind import squish
 from build_ll_controller import ll_controler
@@ -85,6 +86,11 @@ class character():
         self.world_est = np.zeros_like(self.world)
         self.world_est[0] = self.world[0] #terrain is known
 
+        self.world_est_bn = int(min(yaml_p['bottleneck']*4,self.size_z))
+        self.world_est_mask = np.ones(self.world_est_bn)*-self.world_est_bn
+        self.world_est_mask[-1] += 0.1 #so it detects the last entry of the array through argmin
+        self.world_est_data = np.zeros((2,self.world_est_bn))
+
         self.measurement_hist_u = []
         self.measurement_hist_v = []
         self.moment_hist = []
@@ -147,7 +153,7 @@ class character():
 
         # Update compressed wind map
         if yaml_p['world_est']:
-            self.update_world_est()
+            #self.update_world_est()
             self.world_compressed = self.ae.compress_est(self.world_est, self.position_est, self.ceiling)
             if yaml_p['log_world_est_error']:
                 ground_truth = self.ae.compress(self.world, self.position_est, self.ceiling)
@@ -332,6 +338,7 @@ class character():
         self.measurement_hist_v.append(self.measurement[1])
         rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
         self.moment_hist.append([self.position_est[0]*self.w_est_xy, self.position_est[1]*self.w_est_xy, rel_pos_est*self.size_z*self.w_est_z, self.t*self.w_est_t])
+        self.update_world_est(rel_pos_est,self.measurement)
 
     def interpolate(self, world, position=None):
         if position is None: #for self.proj_action()
@@ -417,14 +424,14 @@ class character():
         else:
             self.esterror_vel = np.inf
 
-    def update_world_est(self):
+    def update_world_est_old(self):
         start = int(self.n/4)
         res = 1
 
         if len(self.moment_hist) > start: #the first n measurements are rubbish, as the balloon didn't move yet
-            moment_hist = self.moment_hist[start::res]
-            measurement_hist_u = self.measurement_hist_u[start::res]
-            measurement_hist_v = self.measurement_hist_v[start::res]
+            moment_hist = np.array(self.moment_hist[start::res])
+            measurement_hist_u = np.array(self.measurement_hist_u[start::res])
+            measurement_hist_v = np.array(self.measurement_hist_v[start::res])
 
             T = int((self.T-self.t)/yaml_p['delta_t'])
             world_est = list(np.ndindex(self.size_x,self.size_y,self.size_z,T))
@@ -456,6 +463,66 @@ class character():
             ax[1].imshow(np.multiply(u[:,coord_y,:].T,yaml_p['unit_xy']), origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
             ax[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
             ax[0].imshow(np.multiply(v[:,coord_y,:].T,yaml_p['unit_xy']), origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
+            ax[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+
+            plt.savefig('debug_imshow.png')
+            plt.close()
+            """
+
+    def update_world_est(self, pos_z_squished, data):
+        if self.t < self.T-100:
+            idx = int(pos_z_squished*self.world_est_bn)
+
+            if idx > 0:
+                check_min = abs(np.subtract(idx, self.world_est_mask[0:idx]))
+            else:
+                check_min = [0]
+            if idx < self.world_est_bn - 1:
+                check_max = abs(np.subtract(idx, self.world_est_mask[idx+1::]))
+            else:
+                check_max = [0]
+
+            idx_low = np.clip(np.argmin(check_min),0,self.world_est_bn - 2)
+            idx_high = np.clip(idx + 1 + np.argmin(check_max),1,self.world_est_bn - 1)
+
+            flag_low = np.clip(self.world_est_mask[idx_low],0,1)
+            flag_high = np.clip(self.world_est_mask[idx_high],0,1)
+
+            if flag_low:
+                range_low = int(np.ceil(idx - idx_low)/2)
+            else:
+                range_low = int(np.ceil(idx - idx_low))
+            if flag_high:
+                range_high = int(np.ceil(idx_high - idx)/2)
+            else:
+                range_high = int(np.ceil(idx_high - idx))
+
+            #fill in data point
+            self.world_est_data[:,idx-range_low:idx+1+range_high] = np.array([data]*(range_low+1+range_high)).T*yaml_p['unit_xy']
+            self.world_est_mask[idx] = idx
+
+            for i in range(self.world_est_bn):
+                start = int(i*self.size_z/self.world_est_bn)
+                stop = int((i + 1)*self.size_z/self.world_est_bn)
+                step = stop - start
+                self.world_est[1,:,:,start:stop] = np.resize(self.world_est_data[0,i],(1,self.size_x, self.size_y, step))
+                self.world_est[2,:,:,start:stop] = np.resize(self.world_est_data[1,i],(1,self.size_x, self.size_y, step))
+            self.world_est[1,:,:,start::] = np.resize(self.world_est_data[0,-1],(1,self.size_x, self.size_y, step))
+            self.world_est[2,:,:,start::] = np.resize(self.world_est_data[1,-1],(1,self.size_x, self.size_y, step))
+
+            """
+            import matplotlib.pyplot as plt
+            import seaborn as sns
+            cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+
+            coord_x = int(np.clip(self.position[0],0,self.size_x - 1))
+            coord_y = int(np.clip(self.position[1],0,self.size_y - 1))
+            coord_z = int(np.clip(self.position[2],0,self.size_z - 1))
+
+            fig, ax = plt.subplots(2)
+            ax[1].imshow(self.world_est[1,:,coord_y,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
+            ax[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+            ax[0].imshow(self.world_est[2,coord_x,:,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
             ax[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
 
             plt.savefig('debug_imshow.png')

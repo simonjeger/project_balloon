@@ -88,7 +88,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
     text = text + 'ceiling_width: 0.1' + '\n'
-    text = text + 'noise_path: "/cluster/scratch/sjeger/noise_14x12/"' + '\n'
+    text = text + 'noise_path: "/cluster/scratch/sjeger/noise_20x20/"' + '\n'
     text = text + 'W_20: ' + str(W_20) + '\n'
     text = text + 'world_est: ' + str(world_est) + '\n'
     text = text + 'measurement_info: ' + str(measurement_info) + '\n'
@@ -97,7 +97,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
     text = text + "reuse_weights: True" + '\n'
-    text = text + "log_world_est_error: False" + '\n'
+    text = text + "log_world_est_error: True" + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 15' + '\n'
@@ -115,7 +115,7 @@ action = -0.005
 min_proj_dist = 1
 measurement_info = True
 
-process_nr = 7730
+process_nr = 7800
 global_buffer_N = 30
 global_buffer_nr = process_nr
 
