@@ -498,7 +498,9 @@ class character():
                 range_high = int(np.ceil(idx_high - idx))
 
             #fill in data point
-            self.world_est_data[:,idx-range_low:idx+1+range_high] = np.array([data]*(range_low+1+range_high)).T*yaml_p['unit_xy']
+            start = np.clip(idx-range_low,0,idx)
+            stop = np.clip(idx+1+range_high,idx,self.world_est_bn - 1)
+            self.world_est_data[:,start:stop] = np.array([data]*(stop - start)).T*yaml_p['unit_xy']
             self.world_est_mask[idx] = idx
 
             for i in range(self.world_est_bn):
