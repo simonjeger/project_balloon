@@ -471,7 +471,7 @@ class character():
 
     def update_world_est(self, pos_z_squished, data):
         if self.t < self.T-100:
-            idx = int(pos_z_squished*self.world_est_bn)
+            idx = np.clip(int(pos_z_squished*self.world_est_bn),0,self.world_est_bn - 1)
 
             if idx > 0:
                 check_min = abs(np.subtract(idx, self.world_est_mask[0:idx]))
