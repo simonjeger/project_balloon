@@ -19,6 +19,7 @@ import pygame
 from sys import exit
 import time
 from filelock import FileLock
+import json
 
 import yaml
 import argparse
@@ -243,6 +244,9 @@ class Agent:
 
             else:
                 print('ERROR: Please choose one of the available modes.')
+
+            data = {'action': action, 'target': self.env.character.target.tolist()}
+            self.send(data) #write action to file
 
             obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
             sum_r = sum_r + reward
@@ -593,3 +597,9 @@ class Agent:
         action = np.clip(action,self.clip,1-self.clip) #avoid crashing into terrain
 
         return action
+
+    def send(self, data):
+        path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
+        with open(path + 'action.txt', 'w') as f:
+            f.write(json.dumps(data))
+        return data

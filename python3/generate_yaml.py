@@ -111,7 +111,7 @@ balloon = '"outdoor_balloon"'
 delta_t_physics = 20
 time_train = 20*60*60
 step = -0.00003
-action = -0.005
+action = -0.00005
 min_proj_dist = 1
 measurement_info = True
 

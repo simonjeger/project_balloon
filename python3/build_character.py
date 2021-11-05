@@ -9,6 +9,7 @@ from scipy.interpolate import NearestNDInterpolator
 from sklearn.neighbors import BallTree
 from scipy.ndimage import gaussian_filter
 from scipy.interpolate import UnivariateSpline
+import json
 
 from preprocess_wind import squish
 from build_ll_controller import ll_controler
@@ -195,6 +196,7 @@ class character():
     def move_particle(self):
         self.U = 0
         not_done = True
+
         for n in range(self.n):
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
@@ -205,10 +207,8 @@ class character():
             self.adapt_volume(u)
 
             c = self.area*self.rho_air*self.c_w/(2*self.mass_total)
-
             b = self.net_force(u)/yaml_p['unit_z']**2/self.mass_total
-            self.U += abs(u)/self.n
-
+            self.U += abs(u)*self.delta_tn
             coord = [int(i) for i in np.floor(self.position)]
 
             # calculate velocity at time step t
@@ -263,6 +263,40 @@ class character():
             self.set_measurement()
 
         self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t']
+        self.velocity_est = (self.position_est - self.path_est[-self.n])/yaml_p['delta_t']
+
+        return not_done
+
+    def live_particle(self):
+        self.U = 0
+        not_done = True
+
+        #time.sleep()
+
+        data = self.receive()
+
+        # update
+        self.position = data['position']
+        self.p_x = data['velocity'][0]
+        self.p_y = data['velocity'][1]
+        self.p_z = data['velocity'][2]
+
+        # write down path in history
+        self.path = data['path']
+        self.path_est = data['path_est']
+
+        self.min_proj_dist = data['min_proj_dist']
+
+        # update time
+        self.t -= yaml_p['delta_t']
+
+        """
+        # update EKF
+        #self.update_est(u,c)
+        #self.set_measurement()
+        """
+
+        self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t'] #this needs to work with what ever delta t the live thing has
         self.velocity_est = (self.position_est - self.path_est[-self.n])/yaml_p['delta_t']
 
         return not_done
@@ -509,3 +543,9 @@ class character():
         x = np.array(x)
         c = np.max([self.size_x,self.size_y])/4
         return x/(abs(x) + c)
+
+    def receive(self):
+        path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
+        with open(path + 'data.txt') as json_file:
+            data = json.load(json_file)
+        return data
