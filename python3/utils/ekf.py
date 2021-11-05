@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt #for debugging only
 
 class ekf():
-    def __init__(self, delta_t):
+    def __init__(self, delta_t, x_0):
         self.delta_t = delta_t
 
-        self.xhat_0 = np.array([0,0,0,0])                                   #predicted state
+        self.xhat_0 = np.array([x_0,0,0,0])                                 #predicted state
 
         self.z_hist = [0,0]                                                 #memory states
 
