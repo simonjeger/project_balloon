@@ -137,7 +137,7 @@ def build_set(num, n_h, train_or_test):
                 tensor_rot[-3,:,:,:] = -tensor_rot[-3,:,:,:]
             elif o == 3:
                 tensor_rot = tensor[:,::-1,::-1,:]
-                tensor_rot[-3:-1,:,:,:] = -tensor_rot[-3:-1,:,:,:]
+                tensor_rot[-4:-2,:,:,:] = -tensor_rot[-4:-2,:,:,:]
 
             for n in range(N):
                 world = np.ones(shape=(1+4,size_x,size_y,size_z))*size_z #so that it makes the first "while" for sure

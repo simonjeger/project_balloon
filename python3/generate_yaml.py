@@ -97,7 +97,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
     text = text + "reuse_weights: True" + '\n'
-    text = text + "log_world_est_error: True" + '\n'
+    text = text + "log_world_est_error: False" + '\n'
     text = text + "log_frequency: 3" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 15' + '\n'
@@ -115,7 +115,7 @@ action = -0.00005
 min_proj_dist = 1
 measurement_info = True
 
-process_nr = 7800
+process_nr = 8070
 global_buffer_N = 30
 global_buffer_nr = process_nr
 
@@ -129,9 +129,9 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                             for autoencoder in ['"HAE_avg"']:
                                 for window_size in [1]:
                                     for bottleneck in [8]:
-                                        for W_20 in [0,15]:
+                                        for W_20 in [0]:
                                             for wind_info in [True]:
-                                                for world_est in [True]:
+                                                for world_est in [False]:
                                                     #for gradient in np.array([0.1, 1, 10])*abs(step + action):
                                                     for gradient in [0]:
                                                         for proj_action in [0]:

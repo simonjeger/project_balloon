@@ -1,8 +1,6 @@
 import urllib.request
 
-def call(con):
-    #url = "http://172.20.10.6/" + str(con)
-    url = "http://192.168.0.163/"  + str(con)
+def call(url):
     n = urllib.request.urlopen(url).read() # get the raw html data in bytes (sends request and warn our esp8266)
     n = n.decode("utf-8") # convert raw html bytes format to string :3
 
@@ -13,6 +11,10 @@ def call(con):
 
 # Example usage
 while True:
-    con = input("Give input: ")
+    con = input("Give input for fan 0: ") #0.79
+    url = "http://192.168.0.163/"  + str(con)
+    data = call(url)
 
-    data = call(con)
+    con = input("Give input for fan 1: ")
+    url = "http://192.168.0.111/"  + str(con)
+    data = call(url)

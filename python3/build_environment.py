@@ -142,7 +142,7 @@ class balloon3d(Env):
             proj_action_bonus = (proj_action - proj_min)/(proj_max - proj_min) - 1 #so it is at the max = 0
         else:
             proj_action_bonus = 0.5 - 1 #if they are all the same, just give an average rating back
-            
+
         if in_bounds:
             # calculate reward
             if min_proj_dist <= 1:
@@ -205,16 +205,16 @@ class balloon3d(Env):
         if self.target[2] <= f(self.target[0], self.target[1])[0] + above_ground_target:
             self.target[2] = f(self.target[0], self.target[1])[0] + above_ground_target
 
-        if yaml_p['environment'] == 'python3':
+        if yaml_p['environment'] == 'xplane':
+            self.character = character_xplane(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.train_or_test, self.seed)
+
+        else:
             # avoid impossible szenarios
             if (self.size_z - self.start[2]) < self.size_z*yaml_p['min_space']: #a bit cheeting because the ceiling isn't in that calculation. But like this I can initialize character after the recursion.
                 print('Not enough space to fly in ' + self.world_name + '. Loading new wind_map.')
                 self.reset(target=target)
             self.character = character(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.train_or_test, self.seed)
             self.reward_list = []
-
-        elif yaml_p['environment'] == 'xplane':
-            self.character = character_xplane(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.train_or_test, self.seed)
 
         return self.character.state
 

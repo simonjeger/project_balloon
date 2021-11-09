@@ -8,6 +8,7 @@ import urllib.request
 import sys
 import select
 import matplotlib.pyplot as plt
+import os
 import time
 import json
 
@@ -41,9 +42,9 @@ class character_vicon():
         r.sleep()
 
     def callback_pos(self, data):
-        offset_vicon_x = 2
-        offset_vicon_y = 2
-        offset_vicon_z = 0
+        offset_vicon_x = 0
+        offset_vicon_y = 0
+        offset_vicon_z = -0.725
 
         self.position[0] = data.pose.position.x + offset_vicon_x
         self.position[1] = data.pose.position.y + offset_vicon_y
@@ -70,9 +71,9 @@ def send(data):
         f.write(json.dumps(data))
     return data
 
-def receive(self):
+def receive():
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
-    with open(path + 'data.txt') as json_file:
+    with open(path + 'action.txt') as json_file:
         data = json.load(json_file)
     return data
 
@@ -80,12 +81,12 @@ def update_est(position,u,c):
     est_x.one_cycle(0,c,position[0])
     est_y.one_cycle(0,c,position[1])
     est_z.one_cycle(u,c,position[2])
-    position_est = np.array([est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]])
+    position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
     return position_est
 
 character = character_vicon()
 offset = 0
-scale = 0.1
+scale = 0.5
 
 llc = ll_controler()
 
@@ -101,60 +102,81 @@ U = 0
 min_proj_dist = np.inf
 while True:
     start = time.time()
-    data = receive()
-    action = data['action']
-    target = data['target']
 
-    character.set_vicon()
-    terrain = 0
-    ceiling = 5
+    if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
+        time.sleep(1)
+        print('waiting for the algorithm to publish')
 
-    rel_pos = (character.position[2] - terrain)/(ceiling-terrain)
-    rel_vel = character.velocity[2] / (ceiling-terrain)
+        data = {
+        'U': U,
+        'position': np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+        'velocity': np.divide(character.velocity,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+        'path': [],
+        'position_est': np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+        'path_est': [],
+        'measurement': [0, 0],
+        'min_proj_dist': 0,
+        'not_done': not_done}
 
-    # check if done or not
-    if (character.position[0] < 0) | (character.position[0]/yaml_p['unit_xy'] > yaml_p['size_x'] - 1):
-        not_done = False
-    if (character.position[1] < 0) | (character.position[1]/yaml_p['unit_z'] > yaml_p['size_y'] - 1):
-        not_done = False
-    if (rel_pos < 0) | (rel_pos >= 1):
-        not_done = False
-    #if self.t < 0: #check if flight time is over
-    #    not_done = False
-    #if self.battery_level < 0: #check if battery is empty
-    #    not_done = False
+    else:
+        data = receive()
+        action = data['action']
+        target = data['target']
 
-    u = offset + llc.pid(action, rel_pos, rel_vel)*(1-offset)*scale
-    call(u)
-    if (not not_done) | (action < 0):
-        u = 0
+        character.set_vicon()
+        terrain = 0
+        ceiling = 5
+
+        rel_pos = (character.position[2] - terrain)/(ceiling-terrain)
+        rel_vel = character.velocity[2] / (ceiling-terrain)
+
+        # check if done or not
+        if (character.position[0] < 0) | (character.position[0]/yaml_p['unit_xy'] > yaml_p['size_x'] - 1):
+            not_done = False
+        if (character.position[1] < 0) | (character.position[1]/yaml_p['unit_z'] > yaml_p['size_y'] - 1):
+            not_done = False
+        if (rel_pos < 0) | (rel_pos >= 1):
+            not_done = False
+        not_done = True
+        #if self.t < 0: #check if flight time is over
+        #    not_done = False
+        #if self.battery_level < 0: #check if battery is empty
+        #    not_done = False
+
+        u = offset + llc.pid(action, rel_pos, rel_vel)*(1-offset)*scale
         call(u)
-        break
+        if (not not_done) | (action < 0):
+            u = 0
+            call(u)
+            break
 
-    #c = self.area*self.rho_air*self.c_w/(2*self.mass_total)
-    c = 1
-    position_est = update_est(character.position,u,c)
+        #c = self.area*self.rho_air*self.c_w/(2*self.mass_total)
+        c = 1
+        position_est = update_est(character.position,u,c)
 
-    path.append(np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]))
-    path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]))
+        path.append(np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
+        path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
 
-    stop = time.time()
-    delta_t = stop - start
-    U += abs(u*delta_t)
+        stop = time.time()
+        delta_t = stop - start
+        U += abs(u*delta_t)
 
-    # find min_proj_dist
-    render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
-    residual = target - np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
-    min_proj_dist_prop = np.sqrt((residual[0]*render_ratio/yaml_p['radius_xy'])**2 + (residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2)
-    if min_proj_dist_prop < min_proj_dist:
-        min_proj_dist = min_proj_dist_prop
+        # find min_proj_dist
+        render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+        residual = target - np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
+        min_proj_dist_prop = np.sqrt((residual[0]*render_ratio/yaml_p['radius_xy'])**2 + (residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2)
+        if min_proj_dist_prop < min_proj_dist:
+            min_proj_dist = min_proj_dist_prop
 
-    data = {
-    'U': U,
-    'position': np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),
-    'velocity': np.divide(character.velocity,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),
-    'path': path,
-    'min_proj_dist': min_proj_dist,
-    'not_done': not_done}
+        data = {
+        'U': U,
+        'position': np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+        'velocity': np.divide(character.velocity,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+        'path': path,
+        'position_est': position_est,
+        'path_est': path_est,
+        'measurement': [est_x.wind(), est_y.wind()],
+        'min_proj_dist': min_proj_dist,
+        'not_done': not_done}
 
     send(data)

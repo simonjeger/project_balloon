@@ -9,6 +9,7 @@ from scipy.interpolate import NearestNDInterpolator
 from sklearn.neighbors import BallTree
 from scipy.ndimage import gaussian_filter
 from scipy.interpolate import UnivariateSpline
+import time
 import json
 
 from preprocess_wind import squish
@@ -133,12 +134,19 @@ class character():
         self.p_y = 0
         self.p_z = 0
 
+        self.real_time = copy.copy(time.time())
+        self.position_old = self.position
+        self.position_est_old = self.position_est
+
     def update(self, action, world):
         self.action = action
         self.world = world
         self.world_squished = squish(self.world, self.ceiling)
 
-        not_done = self.move_particle()
+        if yaml_p['environment'] == 'vicon':
+            not_done = self.live_particle()
+        else:
+            not_done = self.move_particle()
 
         # update state
         self.set_state()
@@ -163,6 +171,9 @@ class character():
         else:
             self.world_compressed = self.ae.compress(self.world, self.position_est, self.ceiling)
         self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in character.py
+
+        #to debug
+        #self.est_x.plot()
 
         if not yaml_p['wind_info']:
             self.world_compressed *= 0
@@ -271,33 +282,36 @@ class character():
         self.U = 0
         not_done = True
 
-        #time.sleep()
-
+        #timing of the when to receive the data from the hardware
+        while time.time() - self.real_time < yaml_p['delta_t']:
+            time.sleep(1)
+        self.real_time = time.time()
         data = self.receive()
 
         # update
-        self.position = data['position']
-        self.p_x = data['velocity'][0]
-        self.p_y = data['velocity'][1]
-        self.p_z = data['velocity'][2]
+        self.position = np.array(data['position'])
+        self.position_est = np.array(data['position_est'])
+        [self.p_x, self.p_y, self.p_z] = data['velocity']
 
         # write down path in history
-        self.path = data['path']
-        self.path_est = data['path_est']
+        self.path = np.array(data['path'])
+        self.path_est = np.array(data['path_est'])
 
         self.min_proj_dist = data['min_proj_dist']
 
         # update time
         self.t -= yaml_p['delta_t']
 
-        """
         # update EKF
-        #self.update_est(u,c)
-        #self.set_measurement()
-        """
+        self.position_est = np.array(data['position_est'])
+        self.measurement = data['measurement']
+        self.set_measurement()
 
-        self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t'] #this needs to work with what ever delta t the live thing has
-        self.velocity_est = (self.position_est - self.path_est[-self.n])/yaml_p['delta_t']
+        self.velocity = (self.position - self.position_old)/yaml_p['delta_t']
+        self.velocity_est = (self.position_est - self.position_est_old)/yaml_p['delta_t']
+
+        self.position_old = self.position
+        self.position_est_old = self.position_est
 
         return not_done
 
@@ -454,7 +468,7 @@ class character():
             self.esterror_vel = np.inf
 
     def set_world_est(self, pos_z_squished, data):
-        if self.t < self.T-100:
+        if self.t < self.T-yaml_p['delta_t']:
             idx = np.clip(int(pos_z_squished*self.world_est_bn),0,self.world_est_bn - 1)
 
             if idx > 0:
@@ -507,9 +521,10 @@ class character():
         coord_z = int(np.clip(self.position[2],0,self.size_z - 1))
 
         fig, ax = plt.subplots(2)
-        ax[1].imshow(self.world_est[1,:,coord_y,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
+        mag = 1
+        ax[1].imshow(self.world_est[1,:,coord_y,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-mag, vmax=mag)
         ax[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
-        ax[0].imshow(self.world_est[2,coord_x,:,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-10, vmax=10)
+        ax[0].imshow(self.world_est[2,coord_x,:,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-mag, vmax=mag)
         ax[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
 
         plt.savefig('debug_imshow.png')
@@ -546,6 +561,9 @@ class character():
 
     def receive(self):
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
+        while not os.path.isfile(path + 'data.txt'):
+            print('waiting for the hardware to publish')
+            time.sleep(1)
         with open(path + 'data.txt') as json_file:
             data = json.load(json_file)
         return data
