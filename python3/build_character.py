@@ -39,8 +39,8 @@ class character():
         self.size_x = size_x
         self.size_y = size_y
         self.size_z = size_z
-        self.start = start.astype(float)
-        self.target = target.astype(float)
+        self.start = np.array(start).astype(float)
+        self.target = np.array(target).astype(float)
 
         self.position = copy.copy(self.start)
         self.velocity = np.array([0,0,0])
@@ -468,7 +468,7 @@ class character():
             self.esterror_vel = np.inf
 
     def set_world_est(self, pos_z_squished, data):
-        if self.t < self.T-yaml_p['delta_t']:
+        if self.t < self.T-yaml_p['delta_t']/5: #the first few measurements are rubbish
             idx = np.clip(int(pos_z_squished*self.world_est_bn),0,self.world_est_bn - 1)
 
             if idx > 0:
@@ -511,7 +511,7 @@ class character():
         self.world_est[1,:,:,start::] = np.resize(self.world_est_data[0,-1],(1,self.size_x, self.size_y, step))
         self.world_est[2,:,:,start::] = np.resize(self.world_est_data[1,-1],(1,self.size_x, self.size_y, step))
 
-        """
+        #"""
         import matplotlib.pyplot as plt
         import seaborn as sns
         cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
@@ -521,7 +521,7 @@ class character():
         coord_z = int(np.clip(self.position[2],0,self.size_z - 1))
 
         fig, ax = plt.subplots(2)
-        mag = 1
+        mag = 10
         ax[1].imshow(self.world_est[1,:,coord_y,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-mag, vmax=mag)
         ax[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
         ax[0].imshow(self.world_est[2,coord_x,:,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-mag, vmax=mag)
@@ -529,7 +529,7 @@ class character():
 
         plt.savefig('debug_imshow.png')
         plt.close()
-        """
+        #"""
 
     def proj_action(self, position, target):
         res = self.size_z
@@ -560,10 +560,16 @@ class character():
         return x/(abs(x) + c)
 
     def receive(self):
+        successful = False
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
         while not os.path.isfile(path + 'data.txt'):
             print('waiting for the hardware to publish')
             time.sleep(1)
-        with open(path + 'data.txt') as json_file:
-            data = json.load(json_file)
+        while not successful:
+            with open(path + 'data.txt') as json_file:
+                try:
+                    data = json.load(json_file)
+                    successful = True
+                except:
+                    print('data corrupted, will try again')
         return data

@@ -245,7 +245,11 @@ class Agent:
             else:
                 print('ERROR: Please choose one of the available modes.')
 
-            data = {'action': action, 'target': self.env.character.target.tolist()}
+            data = {
+            'action': action,
+            'target': self.env.character.target.tolist(),
+            'ceiling': self.env.character.ceiling*yaml_p['unit_z'] #in meters
+            }
             self.send(data) #write action to file
 
             obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
@@ -444,7 +448,7 @@ class Agent:
             with open(self.path_rs_pkl,'rb') as fid:
                 ax = pickle.load(fid)
 
-        if self.env.success:
+        if self.env.success_n:
             color = 'green'
         else:
             color = 'red'

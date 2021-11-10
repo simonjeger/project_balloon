@@ -145,14 +145,20 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
         side = np.random.randint(0,3)
         location = np.random.uniform(0,1)
         height = np.random.uniform(0,1)*size_z
-        if n == 0:
-            height = 1/yaml_p['unit_z']
-            side = 2
-        elif n == 1:
-            height = 2/yaml_p['unit_z']
-            side = 0
         angle = np.random.uniform(-1,1)*np.pi/4
         scale = np.random.uniform(0.25,0.5)
+
+        """
+        if n == 0:
+            height = 1/yaml_p['unit_z']
+            location = 0.65
+            angle = np.pi/8
+            side = 1
+        elif n == 1:
+            height = 2/yaml_p['unit_z']
+            location = 0.4
+            angle = np.pi/16
+            side = 3
         scale = 0.5
 
         print('side: ' + str(side))
@@ -160,6 +166,7 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
         print('height: ' + str(height))
         print('angle: ' + str(angle))
         print('------')
+        """
 
         if side == 0:
             o_x = 0*size_x - abs(np.sin(angle))*18*0.1/unit_wind_y
@@ -196,8 +203,8 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
                     wind[0,i,j,k] += a*mag*scale
                     wind[1,i,j,k] += c*mag*scale
 
-    wind = gaussian_filter(wind, sigma=0.1)
+    wind = gaussian_filter(wind, sigma=0.2)
     return wind
 
-generate_world(1, 7, 'train')
-generate_world(1, 7, 'test')
+generate_world(1000, 1, 'train')
+generate_world(300, 1, 'test')

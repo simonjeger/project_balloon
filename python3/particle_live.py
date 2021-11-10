@@ -42,8 +42,8 @@ class character_vicon():
         r.sleep()
 
     def callback_pos(self, data):
-        offset_vicon_x = 0
-        offset_vicon_y = 0
+        offset_vicon_x = 1.5
+        offset_vicon_y = 1.5
         offset_vicon_z = -0.725
 
         self.position[0] = data.pose.position.x + offset_vicon_x
@@ -72,9 +72,15 @@ def send(data):
     return data
 
 def receive():
+    successful = False
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
-    with open(path + 'action.txt') as json_file:
-        data = json.load(json_file)
+    while not successful:
+        with open(path + 'action.txt') as json_file:
+            try:
+                data = json.load(json_file)
+                successful = True
+            except:
+                print('data corrupted, will try again')
     return data
 
 def update_est(position,u,c):
@@ -122,10 +128,11 @@ while True:
         data = receive()
         action = data['action']
         target = data['target']
+        ceiling = data['ceiling']
 
         character.set_vicon()
         terrain = 0
-        ceiling = 5
+        ceiling = 3
 
         rel_pos = (character.position[2] - terrain)/(ceiling-terrain)
         rel_vel = character.velocity[2] / (ceiling-terrain)

@@ -249,10 +249,13 @@ class balloon3d(Env):
 
         h = int(tss/60/60)
         p = (tss - h*60*60)/60/60
-        self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
-        self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+1).zfill(2) + '.pt')
+        if yaml_p['time_dependency']:
+            self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
+            self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+1).zfill(2) + '.pt')
 
-        self.world = p*(self.world_1 - self.world_0) + self.world_0
+            self.world = p*(self.world_1 - self.world_0) + self.world_0
+        else:
+            self.world = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
         torch.save(self.world, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
 
     def set_start(self):
