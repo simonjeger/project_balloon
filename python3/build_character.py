@@ -114,7 +114,7 @@ class character():
         self.set_ceiling()
         self.world_squished = squish(self.world, self.ceiling)
 
-        if yaml_p['W_20'] != 0:
+        if yaml_p['prop_mag_max'] != 0:
             self.set_noise()
 
         self.residual = self.target - self.position
@@ -226,8 +226,11 @@ class character():
             w_x, w_y, w_z = self.interpolate(self.world_squished)
 
             # add noise
-            if yaml_p['W_20'] != 0:
-                n_x, n_y, n_z = self.interpolate(self.noise)
+            if yaml_p['prop_mag_max'] != 0:
+                avg_mag_xy = np.mean(abs(self.world[1:3]))
+                avg_mag_z = np.mean(abs(self.world[3]))
+
+                n_x, n_y, n_z = np.multiply(self.interpolate(self.noise),[avg_mag_xy, avg_mag_xy, avg_mag_z])*self.prop_mag
                 w_x += n_x
                 w_y += n_y
                 w_z += n_z
@@ -435,7 +438,7 @@ class character():
         if self.train_or_test == 'test':
             np.random.seed(self.seed)
             self.seed +=1
-        path = yaml_p['noise_path'] + self.train_or_test + '/tensor_' + str(yaml_p['W_20'])
+        path = yaml_p['noise_path'] + self.train_or_test + '/tensor'
         noise_name = np.random.choice(os.listdir(path))
         self.noise = torch.load(path + '/' + noise_name)
 
@@ -445,7 +448,8 @@ class character():
 
         if (size_n_x != self.size_x) | (size_n_y != self.size_y) | (size_n_z != self.size_z):
             print("ERROR: size of noise map doesn't match the one of the world map")
-
+        self.prop_mag = np.random.uniform(yaml_p['prop_mag_min'], yaml_p['prop_mag_max'])
+        
     def update_est(self,u,c):
         std = 0 #sensor noise
         if self.train_or_test == 'test':

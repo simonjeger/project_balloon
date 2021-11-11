@@ -169,7 +169,7 @@ class balloon3d(Env):
         return reward_step, done, success
 
     def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        self.render_machine.make_render(self.character, self.reward_step, self.reward_epi, self.world_name, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
+        self.render_machine.make_render(self.character, self.reward_step, self.reward_epi, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
 
     def reset(self, target=None):
         # load new world
@@ -256,6 +256,7 @@ class balloon3d(Env):
             self.world = p*(self.world_1 - self.world_0) + self.world_0
         else:
             self.world = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
+
         torch.save(self.world, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
 
     def set_start(self):

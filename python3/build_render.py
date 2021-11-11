@@ -26,7 +26,7 @@ class render():
         self.size_y = (size_y - 1)*self.render_ratio
         self.size_z = size_z - 1
 
-    def make_render(self, character, reward_step, reward_epi, world_name, radius_xy, radius_z, train_or_test, roll_out):
+    def make_render(self, character, reward_step, reward_epi, radius_xy, radius_z, train_or_test, roll_out):
         # general setup
         pygame.init()
         clock = pygame.time.Clock()

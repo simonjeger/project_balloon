@@ -16,7 +16,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def generate_noise(W_20, num, train_or_test):
+def generate_noise(num, train_or_test):
     '''
     Prototyping Turbulent Wind Fields based on Spectral Domain Simulation
     Author: David Rohr, ASL, ETH Zurich, Switzerland, 2019
@@ -28,9 +28,11 @@ def generate_noise(W_20, num, train_or_test):
               R. Frehlich & L.Cornman, J. of applied Meteorology, vol.40, 2000
               - Wikipedia: https://en.wikipedia.org/wiki/Continuous_gusts#Altitude_Dependence
     '''
+    W_20 = 15 # this is a choice. I will then norm it here and then rescale it during runtime.
+
     # set up folder StructurePath(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
     Path(yaml_p['noise_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
-    Path(yaml_p['noise_path'] + train_or_test + '/tensor_' + str(W_20)).mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['noise_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
 
     # details from previous code
     check_statistics=False
@@ -81,7 +83,7 @@ def generate_noise(W_20, num, train_or_test):
 
         # sigma and L depend on height about ground
         for ikz in range(nz):
-            print('W_20 = ' + str(W_20) + ', generated ' + str(n) + ' of ' + str(num) + ' noise maps, next one at ' + str(int(ikz/nz*100)) + '%')
+            print('Generated ' + str(n) + ' of ' + str(num) + ' noise maps, next one at ' + str(int(ikz/nz*100)) + '%')
 
             h = ikz*dz/0.3048 #h is in ft
             if h < 1000: #low altitude
@@ -189,6 +191,14 @@ def generate_noise(W_20, num, train_or_test):
 
         # turbulent velocity field matrix
         UVW = np.stack((np.real(U), np.real(V), np.real(W)), axis=0)
+
+        # normalize this with an average magnitude of 1
+        avg_mag_xy = np.mean(abs(UVW[0:2]))
+        avg_mag_z = np.mean(abs(UVW[2]))
+        UVW[0] /= avg_mag_xy
+        UVW[1] /= avg_mag_xy
+        UVW[2] /= avg_mag_z
+
         XYZ = np.stack((X, Y, Z), axis=0)
 
         # save only at resolution that it will be actually used
@@ -198,14 +208,14 @@ def generate_noise(W_20, num, train_or_test):
         size_z = int(len(UVW[0][0][0]))
 
         # save
-        #plot(UVW,W_20,100)
-        torch.save(UVW, yaml_p['noise_path'] + train_or_test + '/tensor_' + str(W_20) + '/noise_map' + str(n).zfill(5) + '.pt')
+        plot(UVW,100)
+        torch.save(UVW, yaml_p['noise_path'] + train_or_test + '/tensor/noise_map' + str(n).zfill(5) + '.pt')
 
 def karman_E(k, L, sigma):
     E = 1.4528 * L * sigma**2 * (L*np.linalg.norm(k))**4 / (1+(L*np.linalg.norm(k))**2)**(17/6)
     return E
 
-def plot(UVW,t,N):
+def plot(UVW,N):
     U = UVW[0]
     V = UVW[1]
     W = UVW[2]
@@ -238,14 +248,10 @@ def plot(UVW,t,N):
     axs[3].axis('off')
     cbar = plt.colorbar(img, ax=axs[3], orientation='horizontal')
 
-    axs[0].set_title(str(int(t/N*100)) + '%')
-
     plt.tight_layout()
-    Path('temp').mkdir(parents=True, exist_ok=True)
-    plt.savefig('temp/t_' + str(t).zfill(5) + '.png', dpi=1000)
+    plt.savefig('debug_noise.png', dpi=1000)
     plt.close()
 
 
-for W_20 in [15,30,45]:
-    generate_noise(W_20, 500, 'train')
-    generate_noise(W_20, 500, 'test')
+generate_noise(500, 'train')
+generate_noise(300, 'test')
