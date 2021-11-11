@@ -511,7 +511,7 @@ class character():
         self.world_est[1,:,:,start::] = np.resize(self.world_est_data[0,-1],(1,self.size_x, self.size_y, step))
         self.world_est[2,:,:,start::] = np.resize(self.world_est_data[1,-1],(1,self.size_x, self.size_y, step))
 
-        #"""
+        """
         import matplotlib.pyplot as plt
         import seaborn as sns
         cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
@@ -529,7 +529,7 @@ class character():
 
         plt.savefig('debug_imshow.png')
         plt.close()
-        #"""
+        """
 
     def proj_action(self, position, target):
         res = self.size_z
