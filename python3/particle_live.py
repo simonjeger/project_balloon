@@ -92,7 +92,7 @@ def update_est(position,u,c):
 
 character = character_vicon()
 offset = 0
-scale = 0.5
+scale = 0.3
 
 llc = ll_controler()
 

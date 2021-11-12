@@ -41,12 +41,12 @@ def generate_noise(num, train_or_test):
     #nx = int(np.round(yaml_p['size_x']*yaml_p['unit_xy']/yaml_p['unit_z']))
     #ny = int(np.round(yaml_p['size_y']*yaml_p['unit_xy']/yaml_p['unit_z']))
     #nz = int(np.round(yaml_p['size_z']))
-    nx = yaml_p['size_x']
-    ny = yaml_p['size_y']
-    nz = yaml_p['size_z']
-    dx = yaml_p['unit_z']
-    dy = yaml_p['unit_z']
-    dz = yaml_p['unit_z']
+    nx = int(yaml_p['size_x']/yaml_p['unit_noise_xy']*yaml_p['unit_xy'])
+    ny = int(yaml_p['size_y']/yaml_p['unit_noise_xy']*yaml_p['unit_xy'])
+    nz = int(yaml_p['size_z']/yaml_p['unit_noise_z']*yaml_p['unit_z'])
+    dx = yaml_p['unit_noise_xy']
+    dy = yaml_p['unit_noise_xy']
+    dz = yaml_p['unit_noise_z']
 
     lambda_min = min([dx, dy, dz])
     lambda_min = max(lambda_min, 0.06) # minimal wavelength of turbulence to simulate, [m]  (min 6cm)
@@ -208,7 +208,7 @@ def generate_noise(num, train_or_test):
         size_z = int(len(UVW[0][0][0]))
 
         # save
-        plot(UVW,100)
+        #plot(UVW,100)
         torch.save(UVW, yaml_p['noise_path'] + train_or_test + '/tensor/noise_map' + str(n).zfill(5) + '.pt')
 
 def karman_E(k, L, sigma):
@@ -241,9 +241,9 @@ def plot(UVW,N):
     axs[2].set_xlabel('W: y @x=0')
     axs[2].set_ylabel('W: z @x=0')
 
-    axs[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
-    axs[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
-    axs[2].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+    axs[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
+    axs[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
+    axs[2].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
 
     axs[3].axis('off')
     cbar = plt.colorbar(img, ax=axs[3], orientation='horizontal')
@@ -253,5 +253,5 @@ def plot(UVW,N):
     plt.close()
 
 
-generate_noise(500, 'train')
+generate_noise(1000, 'train')
 generate_noise(300, 'test')

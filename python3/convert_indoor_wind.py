@@ -148,7 +148,7 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
         angle = np.random.uniform(-1,1)*np.pi/4
         scale = np.random.uniform(0.25,0.5)
 
-        """
+        """"
         if n == 0:
             height = 1/yaml_p['unit_z']
             location = 0.5
@@ -159,7 +159,6 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
             location = 0.5
             angle = 0.001
             side = 3
-        scale = 0.5
 
         print('side: ' + str(side))
         print('location: ' + str(location))
