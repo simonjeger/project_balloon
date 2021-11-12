@@ -32,8 +32,8 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'size_z: 105' + '\n'
     text = text + 'unit_xy: 1100' + '\n'
     text = text + 'unit_z: 30.48' + '\n'
-    text = text + 'unit_noise_xy: 100' + '\n'
-    text = text + 'unit_noise_z: 10' + '\n'
+    text = text + 'unit_noise_xy: 250' + '\n'
+    text = text + 'unit_noise_z: 15.24' + '\n'
     text = text + 'delta_t: ' + str(delta_t) + '\n'
     text = text + 'delta_t_physics: ' + str(delta_t_physics) + '\n'
 
@@ -57,7 +57,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'gamma: 0.95' + '\n'
     text = text + 'global_buffer_nr: ' + str(global_buffer_nr) + '\n'
     text = text + 'global_buffer_N: ' + str(global_buffer_N) + '\n'
-    text = text + 'buffer_size: 1000000' + '\n'
+    text = text + 'buffer_size: 5000000' + '\n'
     text = text + 'lr: ' + f'{lr:.10f}' + '\n' #to avoid scientific notation (e.g. 1e-5)
     text = text + 'lr_scheduler: 999999999999' + '\n'
     text = text + 'replay_start_size: ' + str(replay_start_size) + '\n'
@@ -120,8 +120,8 @@ measurement_info = True
 
 prop_mag_min = 0
 
-process_nr = 8070
-global_buffer_N = 30
+process_nr = 8360
+global_buffer_N = 20
 global_buffer_nr = process_nr
 
 for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
@@ -134,9 +134,9 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                             for autoencoder in ['"HAE_avg"']:
                                 for window_size in [1]:
                                     for bottleneck in [8]:
-                                        for prop_mag_max in [0]:
+                                        for prop_mag_max in [0,0.5,1]:
                                             for wind_info in [True]:
-                                                for world_est in [False]:
+                                                for world_est in [False, True]:
                                                     #for gradient in np.array([0.1, 1, 10])*abs(step + action):
                                                     for gradient in [0]:
                                                         for proj_action in [0]:

@@ -409,11 +409,11 @@ class character():
         i_y = 1
         i_z = 1
 
-        if coord_x == self.size_x-1:
+        if coord_x == len(world[0,:,0,0])-1:
             i_x = 0
-        if coord_y == self.size_y-1:
+        if coord_y == len(world[0,0,:,0])-1:
             i_y = 0
-        if coord_z == self.size_z-1:
+        if coord_z == len(world[0,0,0,:])-1:
             i_z = 0
 
         f_000 = world[-4::,coord_x,coord_y,coord_z]
