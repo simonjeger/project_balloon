@@ -253,5 +253,5 @@ def plot(UVW,N):
     plt.close()
 
 
-generate_noise(1000, 'train')
+generate_noise(500, 'train')
 generate_noise(300, 'test')

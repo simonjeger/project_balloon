@@ -92,7 +92,7 @@ class render():
 
         # updating the window
         pygame.display.flip()
-        clock.tick(1) #cycles per second
+        clock.tick(max(1,1/yaml_p['delta_t'])) #cycles per second
 
     def display_movement(self, dim, screen, screen_width, screen_height, c_background, window_size, radius_xy, radius_z, res, character, roll_out):
         if dim == 'xz':

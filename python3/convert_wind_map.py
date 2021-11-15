@@ -269,7 +269,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map(13)
+#convert_map(13)
 
-#build_set(1000, 7, 'train')
-#build_set(1000, 7, 'test')
+build_set(1000, 7, 'train')
+build_set(500, 7, 'test')

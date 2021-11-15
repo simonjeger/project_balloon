@@ -42,11 +42,12 @@ class character_vicon():
         r.sleep()
 
     def callback_pos(self, data):
-        offset_vicon_x = 1.5
-        offset_vicon_y = 1.5
+        offset_vicon_x = 1.25
+        offset_vicon_y = 0.75
         offset_vicon_z = -0.725
 
         self.position[0] = data.pose.position.x + offset_vicon_x
+        self.position[0] = 0 + offset_vicon_x #to turn into 2d problem
         self.position[1] = data.pose.position.y + offset_vicon_y
         self.position[2] = data.pose.position.z + offset_vicon_z
 
@@ -92,7 +93,7 @@ def update_est(position,u,c):
 
 character = character_vicon()
 offset = 0
-scale = 0.3
+scale = 0.8
 
 llc = ll_controler()
 
@@ -139,18 +140,21 @@ while True:
 
         # check if done or not
         if (character.position[0] < 0) | (character.position[0]/yaml_p['unit_xy'] > yaml_p['size_x'] - 1):
+            print('x out of bounds')
             not_done = False
-        if (character.position[1] < 0) | (character.position[1]/yaml_p['unit_z'] > yaml_p['size_y'] - 1):
+        if (character.position[1] < 0) | (character.position[1]/yaml_p['unit_xy'] > yaml_p['size_y'] - 1):
+            print('y out of bounds')
             not_done = False
-        if (rel_pos < 0) | (rel_pos >= 1):
-            not_done = False
-        not_done = True
+        #if (rel_pos < 0) | (rel_pos >= 1):
+        #    print('z out of bounds')
+        #    not_done = False
         #if self.t < 0: #check if flight time is over
         #    not_done = False
         #if self.battery_level < 0: #check if battery is empty
         #    not_done = False
 
         u = offset + llc.pid(action, rel_pos, rel_vel)*(1-offset)*scale
+        u = -0.8
         call(u)
         if (not not_done) | (action < 0):
             u = 0

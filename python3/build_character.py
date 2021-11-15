@@ -63,8 +63,8 @@ class character():
             self.battery_capacity = 319680 #Ws
 
         elif yaml_p['balloon'] == 'indoor_balloon':
-            self.mass_structure = 0.06 #kg
-            self.delta_f = 0.01 #N
+            self.mass_structure = 0.04 #kg
+            self.delta_f = 0.08 #N
             self.ascent_consumption = 5 #W
             self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W
@@ -114,8 +114,7 @@ class character():
         self.set_ceiling()
         self.world_squished = squish(self.world, self.ceiling)
 
-        if yaml_p['prop_mag_max'] != 0:
-            self.set_noise()
+        self.set_noise()
 
         self.residual = self.target - self.position
         self.measurement = self.interpolate(self.world_squished)[0:2]
@@ -127,8 +126,10 @@ class character():
         self.path_est = [self.position.copy(), self.position.copy()]
 
         self.min_proj_dist = np.inf
-        self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
-
+        if yaml_p['3d']:
+            self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+        else:
+            self.min_proj_dist = np.sqrt((self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
         #for move_particle (previous velocity is zero at the beginning)
         self.p_x = 0
         self.p_y = 0
@@ -226,14 +227,14 @@ class character():
             w_x, w_y, w_z = self.interpolate(self.world_squished)
 
             # add noise
-            if yaml_p['prop_mag_max'] != 0:
-                avg_mag_xy = np.mean(abs(self.world[1:3]))
-                avg_mag_z = np.mean(abs(self.world[3]))
+            avg_mag_xy = np.mean(abs(self.world[1:3]))
+            avg_mag_z = np.mean(abs(self.world[3]))
 
-                n_x, n_y, n_z = np.multiply(self.interpolate(self.noise,noise=True),[avg_mag_xy, avg_mag_xy, avg_mag_z])*self.prop_mag
-                w_x += n_x
-                w_y += n_y
-                w_z += n_z
+            noise = self.interpolate(self.noise,noise=True)
+            n_x, n_y, n_z = (np.array([avg_mag_xy, avg_mag_xy, avg_mag_z])*self.prop_mag + self.const_mag)*noise
+            w_x += n_x
+            w_y += n_y
+            w_z += n_z
 
             v_x = (np.sign(w_x - self.p_x) * (w_x - self.p_x)**2 * c + 0)*self.delta_tn + self.p_x
             v_y = (np.sign(w_y - self.p_y) * (w_y - self.p_y)**2 * c + 0)*self.delta_tn + self.p_y
@@ -251,7 +252,12 @@ class character():
 
             # find min_proj_dist
             self.residual = self.target - self.position
-            min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+
+            if yaml_p['3d']:
+                min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+            else:
+                min_proj_dist = np.sqrt((self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+
             if min_proj_dist < self.min_proj_dist:
                 self.min_proj_dist = min_proj_dist
 
@@ -446,8 +452,7 @@ class character():
         size_n_y = len(self.noise[0][0])
         size_n_z = len(self.noise[0][0][0])
 
-        if (size_n_x != self.size_x) | (size_n_y != self.size_y) | (size_n_z != self.size_z):
-            print("ERROR: size of noise map doesn't match the one of the world map")
+        self.const_mag = np.random.uniform(yaml_p['const_mag_min'], yaml_p['const_mag_max'],3) / np.array([yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
         self.prop_mag = np.random.uniform(yaml_p['prop_mag_min'], yaml_p['prop_mag_max'])
 
     def update_est(self,u,c):
