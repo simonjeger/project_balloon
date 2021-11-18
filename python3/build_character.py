@@ -57,6 +57,7 @@ class character():
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 0.6 #kg
             self.delta_f = 1 #N
+            self.delay = 1 #s
             self.ascent_consumption = 23 #W
             self.descent_consumption = 23 #W
             self.rest_consumption = 2.5 #W
@@ -65,12 +66,17 @@ class character():
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 0.04 #kg
             self.delta_f = 0.08 #N
+            self.delay = 0.2 #s
             self.ascent_consumption = 5 #W
             self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W
             self.battery_capacity = 1798 #Ws
         else:
             print('ERROR: please choose one of the available balloons')
+
+        #check delay
+        if self.delay >= yaml_p['delta_t']:
+            print('ERROR: please choose a smaller delay or a bigger delta_t')
 
         # initialize autoencoder object
         if yaml_p['autoencoder'][0:3] == 'HAE':
@@ -141,6 +147,7 @@ class character():
         self.position_est_old = self.position_est
 
     def update(self, action, world):
+        self.old_action = self.action
         self.action = action
         self.world = world
         self.world_squished = squish(self.world, self.ceiling)
@@ -212,10 +219,15 @@ class character():
         not_done = True
 
         for n in range(self.n):
+            if n*yaml_p['delta_t_physics'] < self.delay:
+                action = self.old_action
+            else:
+                action = self.action
+
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
             rel_pos = dist_bottom / (dist_top + dist_bottom)
-            u = self.ll_controler.pid(self.action,rel_pos, self.p_z)
+            u = self.ll_controler.pid(action,rel_pos, self.p_z)
 
             #update physics model
             self.adapt_volume(u)
@@ -228,11 +240,10 @@ class character():
             w_x, w_y, w_z = self.interpolate(self.world_squished)
 
             # add noise
-            avg_mag_xy = np.mean(abs(self.world[1:3]))
-            avg_mag_z = np.mean(abs(self.world[3]))
+            avg_mag = np.mean(abs(self.world[1:4]))
 
             noise = self.interpolate(self.noise,noise=True)
-            n_x, n_y, n_z = (np.array([avg_mag_xy, avg_mag_xy, avg_mag_z])*self.prop_mag + self.const_mag)*noise
+            n_x, n_y, n_z = avg_mag*self.prop_mag*noise
             w_x += n_x
             w_y += n_y
             w_z += n_z
@@ -453,7 +464,6 @@ class character():
         size_n_y = len(self.noise[0][0])
         size_n_z = len(self.noise[0][0][0])
 
-        self.const_mag = np.random.uniform(yaml_p['const_mag_min'], yaml_p['const_mag_max'],3) / np.array([yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
         self.prop_mag = np.random.uniform(yaml_p['prop_mag_min'], yaml_p['prop_mag_max'])
 
     def update_est(self,u,c,delta_t):

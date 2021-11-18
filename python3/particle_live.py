@@ -44,7 +44,8 @@ class character_vicon():
     def callback_pos(self, data):
         offset_vicon_x = 1.25
         offset_vicon_y = 0.75
-        offset_vicon_z = -0.725+0.28
+        offset_vicon_z = -0.725 #+0.28
+
 
         self.position[0] = data.pose.position.x + offset_vicon_x
         #self.position[0] = 0 + offset_vicon_x #to turn into 2d problem

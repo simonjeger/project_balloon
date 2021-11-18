@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, const_mag_min, const_mag_max, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info):
+def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -92,8 +92,6 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'balloon: ' + balloon + '\n'
     text = text + 'ceiling_width: 0.1' + '\n'
     text = text + 'noise_path: "/cluster/scratch/sjeger/noise_20x20/"' + '\n'
-    text = text + 'const_mag_min: ' + str(const_mag_min) + '\n'
-    text = text + 'const_mag_max: ' + str(const_mag_max) + '\n'
     text = text + 'prop_mag_min: ' + str(prop_mag_min) + '\n'
     text = text + 'prop_mag_max: ' + str(prop_mag_max) + '\n'
     text = text + 'world_est: ' + str(world_est) + '\n'
@@ -121,8 +119,6 @@ action = -0.00005
 min_proj_dist = 1
 measurement_info = True
 
-const_mag_min = 0.02
-const_mag_max = 0.04
 prop_mag_min = 0
 
 process_nr = 8360
@@ -135,7 +131,7 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
             for burnin in ['advanced']:
                 for HER in [False]:
                     for lr in [0.003]:
-                        for width_depth in [[500,4]]:
+                        for width_depth in [[512,4]]:
                             for autoencoder in ['"HAE_avg"']:
                                 for window_size in [1]:
                                     for bottleneck in [8]:
@@ -150,6 +146,6 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                                                                     for minibatch_size in [1000]:
                                                                         for repeat in range(global_buffer_N):
                                                                             #global_buffer_nr = 0
-                                                                            write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, const_mag_min, const_mag_max, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info)
+                                                                            write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info)
                                                                             process_nr += 1
                                                                         global_buffer_nr = process_nr

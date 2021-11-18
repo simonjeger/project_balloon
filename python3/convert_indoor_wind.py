@@ -148,11 +148,13 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
         angle = np.random.uniform(-1,1)*np.pi/64
         scale = np.random.uniform(0.3,1)
 
+        offset = 0.5 #hight of center of balloon
+
         if n == 0:
-            height = 1.065/yaml_p['unit_z']
+            height = (1.065-offset)/yaml_p['unit_z']
             side = 1
         elif n == 1:
-            height = 2.065/yaml_p['unit_z']
+            height = (3-offset)/yaml_p['unit_z']
             side = 3
 
         if side == 0:
