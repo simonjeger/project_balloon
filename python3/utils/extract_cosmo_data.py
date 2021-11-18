@@ -98,64 +98,87 @@ def determine_cell_indices(x_grid, y_grid, x_cell, y_cell, lat, lon, lat_request
 
     return slice_x, slice_y
 
-def extract_cosmo_data(filename, lat_requested, lon_requested, time_requested, terrain_file = None,
-                       cosmo_projection = pyproj.Proj(proj='latlong', datum='WGS84'),
-                       output_projection = pyproj.Proj(init="CH:1903_LV03")):
-    """Opens the requested COSMO NetCDF file and extracts all wind profiles that are required to calculate the
-    initial wind field for the complete meteo grid domain.
-    """
+class extracter():
+    def __init__(self, filename, terrain_file = None, cosmo_projection = pyproj.Proj(proj='latlong', datum='WGS84'), output_projection = pyproj.Proj(init="CH:1903_LV03")):
+        """Opens the requested COSMO NetCDF file and extracts all wind profiles that are required to calculate the
+        initial wind field for the complete meteo grid domain.
+        """
 
-    if terrain_file is None:
-        terrain_file = filename
-    # create a dummy output
-    out = {}
-    out['valid'] = False
+        self.filename = filename
+        self.terrain_name = terrain_file
+        self.cosmo_projection = cosmo_projection
+        self.output_projection = output_projection
 
-    try:
-        time, lon, lat, z_bnd, u_c, v_c, w_c = read_cosmo_nc_file(filename, ['time', 'lon_1', 'lat_1', 'z_bnds_1', 'U', 'V', 'W'])
-        hsurf, hfl = read_cosmo_nc_file(terrain_file, ['HSURF', 'HFL'])
+        if terrain_file is None:
+            terrain_file = filename
+        # create a dummy output
+        self.out = {}
+        self.out['valid'] = False
 
-    except IOError as e:
-            print('ERROR: Data file read failed')
+        try:
+            self.time, self.lon, self.lat, self.z_bnd, self.u_c, self.v_c, self.w_c = read_cosmo_nc_file(filename, ['time', 'lon_1', 'lat_1', 'z_bnds_1', 'U', 'V', 'W'])
+            self.hsurf, self.hfl = read_cosmo_nc_file(terrain_file, ['HSURF', 'HFL'])
+
+        except IOError as e:
+                print('ERROR: Data file read failed')
+                return self.out
+
+
+    def extract_cosmo_data(self, lat_requested, lon_requested, time_requested):
+
+        # I had to make a class to avoid loading the file every time
+        filename = self.filename
+        terrain_file = self.terrain_name
+        cosmo_projection = self.cosmo_projection
+        output_projection = self.output_projection
+        time = self.time
+        lon = self.lon
+        lat = self.lat
+        z_bnd = self.z_bnd
+        u_c = self.u_c
+        v_c = self.v_c
+        w_c = self.w_c
+        hsurf = self.hsurf
+        hfl = self.hfl
+        out = self.out
+
+        time_true = time == time_requested*3600
+        if (sum(time_true*1) != 1):
+            print("ERROR: Requested COSMO hour invalid!")
             return out
+        t = sum(time_true*np.arange(0, time.shape[0], 1))
 
-    time_true = time == time_requested*3600
-    if (sum(time_true*1) != 1):
-        print("ERROR: Requested COSMO hour invalid!")
+        # convert to output coordinate projection
+        x_cell, y_cell = pyproj.transform(cosmo_projection, output_projection, lon_requested, lat_requested)
+        x_grid, y_grid, h_grid = pyproj.transform(cosmo_projection, output_projection, lon, lat, hsurf)
+
+        # e_cell, n_cell, zone_num0, zone_letter0 = utm.from_latlon(lat_requested, lon_requested)
+        # e_grid, n_grid, zone_num, zone_letter = utm.from_latlon(lat, lon, force_zone_number=zone_num0, force_zone_letter=zone_letter0)
+
+        slice_x, slice_y = determine_cell_indices(x_grid, y_grid, x_cell, y_cell, lat, lon, lat_requested, lon_requested)
+
+        # determine the correct vertical slices to extract
+        # TODO extract the correct vertical slices
+        z_start = 0
+        z_stop = u_c.shape[1]
+        slice_z = slice(z_start, z_stop)
+
+        out['lat'] = lat[slice_y, slice_x]
+        out['lon'] = lon[slice_y, slice_x]
+        out['x'] = x_grid[slice_y, slice_x]
+        out['y'] = y_grid[slice_y, slice_x]
+        out['wind_x'] = u_c[t, slice_z, slice_y, slice_x]
+        out['wind_y'] = v_c[t, slice_z, slice_y, slice_x]
+        out['wind_z'] = w_c[t, slice_z, slice_y, slice_x]
+        out['hsurf'] = h_grid[slice_y, slice_x]             # These are on the CH1903 (like x and y)
+
+        # Note that the hfl altitudes are incorrect (WGS84, need to convert to CH1903)
+        out['z'] = hfl[slice_z, slice_y, slice_x]
+        for i, hfli in enumerate(out['z']):
+            _x, _y, hi_ch = pyproj.transform(cosmo_projection, output_projection, out['lon'], out['lat'], hfli)
+            out['z'][i] = hi_ch
+
         return out
-    t = sum(time_true*np.arange(0, time.shape[0], 1))
-
-    # convert to output coordinate projection
-    x_cell, y_cell = pyproj.transform(cosmo_projection, output_projection, lon_requested, lat_requested)
-    x_grid, y_grid, h_grid = pyproj.transform(cosmo_projection, output_projection, lon, lat, hsurf)
-
-    # e_cell, n_cell, zone_num0, zone_letter0 = utm.from_latlon(lat_requested, lon_requested)
-    # e_grid, n_grid, zone_num, zone_letter = utm.from_latlon(lat, lon, force_zone_number=zone_num0, force_zone_letter=zone_letter0)
-
-    slice_x, slice_y = determine_cell_indices(x_grid, y_grid, x_cell, y_cell, lat, lon, lat_requested, lon_requested)
-
-    # determine the correct vertical slices to extract
-    # TODO extract the correct vertical slices
-    z_start = 0
-    z_stop = u_c.shape[1]
-    slice_z = slice(z_start, z_stop)
-
-    out['lat'] = lat[slice_y, slice_x]
-    out['lon'] = lon[slice_y, slice_x]
-    out['x'] = x_grid[slice_y, slice_x]
-    out['y'] = y_grid[slice_y, slice_x]
-    out['wind_x'] = u_c[t, slice_z, slice_y, slice_x]
-    out['wind_y'] = v_c[t, slice_z, slice_y, slice_x]
-    out['wind_z'] = w_c[t, slice_z, slice_y, slice_x]
-    out['hsurf'] = h_grid[slice_y, slice_x]             # These are on the CH1903 (like x and y)
-
-    # Note that the hfl altitudes are incorrect (WGS84, need to convert to CH1903)
-    out['z'] = hfl[slice_z, slice_y, slice_x]
-    for i, hfli in enumerate(out['z']):
-        _x, _y, hi_ch = pyproj.transform(cosmo_projection, output_projection, out['lon'], out['lat'], hfli)
-        out['z'][i] = hi_ch
-
-    return out
 
 
 def read_cosmo_nc_file(filename, variable_list):

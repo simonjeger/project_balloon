@@ -178,8 +178,11 @@ class Agent:
             self.env.character.importance = importance
 
         if yaml_p['mode'] == 'game':
-            # If it's the beginning of a new round
-            action = self.env.render_machine.load_screen()
+            self.env.render(mode=True,load_screen=True)
+            action = None
+            while action is None:
+                time.sleep(0.1)
+                action = self.user_input()
 
         self.HER_obs = [obs]
         self.HER_pos = [self.env.character.start]
@@ -192,42 +195,14 @@ class Agent:
         self.HER_residual = []
 
         while True:
-            if yaml_p['render']:
-                self.env.render(mode=True)
-
             if yaml_p['mode'] == 'reinforcement_learning':
                 action_RL = self.agent.act(obs) #uses self.agent.model to decide next step
                 action = np.clip(action_RL[0],self.clip,1-self.clip) #gym sometimes violates the conditions set in the environment
 
             elif yaml_p['mode'] == 'game':
-                for event in pygame.event.get():
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == 60:
-                            action = 0
-                        elif event.key == pygame.K_1:
-                            action = 0.1
-                        elif event.key == pygame.K_2:
-                            action = 0.2
-                        elif event.key == pygame.K_3:
-                            action = 0.3
-                        elif event.key == pygame.K_4:
-                            action = 0.4
-                        elif event.key == pygame.K_5:
-                            action = 0.5
-                        elif event.key == pygame.K_6:
-                            action = 0.6
-                        elif event.key == pygame.K_7:
-                            action = 0.7
-                        elif event.key == pygame.K_8:
-                            action = 0.8
-                        elif event.key == pygame.K_9:
-                            action = 0.9
-                        elif event.key == pygame.K_0:
-                            action = 1
-
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
+                action_user = self.user_input()
+                if action_user is not None:
+                    action = action_user
 
                 _ = self.agent.act(obs) #this is only so it works in training mode
                 action = np.clip(action,self.clip,1-self.clip)
@@ -245,9 +220,13 @@ class Agent:
             else:
                 print('ERROR: Please choose one of the available modes.')
 
+            if yaml_p['render']:
+                self.env.render(mode=True, action=action)
+
             data = {
             'action': action,
             'target': self.env.character.target.tolist(),
+            'c': self.env.character.c,
             'ceiling': self.env.character.ceiling*yaml_p['unit_z'] #in meters
             }
             self.send(data) #write action to file
@@ -600,6 +579,38 @@ class Agent:
         action = np.argmax(projections)/len(projections)*(1-p) + tar_z_squished*p
         action = np.clip(action,self.clip,1-self.clip) #avoid crashing into terrain
 
+        return action
+
+    def user_input(self):
+        action = None
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == 60:
+                    action = 0
+                elif event.key == pygame.K_1:
+                    action = 0.1
+                elif event.key == pygame.K_2:
+                    action = 0.2
+                elif event.key == pygame.K_3:
+                    action = 0.3
+                elif event.key == pygame.K_4:
+                    action = 0.4
+                elif event.key == pygame.K_5:
+                    action = 0.5
+                elif event.key == pygame.K_6:
+                    action = 0.6
+                elif event.key == pygame.K_7:
+                    action = 0.7
+                elif event.key == pygame.K_8:
+                    action = 0.8
+                elif event.key == pygame.K_9:
+                    action = 0.9
+                elif event.key == pygame.K_0:
+                    action = 1
+
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
         return action
 
     def send(self, data):

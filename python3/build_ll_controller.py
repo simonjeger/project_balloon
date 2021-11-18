@@ -23,8 +23,8 @@ class ll_controler():
         self.error_prev = error
 
         if yaml_p['balloon'] == 'indoor_balloon':
-            k_p = 15 #20
-            k_d = 90 #120
+            k_p = 15 #15
+            k_d = 90 #90
             k_i = 0 #0
         else:
             k_p = 20 #20

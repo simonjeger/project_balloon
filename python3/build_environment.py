@@ -168,8 +168,8 @@ class balloon3d(Env):
 
         return reward_step, done, success
 
-    def render(self, mode=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        self.render_machine.make_render(self.character, self.reward_step, self.reward_epi, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out)
+    def render(self, mode=False, action=None, load_screen=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
+        self.render_machine.make_render(self.character, action, self.reward_step, self.reward_epi, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out, load_screen)
 
     def reset(self, target=None):
         # load new world

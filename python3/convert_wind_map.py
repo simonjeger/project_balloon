@@ -11,7 +11,7 @@ import shutil
 import imageio
 import datetime
 
-from utils.extract_cosmo_data import extract_cosmo_data
+from utils.extract_cosmo_data import extracter
 
 import yaml
 import argparse
@@ -60,11 +60,13 @@ def convert_map(start_t):
     lowest = 0
     highest = size_z*yaml_p['unit_z']
     step_z = (highest - lowest)/size_z
+    
+    ext = extracter(yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', terrain_file=yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_ana_const.nc')
 
     for t in np.arange(start_t,24):
         for i in range(size_x):
             for j in range(size_y):
-                out = extract_cosmo_data(yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', start_lat + j*step_lat, start_lon + i*step_lon, t, terrain_file=yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_ana_const.nc') #used to be 46.947225, 8.693297, 3
+                out = ext.extract_cosmo_data(start_lat + j*step_lat, start_lon + i*step_lon, t) #used to be 46.947225, 8.693297, 3
                 for k in range(size_z):
                     # finding closest quadrant
                     q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
@@ -269,7 +271,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map(13)
+convert_map(13)
 
-build_set(1000, 7, 'train')
-build_set(500, 7, 'test')
+#build_set(1000, 7, 'train')
+#build_set(500, 7, 'test')

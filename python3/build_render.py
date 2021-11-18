@@ -26,7 +26,7 @@ class render():
         self.size_y = (size_y - 1)*self.render_ratio
         self.size_z = size_z - 1
 
-    def make_render(self, character, reward_step, reward_epi, radius_xy, radius_z, train_or_test, roll_out):
+    def make_render(self, character, action, reward_step, reward_epi, radius_xy, radius_z, train_or_test, roll_out, load_screen):
         # general setup
         pygame.init()
         clock = pygame.time.Clock()
@@ -57,7 +57,7 @@ class render():
         visualize_world(world, character.position, character.ceiling)
 
         for dim in ['xy', 'xz', 'yz']:
-            self.display_movement(dim, screen, screen_width, screen_height, c_background, window_size, radius_xy, radius_z, res, character, roll_out)
+            self.display_movement(dim, screen, screen_width, screen_height, c_background, window_size, radius_xy, radius_z, res, character, action, roll_out)
 
         # text
         myfont = pygame.font.SysFont('Arial', 10, bold=False)
@@ -90,11 +90,15 @@ class render():
             screen.blit(t_world_compressed,(space_text,start_text+11*space_text))
             screen.blit(t_esterr,(space_text,start_text+13*space_text))
 
+        if load_screen:
+            t_load_screen = myfont.render('PRESS NUMBER KEY TO START GAME', False, pygame.Color('White'))
+            screen.blit(t_load_screen,(screen_width/2,start_text+15*space_text))
+
         # updating the window
         pygame.display.flip()
         clock.tick(max(1,1/yaml_p['delta_t'])) #cycles per second
 
-    def display_movement(self, dim, screen, screen_width, screen_height, c_background, window_size, radius_xy, radius_z, res, character, roll_out):
+    def display_movement(self, dim, screen, screen_width, screen_height, c_background, window_size, radius_xy, radius_z, res, character, action, roll_out):
         if dim == 'xz':
             i1 = 0
             i2 = 2
@@ -218,21 +222,21 @@ class render():
                 for i in roll_out:
                     path_roll_out.append(((i[i1]*self.render_ratio+offset_1)*res, (dist_to_bottom-i[i2]*self.render_ratio-offset_2)*res))
 
-        # draw action line
-        if dim == 'xz':
-            pos_y = int(np.clip(character.position[1],0,character.size_y-1))
-            action = (ceiling - character.world[0,:,pos_y,0])*character.action + character.world[0,:,pos_y,0]
+        if action is not None:
+            if dim == 'xz':
+                pos_y = int(np.clip(character.position[1],0,character.size_y-1))
+                action_set = (ceiling - character.world[0,:,pos_y,0])*action + character.world[0,:,pos_y,0]
 
-        if dim == 'yz':
-            pos_x = int(np.clip(character.position[0],0,character.size_x-1))
-            action = (ceiling - character.world[0,pos_x,:,0])*character.action + character.world[0,pos_x,:,0]
+            if dim == 'yz':
+                pos_x = int(np.clip(character.position[0],0,character.size_x-1))
+                action_set = (ceiling - character.world[0,pos_x,:,0])*action + character.world[0,pos_x,:,0]
 
-        if dim != 'xy':
-            array_2 = np.arange(0,size_1+1,1)
-            line_action = []
-            for i in range(len(action)):
-                line_action.append(((array_2[i]*self.render_ratio + offset_1)*res, (dist_to_bottom-action[i])*res))
-            pygame.draw.lines(screen, c_action, False, line_action, 1)
+            if dim != 'xy':
+                array_2 = np.arange(0,size_1+1,1)
+                line_action = []
+                for i in range(len(action_set)):
+                    line_action.append(((array_2[i]*self.render_ratio + offset_1)*res, (dist_to_bottom-action_set[i])*res))
+                pygame.draw.lines(screen, c_action, False, line_action, 1)
 
         # write balloon
         size_balloon = 4*res
@@ -259,7 +263,6 @@ class render():
 
         # balloon
         cv = 100
-        action = character.action
         pygame.draw.ellipse(screen, c_balloon, rec_balloon)
 
         # draw target (dense and transparent)
@@ -298,54 +301,3 @@ class render():
         # overlay everything that overlaps from the xy plane
         if dim == 'xy':
             pygame.draw.rect(screen, c_background, pygame.Rect(0, 0, screen_width, dist_to_top*res))
-
-    def load_screen(self):
-        res = 1.5 #int(100/self.size_z)
-        screen_width = int(3*self.size_z*res)
-        screen_height = int((2*self.size_z)*res + screen_width)
-        screen = pygame.display.set_mode((screen_width, screen_height))
-        pygame.display.set_caption('balloon3d')
-
-        c_background = (34,42,53)
-        screen.fill(c_background)
-
-        bg = pygame.image.load('utils/game_loadscreen.png')
-        bg = pygame.transform.scale(bg, (screen_width, screen_height))
-
-        screen.blit(bg, (0,0))
-        pygame.display.flip()
-
-        wait = True
-        while wait:
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    wait = False
-                    if event.key == 60:
-                        action = 0
-                    elif event.key == pygame.K_1:
-                        action = 0.1
-                    elif event.key == pygame.K_2:
-                        action = 0.2
-                    elif event.key == pygame.K_3:
-                        action = 0.3
-                    elif event.key == pygame.K_4:
-                        action = 0.4
-                    elif event.key == pygame.K_5:
-                        action = 0.5
-                    elif event.key == pygame.K_6:
-                        action = 0.6
-                    elif event.key == pygame.K_7:
-                        action = 0.7
-                    elif event.key == pygame.K_8:
-                        action = 0.8
-                    elif event.key == pygame.K_9:
-                        action = 0.9
-                    elif event.key == pygame.K_0:
-                        action = 1
-                    else:
-                        wait = True #don't stop waiting if it was another key that was pressed
-
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
-        return action

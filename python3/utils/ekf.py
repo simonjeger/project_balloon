@@ -2,9 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt #for debugging only
 
 class ekf():
-    def __init__(self, delta_t, x_0):
-        self.delta_t = delta_t
-
+    def __init__(self, x_0):
         self.xhat_0 = np.array([x_0,0,0,0])                                 #predicted state
 
         self.z_hist = [0,0]                                                 #memory states
@@ -16,7 +14,7 @@ class ekf():
         self.Q_0[1,1] = 0.0001
         self.Q_0[2,2] = 0.5                                                 #the wind is not actually zero
         self.Q_0[3,3] = 0.01                                                #but the wind comes from a uniform distribution
-        self.R_0 = [1, self.delta_t, self.delta_t**2, self.delta_t**2]      #measurement noise (dim_z, dim_z)
+        self.R_0 = [1, 100, 1000, 1000]      #measurement noise (dim_z, dim_z)
         self.H_0 = np.eye((4))                                              #measurement function (dim_x, dim_x)
 
         self.hist_p = []                        #for plotting
@@ -88,7 +86,8 @@ class ekf():
         self.update_estimate()
         self.update_covariance()
 
-    def one_cycle(self, u_0, c, z_0):
+    def one_cycle(self, u_0, z_0, c, delta_t):
+        self.delta_t = delta_t
         self.predict(u_0, c)
         self.correct(z_0)
 

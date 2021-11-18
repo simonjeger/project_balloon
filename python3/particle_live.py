@@ -44,10 +44,10 @@ class character_vicon():
     def callback_pos(self, data):
         offset_vicon_x = 1.25
         offset_vicon_y = 0.75
-        offset_vicon_z = -0.725
+        offset_vicon_z = -0.725+0.28
 
         self.position[0] = data.pose.position.x + offset_vicon_x
-        self.position[0] = 0 + offset_vicon_x #to turn into 2d problem
+        #self.position[0] = 0 + offset_vicon_x #to turn into 2d problem
         self.position[1] = data.pose.position.y + offset_vicon_y
         self.position[2] = data.pose.position.z + offset_vicon_z
 
@@ -84,22 +84,22 @@ def receive():
                 print('data corrupted, will try again')
     return data
 
-def update_est(position,u,c):
-    est_x.one_cycle(0,c,position[0])
-    est_y.one_cycle(0,c,position[1])
-    est_z.one_cycle(u,c,position[2])
+def update_est(position,u,c,delta_t):
+    est_x.one_cycle(0,position[0],c,delta_t)
+    est_y.one_cycle(0,position[1],c,delta_t)
+    est_z.one_cycle(u,position[2],c,delta_t)
     position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
     return position_est
 
 character = character_vicon()
 offset = 0
-scale = 0.8
+scale = 1
 
 llc = ll_controler()
 
-est_x = ekf(0.1, character.position[0])
-est_y = ekf(0.1, character.position[1])
-est_z = ekf(0.1, character.position[2])
+est_x = ekf(character.position[0])
+est_y = ekf(character.position[1])
+est_z = ekf(character.position[2])
 
 path = []
 path_est = []
@@ -130,10 +130,10 @@ while True:
         action = data['action']
         target = data['target']
         ceiling = data['ceiling']
+        c = data['c']
 
         character.set_vicon()
         terrain = 0
-        ceiling = 3
 
         rel_pos = (character.position[2] - terrain)/(ceiling-terrain)
         rel_vel = character.velocity[2] / (ceiling-terrain)
@@ -154,22 +154,21 @@ while True:
         #    not_done = False
 
         u = offset + llc.pid(action, rel_pos, rel_vel)*(1-offset)*scale
-        u = -0.8
         call(u)
         if (not not_done) | (action < 0):
+
             u = 0
             call(u)
             break
 
-        #c = self.area*self.rho_air*self.c_w/(2*self.mass_total)
-        c = 1
-        position_est = update_est(character.position,u,c)
+        stop = time.time()
+        delta_t = stop - start
+
+        position_est = np.divide(update_est(character.position,u,c,delta_t),[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
 
         path.append(np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
         path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
 
-        stop = time.time()
-        delta_t = stop - start
         U += abs(u*delta_t)
 
         # find min_proj_dist
@@ -184,7 +183,7 @@ while True:
         'position': np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
         'velocity': np.divide(character.velocity,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
         'path': path,
-        'position_est': position_est,
+        'position_est': position_est.tolist(),
         'path_est': path_est,
         'measurement': [est_x.wind(), est_y.wind()],
         'min_proj_dist': min_proj_dist,

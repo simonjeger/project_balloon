@@ -46,9 +46,9 @@ class character():
         self.velocity = np.array([0,0,0])
 
         self.ll_controler = ll_controler()
-        self.est_x = ekf(self.delta_tn, self.position[0])
-        self.est_y = ekf(self.delta_tn, self.position[1])
-        self.est_z = ekf(self.delta_tn, self.position[2])
+        self.est_x = ekf(self.position[0])
+        self.est_y = ekf(self.position[1])
+        self.est_z = ekf(self.position[2])
 
         self.esterror_pos = 0
         self.esterror_vel = 0
@@ -120,6 +120,7 @@ class character():
         self.measurement = self.interpolate(self.world_squished)[0:2]
 
         self.importance = None
+        self.adapt_volume(0) #initial volume with u=0
         self.set_state()
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -151,6 +152,10 @@ class character():
 
         # update state
         self.set_state()
+
+        #to debug
+        #self.est_y.plot()
+
         return not_done
 
     def set_state(self):
@@ -172,9 +177,6 @@ class character():
         else:
             self.world_compressed = self.ae.compress(self.world, self.position_est, self.ceiling)
         self.world_compressed /= yaml_p['unit_xy'] #so it's in simulation units and makes sense for the normalization in character.py
-
-        #to debug
-        #self.est_x.plot()
 
         if not yaml_p['wind_info']:
             self.world_compressed *= 0
@@ -218,7 +220,6 @@ class character():
             #update physics model
             self.adapt_volume(u)
 
-            c = self.area*self.rho_air*self.c_w/(2*self.mass_total)
             b = self.net_force(u)/yaml_p['unit_z']**2/self.mass_total
             self.U += abs(u)*self.delta_tn
             coord = [int(i) for i in np.floor(self.position)]
@@ -236,9 +237,9 @@ class character():
             w_y += n_y
             w_z += n_z
 
-            v_x = (np.sign(w_x - self.p_x) * (w_x - self.p_x)**2 * c + 0)*self.delta_tn + self.p_x
-            v_y = (np.sign(w_y - self.p_y) * (w_y - self.p_y)**2 * c + 0)*self.delta_tn + self.p_y
-            v_z = (np.sign(w_z - self.p_z) * (w_z - self.p_z)**2 * c + b)*self.delta_tn + self.p_z
+            v_x = (np.sign(w_x - self.p_x) * (w_x - self.p_x)**2 * self.c + 0)*self.delta_tn + self.p_x
+            v_y = (np.sign(w_y - self.p_y) * (w_y - self.p_y)**2 * self.c + 0)*self.delta_tn + self.p_y
+            v_z = (np.sign(w_z - self.p_z) * (w_z - self.p_z)**2 * self.c + b)*self.delta_tn + self.p_z
 
             # update
             self.position += [v_x*self.delta_tn, v_y*self.delta_tn, v_z*self.delta_tn]
@@ -279,8 +280,8 @@ class character():
                 not_done = False
 
             # update EKF
-            self.update_est(u,c)
-            self.set_measurement()
+            self.update_est(u,self.c, self.delta_tn)
+            self.set_measurement(self.est_x.wind(),self.est_y.wind())
 
         self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t']
         self.velocity_est = (self.position_est - self.path_est[-self.n])/yaml_p['delta_t']
@@ -312,9 +313,7 @@ class character():
         self.t -= yaml_p['delta_t']
 
         # update EKF
-        self.position_est = np.array(data['position_est'])
-        self.measurement = data['measurement']
-        self.set_measurement()
+        self.set_measurement(data['measurement'][0],data['measurement'][1])
 
         self.velocity = (self.position - self.position_old)/yaml_p['delta_t']
         self.velocity_est = (self.position_est - self.position_est_old)/yaml_p['delta_t']
@@ -358,6 +357,8 @@ class character():
         self.area = (self.diameter/2)**2*np.pi #m^2
         self.mass_total = self.mass_structure + volume_init*rho_gas_init #kg
 
+        self.c = self.area*self.rho_air*self.c_w/(2*self.mass_total)
+
     def net_force(self,u):
         f_balloon = (self.volume*(self.rho_air-self.rho_gas) - self.mass_structure)*9.81
         f_net = f_balloon + self.delta_f*u
@@ -381,8 +382,8 @@ class character():
         else:
             return self.ceiling - self.position[2]
 
-    def set_measurement(self):
-        self.measurement = np.array([self.est_x.wind(), self.est_y.wind()])
+    def set_measurement(self,est_x_wind,est_y_wind):
+        self.measurement = np.array([est_x_wind, est_y_wind])
         if np.linalg.norm(self.measurement) != 0:
             self.esterror_wind = np.linalg.norm(self.interpolate(self.world_squished)[0:2] - self.measurement) / np.linalg.norm(self.measurement)
         else:
@@ -455,16 +456,16 @@ class character():
         self.const_mag = np.random.uniform(yaml_p['const_mag_min'], yaml_p['const_mag_max'],3) / np.array([yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
         self.prop_mag = np.random.uniform(yaml_p['prop_mag_min'], yaml_p['prop_mag_max'])
 
-    def update_est(self,u,c):
+    def update_est(self,u,c,delta_t):
         std = 0 #sensor noise
         if self.train_or_test == 'test':
             np.random.seed(self.seed)
             self.seed +=1
         noise = np.random.normal(0,std,3)
 
-        self.est_x.one_cycle(0,c,self.position[0] + noise[0])
-        self.est_y.one_cycle(0,c,self.position[1] + noise[1])
-        self.est_z.one_cycle(u,c,self.position[2] + noise[2])
+        self.est_x.one_cycle(0,self.position[0] + noise[0], c, delta_t)
+        self.est_y.one_cycle(0,self.position[1] + noise[1], c, delta_t)
+        self.est_z.one_cycle(u,self.position[2] + noise[2], c, delta_t)
         self.position_est = np.array([self.est_x.xhat_0[0], self.est_y.xhat_0[0], self.est_z.xhat_0[0]])
 
         if np.linalg.norm(self.position) != 0:
@@ -530,7 +531,7 @@ class character():
         coord_z = int(np.clip(self.position[2],0,self.size_z - 1))
 
         fig, ax = plt.subplots(2)
-        mag = 10
+        mag = 1
         ax[1].imshow(self.world_est[1,:,coord_y,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-mag, vmax=mag)
         ax[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
         ax[0].imshow(self.world_est[2,coord_x,:,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-mag, vmax=mag)

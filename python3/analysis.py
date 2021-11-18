@@ -47,7 +47,7 @@ def plot_reward():
 
     # plot
     fig, ax = plt.subplots(1,1)
-    ax.plot(rew_epi, alpha=0.1)
+    ax.plot(rew_epi, alpha=0.3)
     ax.plot(mean_reward_epi)
     ax.plot(mean_reward_epi_big)
 
@@ -236,7 +236,7 @@ def disp_overview():
     for i in range(n):
         for j in range(m):
             if x < len(df.columns):
-                axs[i,j].grid(linewidth=0.1)
+                axs[i,j].grid(linewidth=0.3)
                 # colors
                 color_max='red'
                 color_mean='Indigo'
@@ -247,17 +247,17 @@ def disp_overview():
 
                 # scatter
                 """
-                axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=0.1, facecolors='none', edgecolors=color_max, alpha=0.2)
-                axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=0.1, facecolors='none', edgecolors=color_mean, alpha=0.2)
-                axs[i,j].scatter(df.iloc[:,x],df['linreg_intercept'], s=0.1, facecolors='none', edgecolors=color_intercept, alpha=0.2)
-                axs[i,j].scatter(df.iloc[:,x],df['linreg_score'], s=0.1, facecolors='none', edgecolors=color_score, alpha=0.2)
+                axs[i,j].scatter(df.iloc[:,x],df['rew_epi_max'], s=0.3, facecolors='none', edgecolors=color_max, alpha=0.2)
+                axs[i,j].scatter(df.iloc[:,x],df['rew_epi_mean'], s=0.3, facecolors='none', edgecolors=color_mean, alpha=0.2)
+                axs[i,j].scatter(df.iloc[:,x],df['linreg_intercept'], s=0.3, facecolors='none', edgecolors=color_intercept, alpha=0.2)
+                axs[i,j].scatter(df.iloc[:,x],df['linreg_score'], s=0.3, facecolors='none', edgecolors=color_score, alpha=0.2)
                 """
 
                 #ax2 = axs[i,j].twinx()
                 #ax2.tick_params(axis='y', colors='green')
 
                 """
-                ax2.scatter(df.iloc[:,x],df['linreg_slope'], s=0.1, facecolors='none', edgecolors=color_slope, alpha=0.2)
+                ax2.scatter(df.iloc[:,x],df['linreg_slope'], s=0.3, facecolors='none', edgecolors=color_slope, alpha=0.2)
                 """
 
                 """
@@ -266,7 +266,7 @@ def disp_overview():
 
                 if df_mean_max.columns[0] != df_mean_max.columns[1]:
                     mean_rew_max = df_mean_max.groupby(df_mean_max.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(mean_rew_max.iloc[:,0], mean_rew_max.iloc[:,1], s=0.1, color=color_max)
+                    axs[i,j].scatter(mean_rew_max.iloc[:,0], mean_rew_max.iloc[:,1], s=0.3, color=color_max)
                 """
 
                 # action_std
@@ -274,21 +274,21 @@ def disp_overview():
 
                 if df_action_std.columns[0] != df_action_std.columns[1]:
                     action_std = df_action_std.groupby(df_action_std.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(action_std.iloc[:,0], action_std.iloc[:,1], s=0.1, color=color_action)
+                    axs[i,j].scatter(action_std.iloc[:,0], action_std.iloc[:,1], s=0.3, color=color_action)
 
                 # mean
                 df_mean_mean = pd.concat([df.iloc[:,x], df['rew_epi_mean']], axis=1)
 
                 if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
                     mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.1, color=color_mean)
+                    axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.3, color=color_mean)
 
                 """
                 # mean_norm
                 df_mean_norm = pd.concat([df.iloc[:,x], df['rew_epi_norm_mean']], axis=1)
                 if df_mean_norm.columns[0] != df_mean_norm.columns[1]:
                     mean_rew_norm = df_mean_norm.groupby(df_mean_norm.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(mean_rew_norm.iloc[:,0], mean_rew_norm.iloc[:,1], s=0.1, color=color_norm)
+                    axs[i,j].scatter(mean_rew_norm.iloc[:,0], mean_rew_norm.iloc[:,1], s=0.3, color=color_norm)
                 """
 
                 # success
@@ -296,21 +296,21 @@ def disp_overview():
 
                 if df_mean_success.columns[0] != df_mean_success.columns[1]:
                     mean_success = df_mean_success.groupby(df_mean_success.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(mean_success.iloc[:,0], mean_success.iloc[:,1], s=0.1, color=color_success)
+                    axs[i,j].scatter(mean_success.iloc[:,0], mean_success.iloc[:,1], s=0.3, color=color_success)
 
                 """
                 df_mean_slope = pd.concat([df.iloc[:,x], df['linreg_slope']], axis=1)
                 if df_mean_slope.columns[0] != df_mean_slope.columns[1]:
                     mean_linreg_slope = df_mean_slope.groupby(df_mean_slope.columns[0]).mean().reset_index()
-                    ax2.scatter(mean_linreg_slope.iloc[:,0], mean_linreg_slope.iloc[:,1], s=0.1, color=color_slope)
+                    ax2.scatter(mean_linreg_slope.iloc[:,0], mean_linreg_slope.iloc[:,1], s=0.3, color=color_slope)
                 df_mean_intercept= pd.concat([df.iloc[:,x], df['linreg_intercept']], axis=1)
                 if df_mean_intercept.columns[0] != df_mean_intercept.columns[1]:
                     mean_linreg_intercept = df_mean_intercept.groupby(df_mean_intercept.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(mean_linreg_intercept.iloc[:,0], mean_linreg_intercept.iloc[:,1], s=0.1, color=color_intercept)
+                    axs[i,j].scatter(mean_linreg_intercept.iloc[:,0], mean_linreg_intercept.iloc[:,1], s=0.3, color=color_intercept)
                 df_mean_score = pd.concat([df.iloc[:,x], df['linreg_score']], axis=1)
                 if df_mean_score.columns[0] != df_mean_score.columns[1]:
                     mean_linreg_score = df_mean_score.groupby(df_mean_score.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(mean_linreg_score.iloc[:,0], mean_linreg_score.iloc[:,1], s=0.1, color=color_score)
+                    axs[i,j].scatter(mean_linreg_score.iloc[:,0], mean_linreg_score.iloc[:,1], s=0.3, color=color_score)
                 """
 
                 axs[i,j].set_title(df.columns[x])
