@@ -23,9 +23,14 @@ class ll_controler():
         self.error_prev = error
 
         if yaml_p['balloon'] == 'indoor_balloon':
-            k_p = 15 #15
-            k_d = 90 #90
-            k_i = 0 #0
+            if yaml_p['environment'] == 'python3':
+                k_p = 2.3
+                k_d = 50
+                k_i = 0
+            elif yaml_p['environment'] == 'vicon':
+                k_p = 8 #8
+                k_d = 50 #50
+                k_i = 0 #0
         else:
             k_p = 20 #20
             k_d = 120 #120

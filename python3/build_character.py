@@ -62,15 +62,17 @@ class character():
             self.descent_consumption = 23 #W
             self.rest_consumption = 2.5 #W
             self.battery_capacity = 319680 #Ws
+            self.c_w = 0.45
 
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 0.04 #kg
-            self.delta_f = 0.08 #N
-            self.delay = 0.2 #s
+            self.delta_f = 0.1 #N
+            self.delay = 0.5 #s
             self.ascent_consumption = 5 #W
             self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W
             self.battery_capacity = 1798 #Ws
+            self.c_w = 0.705 #through experiment
         else:
             print('ERROR: please choose one of the available balloons')
 
@@ -89,7 +91,7 @@ class character():
         self.t = self.T
 
         self.battery_level = 1
-        self.action = 1
+        self.action = 0.01
         self.diameter = 0
 
         self.world = world
@@ -157,6 +159,10 @@ class character():
         else:
             not_done = self.move_particle()
 
+        dist_bottom = self.height_above_ground()
+        dist_top = self.dist_to_ceiling()
+        rel_pos = dist_bottom / (dist_top + dist_bottom)
+        print(self.action - rel_pos)
         # update state
         self.set_state()
 
@@ -227,12 +233,12 @@ class character():
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
             rel_pos = dist_bottom / (dist_top + dist_bottom)
-            u = self.ll_controler.pid(action,rel_pos, self.p_z)
+            u = self.ll_controler.pid(action, rel_pos, self.p_z)
 
             #update physics model
             self.adapt_volume(u)
 
-            b = self.net_force(u)/yaml_p['unit_z']**2/self.mass_total
+            b = self.net_force(u)/yaml_p['unit_z']/self.mass_total
             self.U += abs(u)*self.delta_tn
             coord = [int(i) for i in np.floor(self.position)]
 
@@ -305,7 +311,7 @@ class character():
 
         #timing of the when to receive the data from the hardware
         while time.time() - self.real_time < yaml_p['delta_t']:
-            time.sleep(1)
+            time.sleep(yaml_p['delta_t']/100)
         self.real_time = time.time()
         data = self.receive()
 
@@ -335,9 +341,6 @@ class character():
         return not_done
 
     def adapt_volume(self,u):
-        #general properties
-        self.c_w = 0.45
-
         # pressure
         pressure_init = 101300 #Pa
         slope_pressure = -0.00010393333
@@ -367,13 +370,12 @@ class character():
         self.diameter = 2*(self.volume*3/(4*np.pi))**(1/3) #m
         self.area = (self.diameter/2)**2*np.pi #m^2
         self.mass_total = self.mass_structure + volume_init*rho_gas_init #kg
-
-        self.c = self.area*self.rho_air*self.c_w/(2*self.mass_total)
+        self.c = self.area*self.rho_air*self.c_w/(2*self.mass_total)/(1/yaml_p['unit_z'])
 
     def net_force(self,u):
         f_balloon = (self.volume*(self.rho_air-self.rho_gas) - self.mass_structure)*9.81
         f_net = f_balloon + self.delta_f*u
-        return f_net
+        return f_net #N
 
     def height_above_ground(self, est=False):
         if est:
@@ -449,7 +451,7 @@ class character():
         w_x /= yaml_p['unit_xy']
         w_y /= yaml_p['unit_xy']
         w_z /= yaml_p['unit_z']
-
+#
         return np.array([w_x, w_y, w_z])
 
     def set_noise(self):

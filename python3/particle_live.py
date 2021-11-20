@@ -92,6 +92,16 @@ def update_est(position,u,c,delta_t):
     position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
     return position_est
 
+def plot(plot_time, plot_pos, plot_vel, plot_u, plot_action):
+    plt.plot(plot_time, plot_pos)
+    plt.plot(plot_time, plot_vel)
+    plt.plot(plot_time, plot_u)
+    #plt.plot(plot_time, plot_action)
+    plt.xlabel('[s]')
+    plt.ylabel('[m]')
+    plt.savefig('particle.png')
+    plt.close()
+
 character = character_vicon()
 offset = 0
 scale = 1
@@ -105,6 +115,12 @@ est_z = ekf(character.position[2])
 path = []
 path_est = []
 not_done = True
+
+plot_time = []
+plot_pos = []
+plot_vel = []
+plot_u = []
+plot_action = []
 
 U = 0
 min_proj_dist = np.inf
@@ -157,9 +173,10 @@ while True:
         u = offset + llc.pid(action, rel_pos, rel_vel)*(1-offset)*scale
         call(u)
         if (not not_done) | (action < 0):
-
             u = 0
             call(u)
+            plot(plot_time, plot_pos, plot_vel, plot_u, plot_action)
+
             break
 
         stop = time.time()
@@ -169,6 +186,12 @@ while True:
 
         path.append(np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
         path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
+
+        plot_pos.append(character.position[2])
+        plot_vel.append(character.velocity[2])
+        plot_u.append(u)
+        plot_action.append(action*ceiling)
+        plot_time.append(time.time())
 
         U += abs(u*delta_t)
 

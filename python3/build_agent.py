@@ -220,9 +220,6 @@ class Agent:
             else:
                 print('ERROR: Please choose one of the available modes.')
 
-            if yaml_p['render']:
-                self.env.render(mode=True, action=action)
-
             data = {
             'action': action,
             'target': self.env.character.target.tolist(),
@@ -230,6 +227,9 @@ class Agent:
             'ceiling': self.env.character.ceiling*yaml_p['unit_z'] #in meters
             }
             self.send(data) #write action to file
+            
+            if yaml_p['render']:
+                self.env.render(mode=True, action=action)
 
             obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
             sum_r = sum_r + reward
