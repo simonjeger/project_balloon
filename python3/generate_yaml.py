@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info):
+def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -85,6 +85,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'overtime: -1' + '\n'
     text = text + 'bounds: -1' + '\n'
     text = text + 'min_proj_dist: ' + str(min_proj_dist) + '\n'
+    text = text + 'velocity: ' + str(velocity) + '\n'
     text = text + 'gradient: ' + str(gradient) + '\n'
     text = text + 'proj_action: ' + str(proj_action) + '\n'
 
@@ -135,17 +136,18 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                             for autoencoder in ['"HAE_avg"']:
                                 for window_size in [1]:
                                     for bottleneck in [8]:
-                                        for prop_mag_max in [0,0.5,1]:
-                                            for wind_info in [True]:
-                                                for world_est in [False, True]:
-                                                    #for gradient in np.array([0.1, 1, 10])*abs(step + action):
-                                                    for gradient in [0]:
-                                                        for proj_action in [0]:
-                                                            for replay_start_size in [10000]:
-                                                                for update_interval in [1]:
-                                                                    for minibatch_size in [1000]:
-                                                                        for repeat in range(global_buffer_N):
-                                                                            #global_buffer_nr = 0
-                                                                            write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info)
-                                                                            process_nr += 1
-                                                                        global_buffer_nr = process_nr
+                                        for velocity in [0]:
+                                            for prop_mag_max in [0,0.5,1]:
+                                                for wind_info in [True]:
+                                                    for world_est in [False, True]:
+                                                        #for gradient in np.array([0.1, 1, 10])*abs(step + action):
+                                                        for gradient in [0]:
+                                                            for proj_action in [0]:
+                                                                for replay_start_size in [10000]:
+                                                                    for update_interval in [1]:
+                                                                        for minibatch_size in [1000]:
+                                                                            for repeat in range(global_buffer_N):
+                                                                                #global_buffer_nr = 0
+                                                                                write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info)
+                                                                                process_nr += 1
+                                                                            global_buffer_nr = process_nr

@@ -143,6 +143,13 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
     N = 2
     for n in range(N):
         side = np.random.randint(0,3)
+        location = np.random.uniform(0.2,0.8)
+        height = np.random.uniform(0,1)*size_z
+        angle = np.random.uniform(-1,1)*np.pi/4
+        scale = np.random.uniform(0.3,1)
+
+        """
+        side = np.random.randint(0,3)
         location = np.random.uniform(0.48,0.52)
         height = np.random.uniform(0,1)*size_z
         angle = np.random.uniform(-1,1)*np.pi/64
@@ -156,6 +163,7 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
         elif n == 1:
             height = (3-offset)/yaml_p['unit_z']
             side = 3
+        """
 
         if side == 0:
             o_x = 0*size_x - abs(np.sin(angle))*18*0.1/unit_wind_y
@@ -195,5 +203,5 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
     wind = gaussian_filter(wind, sigma=0.2)
     return wind
 
-generate_world(500, 1, 'train')
+generate_world(1000, 1, 'train')
 generate_world(300, 1, 'test')

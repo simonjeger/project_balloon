@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
+from mpl_toolkits import mplot3d
 import pandas as pd
 from pathlib import Path
 import shutil
@@ -161,6 +162,68 @@ def plot_path():
 
     # Delete temp folder
     shutil.rmtree(path)
+
+def plot_3d_path():
+    # read in logger file as pandas
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    vmin = -1
+    vmax = 0
+
+    vn = 100
+    spectrum = np.linspace(vmin, vmax, vn)
+    colors = pl.cm.jet(np.linspace(0,1,vn))
+
+    step = 0
+    ax = plt.axes(projection='3d')
+
+    for j in range(int(df['epi_n'].dropna().iloc[-1])):
+        df_loc = df[df['epi_n'].isin([j])]
+        end = np.argmin(df_loc['min_proj_dist'])
+        df_loc_cut = df_loc.iloc[0:end+1]
+
+        c = np.argmin(np.abs(spectrum + df_loc['min_dist'].iloc[-1]))
+
+        # plot path in 3d
+        ax.plot3D(df_loc_cut['position_x'], df_loc_cut['position_y'], df_loc_cut['position_z'], color=colors[c])
+        if yaml_p['3d']:
+            ax.scatter3D(df_loc['target_x'], df_loc['target_y'], df_loc['target_z'], color='grey')
+        else:
+            ax.plot3D(np.linspace(0,yaml_p['size_x'], 10), [df_loc['target_y'].iloc[-1]]*10, [df_loc['target_z'].iloc[-1]]*10, color='grey')
+
+        # mark the border of the box
+        ax.set_xlim3d(0, yaml_p['size_x'])
+        ax.set_ylim3d(0, yaml_p['size_y'])
+        ax.set_zlim3d(0, yaml_p['size_z'])
+
+        step = df_loc['position_x'].index[0] + 1
+
+        #fig.suptitle(str(int(i/n_f*100)) + ' %')
+        #plt.subplots_adjust(wspace=0.5, hspace=1)
+
+    # Build folder structure if it doesn't exist yet
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/3dpath.png'
+    plt.show()
+    plt.savefig(path, dpi=150)
+    plt.close()
+
+def histogram():
+    # read in logger file as pandas
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    data = df['min_dist'].dropna()
+    plt.hist(data)
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/dist_hist.png'
+    plt.savefig(path, dpi=150)
+    plt.close()
 
 def write_overview():
     # read in logger file as pandas

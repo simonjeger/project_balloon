@@ -86,6 +86,7 @@ class balloon3d(Env):
                 self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
                 self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
                 self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
+                self.writer.add_scalar('min_proj_dist', self.character.min_proj_dist, self.step_n)
                 self.writer.add_scalar('action', action, self.step_n)
                 self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
 
@@ -97,6 +98,7 @@ class balloon3d(Env):
                 self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
                 self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
                 self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
+                self.writer.add_scalar('min_dist', self.character.min_dist, self.step_n)
                 self.writer.add_scalar('action', action, self.step_n)
 
                 self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
@@ -146,7 +148,7 @@ class balloon3d(Env):
         if in_bounds:
             # calculate reward
             if min_proj_dist <= 1:
-                reward_step = yaml_p['hit']
+                reward_step = yaml_p['hit']*(1 - min(yaml_p['velocity']*abs(self.character.velocity[2]*yaml_p['unit_z']),0.5)) #in m/s and saturate
                 success = 1
                 done = True
             else:

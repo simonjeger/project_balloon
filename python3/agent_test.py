@@ -1,4 +1,4 @@
-from analysis import plot_reward, plot_path, write_overview, clear
+from analysis import plot_reward, plot_path, plot_3d_path, histogram, write_overview, clear
 from build_environment import balloon3d
 from build_agent import Agent
 
@@ -31,9 +31,17 @@ ag.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) 
 
 with ag.agent.eval_mode():
     for i in range(yaml_p['num_epochs_test']):
+        if yaml_p['environment'] != 'python3':
+            start = 'no'
+            while start != 'yes':
+                print('write "yes" if you want to start the episode')
+                start = input()
+
         log = ag.run_epoch()
         print('epoch: ' + str(int(i)) + ' reward: ' + str(log))
 
 # analyse
 if yaml_p['overview']:
     write_overview()
+
+histogram()

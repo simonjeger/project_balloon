@@ -135,10 +135,14 @@ class character():
         self.path_est = [self.position.copy(), self.position.copy()]
 
         self.min_proj_dist = np.inf
+        self.min_dist = np.inf
+
         if yaml_p['3d']:
             self.min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+            self.min_dist = np.sqrt((self.residual[0]*self.render_ratio)**2 + (self.residual[1]*self.render_ratio)**2 + (self.residual[2])**2)
         else:
             self.min_proj_dist = np.sqrt((self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+            self.min_dist = np.sqrt((self.residual[1]*self.render_ratio)**2 + (self.residual[2])**2)
         #for move_particle (previous velocity is zero at the beginning)
         self.p_x = 0
         self.p_y = 0
@@ -162,7 +166,7 @@ class character():
         dist_bottom = self.height_above_ground()
         dist_top = self.dist_to_ceiling()
         rel_pos = dist_bottom / (dist_top + dist_bottom)
-        print(self.action - rel_pos)
+
         # update state
         self.set_state()
 
@@ -273,11 +277,14 @@ class character():
 
             if yaml_p['3d']:
                 min_proj_dist = np.sqrt((self.residual[0]*self.render_ratio/self.radius_xy)**2 + (self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+                min_dist = np.sqrt((self.residual[0]*self.render_ratio)**2 + (self.residual[1]*self.render_ratio)**2 + (self.residual[2])**2)*yaml_p['unit_z'] #in meters
             else:
                 min_proj_dist = np.sqrt((self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
+                min_dist = np.sqrt((self.residual[1]*self.render_ratio)**2 + (self.residual[2])**2)*yaml_p['unit_z'] #in meters
 
             if min_proj_dist < self.min_proj_dist:
                 self.min_proj_dist = min_proj_dist
+                self.min_dist = min_dist
 
             # update time
             self.t -= yaml_p['delta_t']/self.n
@@ -325,6 +332,7 @@ class character():
         self.path_est = np.array(data['path_est'])
 
         self.min_proj_dist = data['min_proj_dist']
+        self.min_dist = data['min_dist']
 
         # update time
         self.t -= yaml_p['delta_t']

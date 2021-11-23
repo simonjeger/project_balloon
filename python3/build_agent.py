@@ -227,7 +227,7 @@ class Agent:
             'ceiling': self.env.character.ceiling*yaml_p['unit_z'] #in meters
             }
             self.send(data) #write action to file
-            
+
             if yaml_p['render']:
                 self.env.render(mode=True, action=action)
 
@@ -259,6 +259,12 @@ class Agent:
                     self.writer.add_scalar('buffer_len', len(self.agent.replay_buffer.memory), self.step_n-1)
                     self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n-1)
                     self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n-1)
+
+                # stop the vicon system
+                data['action'] = -1
+                self.send(data)
+                data['action'] = 0
+                self.send(data)
 
                 self.epi_n += 1
                 break
