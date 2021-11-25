@@ -277,8 +277,8 @@ class balloon3d(Env):
             self.start = np.floor(self.start) + np.append(np.random.uniform(-1,1,2),[0]) #randomize start position without touching the z-axis
 
     def set_target(self):
-        border_x = self.size_x/(10*self.render_ratio)
-        border_y = self.size_y/(10*self.render_ratio)
+        border_x = self.size_x/10
+        border_y = self.size_y/10
         border_z = self.size_z/10
 
         if self.train_or_test == 'train':
@@ -289,12 +289,12 @@ class balloon3d(Env):
             self.seed +=1
 
         if yaml_target == 'random':
-            self.target = np.array([border_x + np.random.uniform()*(self.size_x - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),border_z + np.random.uniform()*(self.size_z - 2*border_z)], dtype=float)
+            self.target = np.array([border_x + np.random.uniform()*(self.size_x -1 - 2*border_x),border_y + np.random.uniform()*(self.size_y -1 - 2*border_y),border_z + np.random.uniform()*(self.size_z -1 - 2*border_z)], dtype=float)
         elif yaml_target == 'random_low':
-            self.target = np.array([border_x + np.random.uniform()*(self.size_x - 2*border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),0], dtype=float)
+            self.target = np.array([border_x + np.random.uniform()*(self.size_x -1 - 2*border_x),border_y + np.random.uniform()*(self.size_y -1 - 2*border_y),0], dtype=float)
         elif yaml_target == 'right':
-            self.target = np.array([self.start[0] + np.random.uniform()*(self.size_x - self.start[0] - border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),border_z + np.random.uniform()*(self.size_z - 2*border_z)], dtype=float)
+            self.target = np.array([self.start[0] + np.random.uniform()*(self.size_x -1 - self.start[0] - border_x),border_y + np.random.uniform()*(self.size_y -1 - 2*border_y),border_z + np.random.uniform()*(self.size_z -1 - 2*border_z)], dtype=float)
         elif yaml_target == 'right_low':
-            self.target = np.array([self.start[0] + np.random.uniform()*(self.size_x - self.start[0] - border_x),border_y + np.random.uniform()*(self.size_y - 2*border_y),0], dtype=float)
+            self.target = np.array([self.start[0] + np.random.uniform()*(self.size_x -1 - self.start[0] - border_x),border_y + np.random.uniform()*(self.size_y -1 - 2*border_y),0], dtype=float)
         else:
             self.target = np.array(yaml_target, dtype=float)

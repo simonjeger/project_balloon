@@ -6,6 +6,7 @@ import numpy as np
 import gym
 import matplotlib.pyplot as plt
 import torch
+import time
 
 import yaml
 import argparse
@@ -44,5 +45,6 @@ with ag.agent.eval_mode():
 if yaml_p['overview']:
     write_overview()
 
+time.sleep(10) #make sure the writing of tensorboard files is done
 plot_2d_path()
 histogram()

@@ -193,9 +193,9 @@ while True:
         if (character.position[1] < 0) | (character.position[1]/yaml_p['unit_xy'] > yaml_p['size_y'] - 1):
             print('y out of bounds')
             not_done = False
-        if (rel_pos < 0) | (rel_pos >= 1):
-            print('z out of bounds')
-            not_done = False
+        #if (rel_pos < 0) | (rel_pos >= 1):
+        #    print('z out of bounds')
+        #    not_done = False
         #if self.t < 0: #check if flight time is over
         #    not_done = False
         #if self.battery_level < 0: #check if battery is empty

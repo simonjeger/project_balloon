@@ -566,8 +566,8 @@ class Agent:
         vel_y = character.velocity[1]
 
         if p is None:
-            k_1 = 4 #5
-            k_2 = 8  #100
+            k_1 = 1.25 #4
+            k_2 = 0 #8
 
             v_min = 0.1
             v_max = 1
@@ -581,7 +581,8 @@ class Agent:
 
             p_2 = np.clip(1/abs(residual_y)*k_1,v_min,v_max)
             p_4 = np.clip(vel_y*residual_y*k_2,v_min,v_max)
-            p = np.clip(p_1*p_2*p_3*p_4,0,1)
+            #p = np.clip(p_1*p_2*p_3*p_4,0,1)
+            p = np.clip(p_1*p_2,0,1)
 
             p = np.round(p,0) #bang bang makes most sense here
             #p = 1 #switch to heuristic_without_wind
