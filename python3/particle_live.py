@@ -193,9 +193,9 @@ while True:
         if (character.position[1] < 0) | (character.position[1]/yaml_p['unit_xy'] > yaml_p['size_y'] - 1):
             print('y out of bounds')
             not_done = False
-        #if (rel_pos < 0) | (rel_pos >= 1):
-        #    print('z out of bounds')
-        #    not_done = False
+        if (rel_pos < 0) | (rel_pos >= 1):
+            print('z out of bounds')
+            not_done = False
         #if self.t < 0: #check if flight time is over
         #    not_done = False
         #if self.battery_level < 0: #check if battery is empty
@@ -229,8 +229,8 @@ while True:
 
         # find min_proj_dist
         render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
-        residual = target - np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]) #only 2d case!
-        min_proj_dist_prop = np.sqrt((residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2)
+        residual = target - np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
+        min_proj_dist_prop = np.sqrt((residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
         min_dist_prop = np.sqrt((residual[1]*render_ratio)**2 + (residual[2])**2)*yaml_p['unit_z']
         if min_proj_dist_prop < min_proj_dist:
             min_proj_dist = min_proj_dist_prop

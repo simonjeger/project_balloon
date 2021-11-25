@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
+from matplotlib.collections import LineCollection
+from matplotlib.colors import ListedColormap, BoundaryNorm
 from mpl_toolkits import mplot3d
 import pandas as pd
 from pathlib import Path
@@ -181,7 +183,7 @@ def plot_3d_path():
     step = 0
     ax = plt.axes(projection='3d')
 
-    for j in range(int(df['epi_n'].dropna().iloc[-1])):
+    for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
         df_loc = df[df['epi_n'].isin([j])]
         end = np.argmin(df_loc['min_proj_dist'])
         df_loc_cut = df_loc.iloc[0:end+1]
@@ -206,8 +208,51 @@ def plot_3d_path():
         #plt.subplots_adjust(wspace=0.5, hspace=1)
 
     # Build folder structure if it doesn't exist yet
-    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/3dpath.png'
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/3dpath.png'
+    plt.savefig(path, dpi=150)
     plt.show()
+    plt.close()
+
+def plot_2d_path():
+    # read in logger file as pandas
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    step = 0
+    fig, ax = plt.subplots(1, 1, sharex=True, sharey=True)
+    for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
+        df_loc = df[df['epi_n'].isin([j])]
+        end = np.argmin(df_loc['min_proj_dist'])
+        df_loc_cut = df_loc.iloc[0:end+1]
+
+        dydx = np.linspace(0,1,int(yaml_p['T']/yaml_p['delta_t']))  # first derivative
+
+        points = np.array([df_loc_cut['position_y'], df_loc_cut['position_z']]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+        # Create a continuous norm to map from data points to colors
+        norm = plt.Normalize(dydx.min(), dydx.max())
+        lc = LineCollection(segments, cmap='viridis', norm=norm)
+
+        # Set the values used for colormapping
+        lc.set_array(dydx)
+        #lc.set_linewidth(2)
+        line = ax.add_collection(lc)
+
+        ax.scatter(df_loc['target_y'],df_loc['target_z'], color='black')
+        ax.set_xlim(0,yaml_p['size_y'])
+        ax.set_ylim(0,yaml_p['size_z'])
+
+        step = df_loc['position_x'].index[0] + 1
+
+        #fig.suptitle(str(int(i/n_f*100)) + ' %')
+        #plt.subplots_adjust(wspace=0.5, hspace=1)
+
+    # Build folder structure if it doesn't exist yet
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/2dpath.png'
     plt.savefig(path, dpi=150)
     plt.close()
 
@@ -221,7 +266,7 @@ def histogram():
 
     data = df['min_dist'].dropna()
     plt.hist(data)
-    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/dist_hist.png'
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/dist_hist.png'
     plt.savefig(path, dpi=150)
     plt.close()
 

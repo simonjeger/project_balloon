@@ -263,6 +263,7 @@ class Agent:
                 # stop the vicon system
                 data['action'] = -1
                 self.send(data)
+                time.sleep(3) #so we are sure the system reads it
                 data['action'] = 0
                 self.send(data)
 
@@ -565,13 +566,21 @@ class Agent:
         vel_y = character.velocity[1]
 
         if p is None:
-            k_1 = 5 #5
-            k_2 = 100 #100
+            k_1 = 4 #5
+            k_2 = 8  #100
 
-            p_1 = 1/abs(residual_x)*k_1
-            p_2 = 1/abs(residual_y)*k_1
-            p_3 = np.clip(vel_x*residual_x*k_2,0.1,np.inf)
-            p_4 = np.clip(vel_y*residual_y*k_2,0.1,np.inf)
+            v_min = 0.1
+            v_max = 1
+
+            if yaml_p['3d']:
+                p_1 = np.clip(1/abs(residual_x)*k_1,v_min,v_max)
+                p_3 = np.clip(vel_x*residual_x*k_2,v_min,v_max)
+            else:
+                p_1 = v_max
+                p_3 = v_max
+
+            p_2 = np.clip(1/abs(residual_y)*k_1,v_min,v_max)
+            p_4 = np.clip(vel_y*residual_y*k_2,v_min,v_max)
             p = np.clip(p_1*p_2*p_3*p_4,0,1)
 
             p = np.round(p,0) #bang bang makes most sense here

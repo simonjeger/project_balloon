@@ -67,7 +67,7 @@ class character():
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 0.04 #kg
             self.delta_f = 0.1 #N
-            self.delay = 0.5 #s
+            self.delay = 0.49 #s
             self.ascent_consumption = 5 #W
             self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W
@@ -566,8 +566,13 @@ class character():
         proj = []
         for i in range(res):
             pos_z = i/res*self.size_z
-            wind = self.interpolate(self.world_squished,position=[position[0], position[1], pos_z])[0:2]
-            residual = (target - position)[0:2]
+
+            if yaml_p['3d']:
+                wind = self.interpolate(self.world_squished,position=[position[0], position[1], pos_z])[0:2]
+                residual = (target - position)[0:2]
+            else:
+                wind = self.interpolate(self.world_squished,position=[position[0], position[1], pos_z])[1:2]
+                residual = (target - position)[1:2]
             if np.linalg.norm(residual) != 0:
                 proj.append(np.dot(wind, residual)/np.linalg.norm(residual)**2)
             else:

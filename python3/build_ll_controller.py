@@ -15,6 +15,20 @@ class ll_controler():
         self.error_prev = 0
         self.error_int = 0
 
+        if yaml_p['balloon'] == 'indoor_balloon':
+            if yaml_p['environment'] == 'python3':
+                self.k_p = 2.3
+                self.k_d = 50
+                self.k_i = 0
+            elif yaml_p['environment'] == 'vicon':
+                self.k_p = 8 #8
+                self.k_d = 50 #50
+                self.k_i = 0 #0
+            else:
+                self.k_p = 20 #20
+                self.k_d = 120 #120
+                self.k_i = 0 #0
+
     def pid(self, set, position, velocity):
         error = set - position
         self.error_int += error
@@ -22,21 +36,7 @@ class ll_controler():
         velocity = error - self.error_prev
         self.error_prev = error
 
-        if yaml_p['balloon'] == 'indoor_balloon':
-            if yaml_p['environment'] == 'python3':
-                k_p = 2.3
-                k_d = 50
-                k_i = 0
-            elif yaml_p['environment'] == 'vicon':
-                k_p = 8 #8
-                k_d = 50 #50
-                k_i = 0 #0
-        else:
-            k_p = 20 #20
-            k_d = 120 #120
-            k_i = 0 #0
-
-        u = k_p*error + k_d*velocity + k_i*self.error_int
+        u = self.k_p*error + self.k_d*velocity + self.k_i*self.error_int
         u = np.clip(u,-1,1)
         return u
 

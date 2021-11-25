@@ -1,4 +1,4 @@
-from analysis import plot_reward, plot_path, plot_3d_path, histogram, write_overview, clear
+from analysis import plot_reward, plot_path, plot_2d_path, plot_3d_path, histogram, write_overview, clear
 from build_environment import balloon3d
 from build_agent import Agent
 
@@ -44,4 +44,5 @@ with ag.agent.eval_mode():
 if yaml_p['overview']:
     write_overview()
 
+plot_2d_path()
 histogram()
