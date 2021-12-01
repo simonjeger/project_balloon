@@ -98,9 +98,10 @@ def plot_pid(plot_time, plot_pos_z, plot_vel, plot_u, plot_action):
     plt.plot(plot_time, plot_pos_z)
     plt.plot(plot_time, plot_vel)
     plt.plot(plot_time, plot_u)
-    #plt.plot(plot_time, plot_action)
+    plt.plot(plot_time, plot_action)
     plt.xlabel('[s]')
     plt.ylabel('[m]')
+    plt.title('max velocity: ' + str(np.round(np.max(plot_vel),2)) + 'm/s')
     plt.savefig('debug_pid.png')
     plt.close()
 
@@ -129,9 +130,20 @@ def plot(plot_pos_x, plot_pos_y, plot_pos_z, target, plot_residual):
     plt.show()
     plt.close()
 
+def tuning(delta_t):
+    if delta_t < 2:
+        action = 0
+    elif delta_t < 22:
+        action = 0.8
+    elif delta_t < 40:
+        action = 0.2
+    else:
+        action = -1
+    return action
+
 character = character_vicon()
 offset = 0
-scale = 1
+scale = 0.7
 
 llc = ll_controler()
 
@@ -155,6 +167,7 @@ plot_residual = np.inf
 U = 0
 min_proj_dist = np.inf
 
+global_start = time.time()
 while True:
     start = time.time()
 
@@ -201,12 +214,14 @@ while True:
         #if self.battery_level < 0: #check if battery is empty
         #    not_done = False
 
+        action = tuning(time.time() - global_start)
+
         u = offset + llc.pid(action, rel_pos, rel_vel)*(1-offset)*scale
         call(u)
         if (not not_done) | (action < 0):
             u = 0
             call(u)
-            #plot_pid(plot_time, plot_pos_z, plot_vel, plot_u, plot_action)
+            plot_pid(plot_time, plot_pos_z, plot_vel, plot_u, plot_action)
             #plot(plot_pos_x, plot_pos_y, plot_pos_z, target, plot_residual)
 
         stop = time.time()

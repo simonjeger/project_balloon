@@ -21,9 +21,9 @@ class ll_controler():
                 self.k_d = 50
                 self.k_i = 0
             elif yaml_p['environment'] == 'vicon':
-                self.k_p = 8 #8
-                self.k_d = 50 #50
-                self.k_i = 0 #0
+                self.k_p = 8
+                self.k_d = 67
+                self.k_i = 0.02
             else:
                 self.k_p = 20 #20
                 self.k_d = 120 #120

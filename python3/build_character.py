@@ -65,14 +65,14 @@ class character():
             self.c_w = 0.45
 
         elif yaml_p['balloon'] == 'indoor_balloon':
-            self.mass_structure = 0.04 #kg
-            self.delta_f = 0.1 #N
-            self.delay = 0.49 #s
+            self.mass_structure = 0.049 #kg
+            self.delta_f = 0.06 #N
+            self.delay = 0.3 #s
             self.ascent_consumption = 5 #W
             self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W
             self.battery_capacity = 1798 #Ws
-            self.c_w = 0.705 #through experiment
+            self.c_w = 0.6714 #through experiment
         else:
             print('ERROR: please choose one of the available balloons')
 

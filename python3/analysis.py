@@ -11,6 +11,7 @@ import imageio
 import os
 import torch
 from sklearn.linear_model import LinearRegression
+from scipy.stats import beta
 
 from utils.load_tf import tflog2pandas, many_logs2pandas
 
@@ -180,32 +181,43 @@ def plot_3d_path():
     spectrum = np.linspace(vmin, vmax, vn)
     colors = pl.cm.jet(np.linspace(0,1,vn))
 
-    step = 0
     ax = plt.axes(projection='3d')
 
+    d = 0
     for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
+
         df_loc = df[df['epi_n'].isin([j])]
         end = np.argmin(df_loc['min_proj_dist'])
         df_loc_cut = df_loc.iloc[0:end+1]
+        draw = True
+        if len(df_loc) < 10:
+            draw = False
+        if (min(df_loc['position_x']) < 0) | (max(df_loc['position_x']) > yaml_p['size_x'] - 1):
+            draw = False
+        if len(df_loc['min_dist'].dropna()) == 0:
+            draw = False
+        if d > 9:
+            draw = False
 
-        c = np.argmin(np.abs(spectrum + df_loc['min_dist'].iloc[-1]))
+        if draw:
+            c = np.argmin(np.abs(spectrum + df_loc['min_dist'].iloc[-1]))
 
-        # plot path in 3d
-        ax.plot3D(df_loc_cut['position_x'], df_loc_cut['position_y'], df_loc_cut['position_z'], color=colors[c])
-        if yaml_p['3d']:
-            ax.scatter3D(df_loc['target_x'], df_loc['target_y'], df_loc['target_z'], color='grey')
-        else:
-            ax.plot3D(np.linspace(0,yaml_p['size_x'], 10), [df_loc['target_y'].iloc[-1]]*10, [df_loc['target_z'].iloc[-1]]*10, color='grey')
+            # plot path in 3d
+            ax.plot3D(df_loc_cut['position_x'], df_loc_cut['position_y'], df_loc_cut['position_z'], color=colors[c])
+            if yaml_p['3d']:
+                ax.scatter3D(df_loc['target_x'], df_loc['target_y'], df_loc['target_z'], color='grey')
+            else:
+                ax.plot3D(np.linspace(0,yaml_p['size_x'], 10), [df_loc['target_y'].iloc[-1]]*10, [df_loc['target_z'].iloc[-1]]*10, color='grey')
 
-        # mark the border of the box
-        ax.set_xlim3d(0, yaml_p['size_x'])
-        ax.set_ylim3d(0, yaml_p['size_y'])
-        ax.set_zlim3d(0, yaml_p['size_z'])
+            # mark the border of the box
+            ax.set_xlim3d(0, yaml_p['size_x'] - 1)
+            ax.set_ylim3d(0, yaml_p['size_y'] - 1)
+            ax.set_zlim3d(0, yaml_p['size_z'] - 1)
 
-        step = df_loc['position_x'].index[0] + 1
+            d += 1
 
-        #fig.suptitle(str(int(i/n_f*100)) + ' %')
-        #plt.subplots_adjust(wspace=0.5, hspace=1)
+            #fig.suptitle(str(int(i/n_f*100)) + ' %')
+            #plt.subplots_adjust(wspace=0.5, hspace=1)
 
     # Build folder structure if it doesn't exist yet
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/3dpath.png'
@@ -221,32 +233,47 @@ def plot_2d_path():
         name_list[i] = path_logger + name_list[i]
     df = many_logs2pandas(name_list)
 
-    step = 0
     fig, ax = plt.subplots(1, 1, sharex=True, sharey=True)
+
+    d = 0
     for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
+
         df_loc = df[df['epi_n'].isin([j])]
         end = np.argmin(df_loc['min_proj_dist'])
+
         df_loc_cut = df_loc.iloc[0:end+1]
 
-        dydx = np.linspace(0,1,int(yaml_p['T']/yaml_p['delta_t']))  # first derivative
+        draw = True
+        if len(df_loc) < 10:
+            draw = False
+        if (min(df_loc['position_x']) < 0) | (max(df_loc['position_x']) > yaml_p['size_x'] - 1):
+            draw = False
+        if len(df_loc['min_dist'].dropna()) == 0:
+            draw = False
+        if d > 9:
+            draw = False
 
-        points = np.array([df_loc_cut['position_y'], df_loc_cut['position_z']]).T.reshape(-1, 1, 2)
-        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        if draw:
+            dydx = np.linspace(0,1,int(yaml_p['T']/yaml_p['delta_t']))  # first derivative
 
-        # Create a continuous norm to map from data points to colors
-        norm = plt.Normalize(dydx.min(), dydx.max())
-        lc = LineCollection(segments, cmap='viridis', norm=norm)
+            points = np.array([df_loc_cut['position_y'], df_loc_cut['position_z']]).T.reshape(-1, 1, 2)
+            segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
-        # Set the values used for colormapping
-        lc.set_array(dydx)
-        #lc.set_linewidth(2)
-        line = ax.add_collection(lc)
+            # Create a continuous norm to map from data points to colors
+            norm = plt.Normalize(dydx.min(), dydx.max())
+            lc = LineCollection(segments, cmap='viridis', norm=norm)
 
-        ax.scatter(df_loc['target_y'],df_loc['target_z'], color='black')
-        ax.set_xlim(0,yaml_p['size_y'])
-        ax.set_ylim(0,yaml_p['size_z'])
+            # Set the values used for colormapping
+            lc.set_array(dydx)
+            #lc.set_linewidth(2)
+            line = ax.add_collection(lc)
+            ax.scatter(df_loc_cut['position_y'].iloc[-1], df_loc_cut['position_z'].iloc[-1], c=end, vmin=0, vmax=int(yaml_p['T']/yaml_p['delta_t']), cmap='viridis')
+            ax.scatter(df_loc['target_y'],df_loc['target_z'], color='red', zorder=1000) #zorder so the target is always above everything else
 
-        step = df_loc['position_x'].index[0] + 1
+            ax.set_xlim(0,yaml_p['size_y'] - 1)
+            ax.set_ylim(0,yaml_p['size_z'] - 1)
+
+            d += 1
 
         #fig.suptitle(str(int(i/n_f*100)) + ' %')
         #plt.subplots_adjust(wspace=0.5, hspace=1)
@@ -264,8 +291,46 @@ def histogram():
         name_list[i] = path_logger + name_list[i]
     df = many_logs2pandas(name_list)
 
-    data = df['min_dist'].dropna()
-    plt.hist(data)
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    fig, ax = plt.subplots(1, 1, sharex=True, sharey=True)
+
+    d = 0
+    data = []
+    for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
+        df_loc = df[df['epi_n'].isin([j])]
+        draw = True
+        if len(df_loc) < 10:
+            draw = False
+        if (min(df_loc['position_x']) < 0) | (max(df_loc['position_x']) > yaml_p['size_x'] - 1):
+            draw = False
+        if len(df_loc['min_dist'].dropna()) == 0:
+            draw = False
+        if d > 9:
+            draw = False
+
+        if draw:
+            data.append(df_loc['min_dist'].dropna().iloc[-1])
+            d += 1
+
+    ax.hist(data,range=(0,1),bins=10) #at the moment between 0 and 1m. It's important that it always normed between 0 and 1
+    ax.set_xlabel('min distance [m]')
+    ax.set_ylabel('histogram')
+
+    # fit beta function
+    mean, var, skew, kurt = beta.fit(data)
+    x = np.linspace(0, 1, 100)
+    ax2 = ax.twinx()
+    #ax2.plot(x, beta.pdf(x,mean,var,skew,kurt), color='red')
+    ax2.plot(x, beta.pdf(x,mean,var), color='red')
+    ax2.set_ylabel('beta pdf', color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
+    ax2.set_title('alpha: ' + str(np.round(mean,2)) + ' beta: ' + str(np.round(var,2)), color='red')
+
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/dist_hist.png'
     plt.savefig(path, dpi=150)
     plt.close()

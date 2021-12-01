@@ -9,6 +9,6 @@ import shutil
 
 # analyse
 plot_2d_path()
-plot_3d_path()
 histogram()
+plot_3d_path()
 #disp_overview()
