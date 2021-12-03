@@ -1,4 +1,4 @@
-from analysis import plot_reward, plot_path, plot_2d_path, plot_3d_path, histogram, write_overview, clear
+from analysis import plot_reward, plot_path, plot_2d_path, plot_3d_path, histogram, tuning, write_overview, clear
 from build_environment import balloon3d
 from build_agent import Agent
 
@@ -41,10 +41,12 @@ with ag.agent.eval_mode():
         log = ag.run_epoch()
         print('epoch: ' + str(int(i)) + ' reward: ' + str(log))
 
-# analyse
+time.sleep(10) #make sure the writing of tensorboard files is done
 if yaml_p['overview']:
     write_overview()
 
-time.sleep(10) #make sure the writing of tensorboard files is done
 plot_2d_path()
 histogram()
+
+if yaml_p['mode'] == 'tuning':
+    tuning()

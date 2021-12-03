@@ -80,48 +80,6 @@ class balloon3d(Env):
         self.reward_list.append(self.reward_step)
 
         if (not skip) & (self.writer is not None):
-            # logger
-            if (self.step_n % yaml_p['log_frequency'] == 0) & (not done):
-                self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
-                self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-                self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
-                self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
-                self.writer.add_scalar('min_proj_dist', self.character.min_proj_dist, self.step_n)
-                self.writer.add_scalar('action', action, self.step_n)
-                self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
-
-                if yaml_p['log_world_est_error']:
-                    self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
-            if done:
-                self.writer.add_scalar('step_n', self.step_n , self.step_n)
-                self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
-                self.writer.add_scalar('position_x', self.character.position[0], self.step_n)
-                self.writer.add_scalar('position_y', self.character.position[1], self.step_n)
-                self.writer.add_scalar('position_z', self.character.position[2], self.step_n)
-                self.writer.add_scalar('min_dist', self.character.min_dist, self.step_n)
-                self.writer.add_scalar('action', action, self.step_n)
-
-                self.writer.add_scalar('target_x', self.character.target[0], self.step_n)
-                self.writer.add_scalar('target_y', self.character.target[1], self.step_n)
-                self.writer.add_scalar('target_z', self.character.target[2], self.step_n)
-
-                self.writer.add_scalar('size_x', self.size_x , self.step_n)
-                self.writer.add_scalar('size_y', self.size_y , self.step_n)
-                self.writer.add_scalar('size_z', self.size_z , self.step_n)
-
-                self.writer.add_scalar('reward_step', self.reward_step, self.step_n)
-                self.writer.add_scalar('reward_epi', self.reward_epi, self.step_n)
-
-                if yaml_p['log_world_est_error']:
-                    self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
-
-                if self.reward_roll_out is not None:
-                    self.writer.add_scalar('reward_epi_norm', self.reward_epi/self.reward_roll_out, self.step_n)
-                else:
-                    self.writer.add_scalar('reward_epi_norm', 0, self.step_n)
-
-                self.writer.add_scalar('success_n', self.success_n, self.step_n)
-
             self.step_n += 1
             if done:
                 self.epi_n += 1

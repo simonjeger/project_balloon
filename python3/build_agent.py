@@ -217,21 +217,75 @@ class Agent:
                 action_RL = self.agent.act(obs) #this is only so it works in training mode
                 action = self.act_simple(self.env.character, action_RL[0])
 
+            elif yaml_p['mode'] == 'tuning':
+                _ = self.agent.act(obs) #this is only so it works in training mode
+                action = self.tuning()
+                action_RL = action #this is only so it works with HER
+
             else:
                 print('ERROR: Please choose one of the available modes.')
-
-            data = {
-            'action': action,
-            'target': self.env.character.target.tolist(),
-            'c': self.env.character.c,
-            'ceiling': self.env.character.ceiling*yaml_p['unit_z'] #in meters
-            }
-            self.send(data) #write action to file
 
             if yaml_p['render']:
                 self.env.render(mode=True, action=action)
 
+            # logger
+            if self.writer is not None:
+                if (self.step_n % yaml_p['log_frequency'] == 0):
+                    self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
+                    self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
+                    self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
+                    self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
+                    self.writer.add_scalar('t', self.env.character.t, self.step_n)
+                    self.writer.add_scalar('min_proj_dist', self.env.character.min_proj_dist, self.step_n)
+                    self.writer.add_scalar('action', action, self.step_n)
+                    self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
+
+                    if yaml_p['log_world_est_error']:
+                        self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
+
+            # do the actual step
             obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
+
+            # logger
+            if self.writer is not None:
+                if done:
+                    self.writer.add_scalar('step_n', self.step_n , self.step_n)
+                    self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
+                    self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
+                    self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
+                    self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
+                    self.writer.add_scalar('min_dist', self.env.character.min_dist, self.step_n)
+                    self.writer.add_scalar('action', action, self.step_n)
+
+                    self.writer.add_scalar('target_x', self.env.character.target[0], self.step_n)
+                    self.writer.add_scalar('target_y', self.env.character.target[1], self.step_n)
+                    self.writer.add_scalar('target_z', self.env.character.target[2], self.step_n)
+
+                    self.writer.add_scalar('size_x', self.env.size_x , self.step_n)
+                    self.writer.add_scalar('size_y', self.env.size_y , self.step_n)
+                    self.writer.add_scalar('size_z', self.env.size_z , self.step_n)
+
+                    self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
+                    self.writer.add_scalar('reward_epi', self.env.reward_epi, self.step_n)
+
+                    if yaml_p['log_world_est_error']:
+                        self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
+
+                    if self.env.reward_roll_out is not None:
+                        self.writer.add_scalar('reward_epi_norm', self.env.reward_epi/self.env.reward_roll_out, self.step_n)
+                    else:
+                        self.writer.add_scalar('reward_epi_norm', 0, self.step_n)
+
+                    self.writer.add_scalar('success_n', self.env.success_n, self.step_n)
+
+                    if (len(self.agent.q_func1_loss_record) > 0):
+                        self.writer.add_scalar('q_func1_loss', self.agent.q_func1_loss_record[-1], self.step_n)
+                        self.writer.add_scalar('q_func2_loss', self.agent.q_func2_loss_record[-1], self.step_n)
+                    self.writer.add_scalar('buffer_len', len(self.agent.replay_buffer.memory), self.step_n)
+                    self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n)
+                    self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n)
+
+
             sum_r = sum_r + reward
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
             self.step_n += 1
@@ -251,21 +305,17 @@ class Agent:
                 if yaml_p['render']:
                     self.env.render(mode=True)
 
-                # logger
-                if self.writer is not None:
-                    if (len(self.agent.q_func1_loss_record) > 0):
-                        self.writer.add_scalar('q_func1_loss', self.agent.q_func1_loss_record[-1], self.step_n-1)
-                        self.writer.add_scalar('q_func2_loss', self.agent.q_func2_loss_record[-1], self.step_n-1)
-                    self.writer.add_scalar('buffer_len', len(self.agent.replay_buffer.memory), self.step_n-1)
-                    self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n-1)
-                    self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n-1)
-
                 # stop the vicon system
-                data['action'] = -1
-                self.send(data)
+                data = {
+                'action': -1,
+                'target': [-10,-10,-10],
+                'c': 1,
+                'ceiling': 1
+                }
+                self.env.character.send(data)
                 time.sleep(3) #so we are sure the system reads it
                 data['action'] = 0
-                self.send(data)
+                self.env.character.send(data)
 
                 self.epi_n += 1
                 break
@@ -566,7 +616,7 @@ class Agent:
         vel_y = character.velocity[1]
 
         if p is None:
-            k_1 = 0.4 #for vicon 0.8 for sim
+            k_1 = 0.8 #0.4 for vicon 0.8 for sim
             k_2 = 0
 
             v_min = 0.1
@@ -629,8 +679,13 @@ class Agent:
                 exit()
         return action
 
-    def send(self, data):
-        path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
-        with open(path + 'action.txt', 'w') as f:
-            f.write(json.dumps(data))
-        return data
+    def tuning(self):
+        t = np.round(yaml_p['T'] - self.env.character.t,1) #because in simulation there is a slight rounding rest because of the discritization
+        if t < 20:
+            action = 0.8
+        elif t < 38:
+            action = 0.2
+        else:
+            action = -1
+        action = 0.165
+        return action

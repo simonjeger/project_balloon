@@ -197,7 +197,7 @@ class HAE():
         mean_z = data[-2,:,:]
         sig_xz = data[-1,:,:]
 
-        idx = np.arange(0,self.size_z, self.box_size)
+        idx = np.arange(0, self.size_z, self.box_size)
         if self.size_z%self.box_size != 0:
             idx = idx[:-1]
         pred = np.zeros((len(idx)*2)) # two different wind directions

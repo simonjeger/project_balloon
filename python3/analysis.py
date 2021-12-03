@@ -283,6 +283,65 @@ def plot_2d_path():
     plt.savefig(path, dpi=150)
     plt.close()
 
+def tuning(directory_compare=None):
+    # read in logger file as pandas
+    path_logger_list = []
+    if directory_compare is not None:
+        path_logger_list.append(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/' + directory_compare + '/')
+    path_logger_list.append(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/')
+
+    fig, axs = plt.subplots(3, 1, sharex=True, sharey=True)
+    for p in range(len(path_logger_list)):
+        path_logger = path_logger_list[p]
+        name_list = os.listdir(path_logger)
+        for i in range(len(name_list)):
+            name_list[i] = path_logger + name_list[i]
+        df = many_logs2pandas(name_list)
+
+        cmap = plt.cm.get_cmap('winter')
+
+        iter_max = int(df['epi_n'].dropna().iloc[-1]) + 1
+
+        for j in range(iter_max):
+            df_loc = df[df['epi_n'].isin([j])]
+            end = np.argmin(df_loc['action'])
+            end = np.argmin(abs(np.gradient(df_loc['position_x'])))
+            df_loc_cut = df_loc.iloc[0:end]
+            time = yaml_p['T'] - df_loc_cut['t']
+
+            if p == 0:
+                if j == 0: #beacuse when tuning it's always the same action cycle
+                    axs[2].plot(time, df_loc_cut['action']*yaml_p['size_z']*yaml_p['unit_z'], color='orange', linewidth=0.5)
+                color=cmap(1-j/iter_max)
+            else:
+                color='red'
+            axs[0].plot(time, df_loc_cut['position_x']*yaml_p['unit_xy'], color=color, linewidth=0.5)
+            axs[1].plot(time, df_loc_cut['position_y']*yaml_p['unit_xy'], color=color, linewidth=0.5)
+            axs[2].plot(time, df_loc_cut['position_z']*yaml_p['unit_z'], color=color, linewidth=0.5)
+
+            #fig.suptitle(str(int(i/n_f*100)) + ' %')
+            #plt.subplots_adjust(wspace=0.5, hspace=1)
+
+    for a in range(3):
+        axs[a].set_xlim(0,yaml_p['T'])
+        axs[a].set_ylim(0,yaml_p['size_z']*yaml_p['unit_z'])
+        axs[a].set_xlabel('time [s]')
+
+        axs[a].grid(which='minor', alpha=0.2, linewidth=0.5)
+        axs[a].grid(which='major', alpha=0.5, linewidth=0.5)
+
+        if a == 0:
+            axs[a].set_ylabel('position x [m]')
+        elif a == 1:
+            axs[a].set_ylabel('position y [m]')
+        else:
+            axs[a].set_ylabel('position z [m]')
+
+    # Build folder structure if it doesn't exist yet
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/tuning.png'
+    plt.savefig(path, dpi=800)
+    plt.close()
+
 def histogram():
     # read in logger file as pandas
     path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'

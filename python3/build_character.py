@@ -67,7 +67,7 @@ class character():
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 0.049 #kg
             self.delta_f = 0.06 #N
-            self.delay = 0.3 #s
+            self.delay = 0.6 #s
             self.ascent_consumption = 5 #W
             self.descent_consumption = 2.5 #W
             self.rest_consumption = 0.5 #W
@@ -75,10 +75,6 @@ class character():
             self.c_w = 0.6714 #through experiment
         else:
             print('ERROR: please choose one of the available balloons')
-
-        #check delay
-        if self.delay >= yaml_p['delta_t']:
-            print('ERROR: please choose a smaller delay or a bigger delta_t')
 
         # initialize autoencoder object
         if yaml_p['autoencoder'][0:3] == 'HAE':
@@ -92,6 +88,7 @@ class character():
 
         self.battery_level = 1
         self.action = 0.01
+        self.action_hist = [self.action]
         self.diameter = 0
 
         self.world = world
@@ -153,8 +150,8 @@ class character():
         self.position_est_old = self.position_est
 
     def update(self, action, world):
-        self.old_action = self.action
         self.action = action
+        self.action_hist.append(action)
         self.world = world
         self.world_squished = squish(self.world, self.ceiling)
 
@@ -229,10 +226,12 @@ class character():
         not_done = True
 
         for n in range(self.n):
-            if n*yaml_p['delta_t_physics'] < self.delay:
-                action = self.old_action
-            else:
-                action = self.action
+            lag_int = int(self.delay/yaml_p['delta_t'])
+            lag_rest = self.delay - lag_int*yaml_p['delta_t']
+            if lag_rest < n*yaml_p['delta_t_physics']:
+                lag_int -= 1
+            lag_int = np.clip(lag_int + 2,0,len(self.action_hist)) #extensively tested, I know it looks complicated, but it works
+            action = self.action_hist[-lag_int]
 
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
@@ -315,6 +314,14 @@ class character():
     def live_particle(self):
         self.U = 0
         not_done = True
+
+        data = {
+        'action': self.action,
+        'target': self.target.tolist(),
+        'c': self.c,
+        'ceiling': self.ceiling*yaml_p['unit_z'] #in meters
+        }
+        self.send(data) #write action to file
 
         #timing of the when to receive the data from the hardware
         while time.time() - self.real_time < yaml_p['delta_t']:
@@ -459,7 +466,7 @@ class character():
         w_x /= yaml_p['unit_xy']
         w_y /= yaml_p['unit_xy']
         w_z /= yaml_p['unit_z']
-#
+
         return np.array([w_x, w_y, w_z])
 
     def set_noise(self):
@@ -594,17 +601,27 @@ class character():
         c = np.max([self.size_x,self.size_y])/4
         return x/(abs(x) + c)
 
+    def send(self, data):
+        path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
+        with open(path + 'action.txt', 'w') as f:
+            f.write(json.dumps(data))
+        return data
+
     def receive(self):
         successful = False
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
         while not os.path.isfile(path + 'data.txt'):
             print('waiting for the hardware to publish')
             time.sleep(1)
+        start = time.time()
+        corrupt = False
         while not successful:
             with open(path + 'data.txt') as json_file:
                 try:
                     data = json.load(json_file)
                     successful = True
                 except:
-                    print('data corrupted, will try again')
+                    corrupt = True
+        if corrupt:
+            print('data corrupted, lag of ' + str(np.round(time.time() - start,3)) + '[s]')
         return data

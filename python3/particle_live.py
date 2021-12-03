@@ -78,13 +78,17 @@ def send(data):
 def receive():
     successful = False
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
+    start = time.time()
+    corrupt = False
     while not successful:
         with open(path + 'action.txt') as json_file:
             try:
                 data = json.load(json_file)
                 successful = True
             except:
-                print('data corrupted, will try again')
+                corrupt = True
+    if corrupt:
+        print('data corrupted, lag of ' + str(np.round(time.time() - start,3)) + '[s]')
     return data
 
 def update_est(position,u,c,delta_t):
@@ -142,7 +146,7 @@ def tuning(delta_t):
     return action
 
 character = character_vicon()
-offset = 0
+offset = 0.16
 scale = 0.7
 
 llc = ll_controler()
@@ -214,9 +218,12 @@ while True:
         #if self.battery_level < 0: #check if battery is empty
         #    not_done = False
 
-        action = tuning(time.time() - global_start)
+        #action = tuning(time.time() - global_start)
+        u_raw = llc.pid(action, rel_pos, rel_vel)
+        if yaml_p['mode'] == 'tuning':
+            print(u_raw)
+        u = offset + u_raw*(1-offset)*scale
 
-        u = offset + llc.pid(action, rel_pos, rel_vel)*(1-offset)*scale
         call(u)
         if (not not_done) | (action < 0):
             u = 0
