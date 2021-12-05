@@ -227,12 +227,14 @@ class balloon3d(Env):
             np.random.seed(self.seed)
             self.seed +=1
 
-        if (yaml_start == 'center') | (yaml_start == 'center_determ'):
+        if yaml_start == 'center':
+            self.start = np.array([(self.size_x - 1)/2,(self.size_y - 1)/2,0], dtype=float)
+            self.start = np.floor(self.start) + np.append(np.random.uniform(-1,1,2),[0]) #randomize start position without touching the z-axis
+
+        elif yaml_start == 'center_determ':
             self.start = np.array([(self.size_x - 1)/2,(self.size_y - 1)/2,0], dtype=float)
         else:
             self.start = np.array(yaml_start, dtype=float)
-        if yaml_start != 'center_determ':
-            self.start = np.floor(self.start) + np.append(np.random.uniform(-1,1,2),[0]) #randomize start position without touching the z-axis
 
     def set_target(self):
         border_x = self.size_x/10

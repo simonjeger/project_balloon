@@ -8,8 +8,8 @@ from pathlib import Path
 import shutil
 
 # analyse
-#tuning('logger_test_pid_vicon')
-tuning()
+tuning('logger_test_wind_vicon2')
+#tuning()
 #plot_2d_path()
 #histogram()
 #plot_3d_path()

@@ -298,7 +298,8 @@ def tuning(directory_compare=None):
             name_list[i] = path_logger + name_list[i]
         df = many_logs2pandas(name_list)
 
-        cmap = plt.cm.get_cmap('winter')
+        cmap0 = plt.cm.get_cmap('winter')
+        cmap1 = plt.cm.get_cmap('autumn')
 
         iter_max = int(df['epi_n'].dropna().iloc[-1]) + 1
 
@@ -306,18 +307,19 @@ def tuning(directory_compare=None):
             df_loc = df[df['epi_n'].isin([j])]
             end = np.argmin(df_loc['action'])
             end = np.argmin(abs(np.gradient(df_loc['position_x'])))
+            end = 100
             df_loc_cut = df_loc.iloc[0:end]
             time = yaml_p['T'] - df_loc_cut['t']
 
             if p == 0:
                 if j == 0: #beacuse when tuning it's always the same action cycle
-                    axs[2].plot(time, df_loc_cut['action']*yaml_p['size_z']*yaml_p['unit_z'], color='orange', linewidth=0.5)
-                color=cmap(1-j/iter_max)
+                    axs[2].plot(time, df_loc_cut['action']*yaml_p['size_z']*yaml_p['unit_z'], color='orange', linewidth=0.2)
+                color=cmap0(1-j/iter_max)
             else:
-                color='red'
-            axs[0].plot(time, df_loc_cut['position_x']*yaml_p['unit_xy'], color=color, linewidth=0.5)
-            axs[1].plot(time, df_loc_cut['position_y']*yaml_p['unit_xy'], color=color, linewidth=0.5)
-            axs[2].plot(time, df_loc_cut['position_z']*yaml_p['unit_z'], color=color, linewidth=0.5)
+                color=cmap1(1-j/iter_max)
+            axs[0].plot(time, df_loc_cut['position_x']*yaml_p['unit_xy'], color=color, linewidth=0.2)
+            axs[1].plot(time, df_loc_cut['position_y']*yaml_p['unit_xy'], color=color, linewidth=0.2)
+            axs[2].plot(time, df_loc_cut['position_z']*yaml_p['unit_z'], color=color, linewidth=0.2)
 
             #fig.suptitle(str(int(i/n_f*100)) + ' %')
             #plt.subplots_adjust(wspace=0.5, hspace=1)
@@ -339,7 +341,7 @@ def tuning(directory_compare=None):
 
     # Build folder structure if it doesn't exist yet
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/tuning.png'
-    plt.savefig(path, dpi=800)
+    plt.savefig(path, dpi=1000)
     plt.close()
 
 def histogram():
