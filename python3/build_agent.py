@@ -616,7 +616,7 @@ class Agent:
         vel_y = character.velocity[1]
 
         if p is None:
-            k_1 = 0.8 #0.4 for vicon 0.8 for sim
+            k_1 = 0.85 #0.4 for vicon 0.85 for sim
             k_2 = 0
 
             v_min = 0.1

@@ -344,53 +344,51 @@ def tuning(directory_compare=None):
     plt.savefig(path, dpi=1000)
     plt.close()
 
-def histogram():
-    # read in logger file as pandas
-    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
-    name_list = os.listdir(path_logger)
-    for i in range(len(name_list)):
-        name_list[i] = path_logger + name_list[i]
-    df = many_logs2pandas(name_list)
-
-    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
-    name_list = os.listdir(path_logger)
-    for i in range(len(name_list)):
-        name_list[i] = path_logger + name_list[i]
-    df = many_logs2pandas(name_list)
+def dist_hist(abs_path_list=None):
+    if abs_path_list is None:
+        abs_path_list = [yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/']
 
     fig, ax = plt.subplots(1, 1, sharex=True, sharey=True)
 
-    d = 0
-    data = []
-    for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
-        df_loc = df[df['epi_n'].isin([j])]
-        draw = True
-        if len(df_loc) < 10:
-            draw = False
-        if (min(df_loc['position_x']) < 0) | (max(df_loc['position_x']) > yaml_p['size_x'] - 1):
-            draw = False
-        if len(df_loc['min_dist'].dropna()) == 0:
-            draw = False
-        if d > 9:
-            draw = False
+    legend_list = []
+    for path_logger in abs_path_list:
+        # read in logger file as pandas
+        name_list = os.listdir(path_logger)
+        for i in range(len(name_list)):
+            name_list[i] = path_logger + name_list[i]
+        df = many_logs2pandas(name_list)
 
-        if draw:
-            data.append(df_loc['min_dist'].dropna().iloc[-1])
-            d += 1
+        d = 0
+        data = []
+        for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
+            df_loc = df[df['epi_n'].isin([j])]
+            draw = True
+            if len(df_loc) < 10:
+                draw = False
+            if (min(df_loc['position_x']) < 0) | (max(df_loc['position_x']) > yaml_p['size_x'] - 1):
+                draw = False
+            if len(df_loc['min_dist'].dropna()) == 0:
+                draw = False
+            #if d > 9:
+            #    draw = False
 
-    ax.hist(data,range=(0,1),bins=10) #at the moment between 0 and 1m. It's important that it always normed between 0 and 1
-    ax.set_xlabel('min distance [m]')
-    ax.set_ylabel('histogram')
+            if draw:
+                data.append(df_loc['min_dist'].dropna().iloc[-1])
+                d += 1
 
-    # fit beta function
-    mean, var, skew, kurt = beta.fit(data)
-    x = np.linspace(0, 1, 100)
-    ax2 = ax.twinx()
-    #ax2.plot(x, beta.pdf(x,mean,var,skew,kurt), color='red')
-    ax2.plot(x, beta.pdf(x,mean,var), color='red')
-    ax2.set_ylabel('beta pdf', color='red')
-    ax2.tick_params(axis='y', labelcolor='red')
-    ax2.set_title('alpha: ' + str(np.round(mean,2)) + ' beta: ' + str(np.round(var,2)), color='red')
+        # plot cummulative histogram
+        data.sort()
+        x = [0]
+        y = [0]
+        for i in range(len(data)):
+            x.append(data[i])
+            y.append((i+1)/len(data)*100)
+        ax.plot(x,y)
+        legend_list.append('median at ' + str(np.round(np.median(data),2)) + ' [m]')
+
+    ax.set_xlabel('min radius to the target [m]')
+    ax.set_ylabel('tries within that radius [%]')
+    plt.legend(legend_list)
 
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/dist_hist.png'
     plt.savefig(path, dpi=150)
