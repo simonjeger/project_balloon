@@ -146,7 +146,7 @@ def tuning(delta_t):
     return action
 
 character = character_vicon()
-offset = 0.16
+offset = 0.06 #0.22
 scale = 0.7
 
 llc = ll_controler()
@@ -220,9 +220,10 @@ while True:
 
         #action = tuning(time.time() - global_start)
         u_raw = llc.pid(action, rel_pos, rel_vel)
+        u = offset + u_raw*scale
+
         if yaml_p['mode'] == 'tuning':
-            print(u_raw)
-        u = offset + u_raw*(1-offset)*scale
+            print(u)
 
         call(u)
         if (not not_done) | (action < 0):

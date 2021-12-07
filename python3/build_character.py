@@ -56,20 +56,22 @@ class character():
 
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 0.6 #kg
-            self.delta_f = 1 #N
+            self.delta_f_up = 1 #N
+            self.delta_f_down = 1 #N
             self.delay = 1 #s
-            self.ascent_consumption = 23 #W
-            self.descent_consumption = 23 #W
+            self.consumption_up = 23 #W
+            self.consumption_down = 23 #W
             self.rest_consumption = 2.5 #W
             self.battery_capacity = 319680 #Ws
             self.c_w = 0.45
 
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 0.049 #kg
-            self.delta_f = 0.06 #N
-            self.delay = 0.6 #s
-            self.ascent_consumption = 5 #W
-            self.descent_consumption = 2.5 #W
+            self.delta_f_up = 0.06 #N
+            self.delta_f_down = 0.03 #N
+            self.delay = 0.5 #0.6 #s
+            self.consumption_up = 5 #W
+            self.consumption_down = 2.5 #W
             self.rest_consumption = 0.5 #W
             self.battery_capacity = 1798 #Ws
             self.c_w = 0.6714 #through experiment
@@ -253,6 +255,10 @@ class character():
 
             noise = self.interpolate(self.noise,noise=True)
             n_x, n_y, n_z = avg_mag*self.prop_mag*noise
+
+            if yaml_p['3d'] == False: #because there is so much noise in x direction when it's a 2d field
+                n_x *= 1.3
+
             w_x += n_x
             w_y += n_y
             w_z += n_z
@@ -377,7 +383,7 @@ class character():
         self.rho_air = rho_air_init*temp_init/temp*pressure_init/pressure
         self.rho_gas = rho_gas_init*temp_init/temp*pressure_init/pressure
 
-        self.battery_level -= (self.rest_consumption*self.delta_tn + abs(min(u,0))*self.descent_consumption*self.delta_tn + max(u,0)*self.ascent_consumption*self.delta_tn)/self.battery_capacity
+        self.battery_level -= (self.rest_consumption*self.delta_tn + abs(min(u,0))*self.consumption_down*self.delta_tn + max(u,0)*self.consumption_up*self.delta_tn)/self.battery_capacity
 
         # volume
         volume_init = self.mass_structure/(rho_air_init - rho_gas_init) #m^3
@@ -389,7 +395,10 @@ class character():
 
     def net_force(self,u):
         f_balloon = (self.volume*(self.rho_air-self.rho_gas) - self.mass_structure)*9.81
-        f_net = f_balloon + self.delta_f*u
+        if u > 0:
+            f_net = f_balloon + self.delta_f_up*u
+        else:
+            f_net = f_balloon + self.delta_f_down*u
         return f_net #N
 
     def height_above_ground(self, est=False):

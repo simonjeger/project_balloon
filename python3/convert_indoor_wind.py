@@ -153,48 +153,50 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
         #"""
         location = np.random.uniform(0.45,0.55)
         angle = np.random.uniform(-1,1)*np.pi/32
-        #scale = np.random.uniform(0.45,0.7)
+        scale = 0.85
         #"""
         """
         angle = 0
         location = 0.5
         angle = 0
-        scale = 0.55
+        scale = 0.85
         """
 
         offset = 0.5 #hight of center of balloon
 
         if n == 0:
             height = (1.065-offset)/yaml_p['unit_z'] + np.random.uniform(-0.1,0.1)
+            #height = (1.065-offset)/yaml_p['unit_z']
             side = np.random.choice([1,3])
-            scale = np.random.uniform(0.45,0.7)
+            scale += np.random.uniform(-0.1,0.1)
         elif n == 1:
             height = (3-offset)/yaml_p['unit_z'] + np.random.uniform(-0.1,0.1)
+            #height = (3-offset)/yaml_p['unit_z']
             if side == 1:
                 side = 3
             elif side == 3:
                 side = 1
-            scale = np.random.uniform(0.45,0.7)
+            scale += np.random.uniform(-0.1,0.1)
 
-
+        dist = 1 #I added one grid cell on each side in the real world
         if side == 0:
-            o_x = 0*size_x - abs(np.sin(angle))*18*0.1/unit_wind_y
+            o_x = 0*size_x - dist - abs(np.sin(angle))*18*0.1/unit_wind_y
             o_y = location*size_y
             o_angle = 0
 
         elif side == 1:
             o_x = location*size_x
-            o_y = 0*size_y - abs(np.sin(angle))*18*0.1/unit_wind_x
+            o_y = 0*size_y - dist - abs(np.sin(angle))*18*0.1/unit_wind_x
             o_angle = np.pi/2
 
         elif side == 2:
-            o_x = 1*size_x + abs(np.sin(angle))*18*0.1/unit_wind_y
+            o_x = 1*(size_x-1) + dist + abs(np.sin(angle))*18*0.1/unit_wind_y
             o_y = location*size_y
             o_angle = np.pi
 
         elif side == 3:
             o_x = location*size_x
-            o_y = 1*size_y + abs(np.sin(angle))*18*0.1/unit_wind_x
+            o_y = 1*(size_y-1) + dist + abs(np.sin(angle))*18*0.1/unit_wind_x
             o_angle = np.pi*3/2
 
         a = np.cos(angle+o_angle)
@@ -212,8 +214,13 @@ def generate_wind(size_x, size_y, size_z, terrain, model, grid, interp):
                     wind[0,i,j,k] += a*mag*scale
                     wind[1,i,j,k] += c*mag*scale
 
-    wind = gaussian_filter(wind, sigma=0.2)
+    #wind = gaussian_filter(wind, sigma=0.2)
+    #wind[1] = gaussian_filter(wind[1], sigma=2)
+    for x in range(len(wind[1,:,0,0])):
+        for y in range(len(wind[1,0,:,0])):
+            wind[1,x,y,:] = gaussian_filter(wind[1,x,y,:], sigma=1.5)
     return wind
+
 
 generate_world(1000, 1, 'train')
 generate_world(300, 1, 'test')

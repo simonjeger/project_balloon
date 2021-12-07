@@ -290,7 +290,8 @@ def tuning(directory_compare=None):
         path_logger_list.append(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/' + directory_compare + '/')
     path_logger_list.append(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/')
 
-    fig, axs = plt.subplots(3, 1, sharex=True, sharey=True)
+    #fig, axs = plt.subplots(6, 1)
+    fig, axs = plt.subplots(3, 1)
     for p in range(len(path_logger_list)):
         path_logger = path_logger_list[p]
         name_list = os.listdir(path_logger)
@@ -312,14 +313,17 @@ def tuning(directory_compare=None):
             time = yaml_p['T'] - df_loc_cut['t']
 
             if p == 0:
-                if j == 0: #beacuse when tuning it's always the same action cycle
-                    axs[2].plot(time, df_loc_cut['action']*yaml_p['size_z']*yaml_p['unit_z'], color='orange', linewidth=0.2)
+                if (j == 0) & (yaml_p['mode'] == 'tuning'): #beacuse when tuning it's always the same action cycle
+                    axs[2].plot(time, df_loc_cut['action']*yaml_p['size_z']*yaml_p['unit_z'], color='grey', linewidth=0.5)
                 color=cmap0(1-j/iter_max)
             else:
                 color=cmap1(1-j/iter_max)
             axs[0].plot(time, df_loc_cut['position_x']*yaml_p['unit_xy'], color=color, linewidth=0.2)
             axs[1].plot(time, df_loc_cut['position_y']*yaml_p['unit_xy'], color=color, linewidth=0.2)
             axs[2].plot(time, df_loc_cut['position_z']*yaml_p['unit_z'], color=color, linewidth=0.2)
+            #axs[3].plot(time, np.gradient(df_loc_cut['position_x']*yaml_p['unit_xy']), color=color, linewidth=0.2)
+            #axs[4].plot(time, np.gradient(df_loc_cut['position_y']*yaml_p['unit_xy']), color=color, linewidth=0.2)
+            #axs[5].plot(time, np.gradient(df_loc_cut['position_z']*yaml_p['unit_z']), color=color, linewidth=0.2)
 
             #fig.suptitle(str(int(i/n_f*100)) + ' %')
             #plt.subplots_adjust(wspace=0.5, hspace=1)
@@ -332,15 +336,16 @@ def tuning(directory_compare=None):
         axs[a].grid(which='minor', alpha=0.2, linewidth=0.5)
         axs[a].grid(which='major', alpha=0.5, linewidth=0.5)
 
-        if a == 0:
-            axs[a].set_ylabel('position x [m]')
-        elif a == 1:
-            axs[a].set_ylabel('position y [m]')
-        else:
-            axs[a].set_ylabel('position z [m]')
+    axs[0].set_ylabel('pos x [m]')
+    axs[1].set_ylabel('pos y [m]')
+    axs[2].set_ylabel('pos z [m]')
+    #axs[3].set_ylabel('vel x [m/s]')
+    #axs[4].set_ylabel('vel y [m/s]')
+    #axs[5].set_ylabel('vel z [m/s]')
 
     # Build folder structure if it doesn't exist yet
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/tuning.png'
+    plt.tight_layout()
     plt.savefig(path, dpi=1000)
     plt.close()
 

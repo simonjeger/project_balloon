@@ -56,7 +56,7 @@ def visualize_world(tensor, position, ceiling):
             if yaml_p['balloon'] == 'outdoor_balloon':
                 range = 10
             elif yaml_p['balloon'] == 'indoor_balloon':
-                range = 1
+                range = 1.5
             else:
                 print('ERROR: Choose an existing balloon type')
 

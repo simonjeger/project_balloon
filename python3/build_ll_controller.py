@@ -17,8 +17,8 @@ class ll_controler():
 
         if yaml_p['balloon'] == 'indoor_balloon':
             if yaml_p['environment'] == 'python3':
-                self.k_p = 3.5 #4 #2
-                self.k_d = 50 #80
+                self.k_p = 3 #3.5
+                self.k_d = 80 #50
                 self.k_i = 0
             elif yaml_p['environment'] == 'vicon':
                 self.k_p = 9.5

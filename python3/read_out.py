@@ -8,11 +8,11 @@ from pathlib import Path
 import shutil
 
 # analyse
-#tuning('logger_test_wind_vicon2')
 #tuning()
-#plot_2d_path()
-#dist_hist()
-dist_hist(['process09462/logger_test/', 'process09450/logger_test/', 'process99991/logger_test/'])
+tuning('logger_test_tuning_vicon')
+plot_2d_path()
+dist_hist()
+#dist_hist(['process09462/logger_test/', 'process09450/logger_test/', 'process99991/logger_test/'])
 #plot_3d_path()
 #write_overview()
 #disp_overview()
