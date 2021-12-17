@@ -235,10 +235,19 @@ class Agent:
                     self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
                     self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
                     self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
+                    self.writer.add_scalar('velocity_x', self.env.character.velocity[0], self.step_n)
+                    self.writer.add_scalar('velocity_y', self.env.character.velocity[1], self.step_n)
+                    self.writer.add_scalar('velocity_z', self.env.character.velocity[2], self.step_n)
                     self.writer.add_scalar('t', self.env.character.t, self.step_n)
+                    self.writer.add_scalar('diameter', self.env.character.diameter, self.step_n)
+                    self.writer.add_scalar('battery_level', self.env.character.battery_level, self.step_n)
                     self.writer.add_scalar('min_proj_dist', self.env.character.min_proj_dist, self.step_n)
                     self.writer.add_scalar('action', action, self.step_n)
                     self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
+
+                    if yaml_p['world_est'] == True:
+                        self.writer.add_scalar('measurement_x', self.env.character.measurement[0], self.step_n)
+                        self.writer.add_scalar('measurement_y', self.env.character.measurement[1], self.step_n)
 
                     if yaml_p['log_world_est_error']:
                         self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
@@ -254,6 +263,12 @@ class Agent:
                     self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
                     self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
                     self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
+                    self.writer.add_scalar('velocity_x', self.env.character.velocity[0], self.step_n)
+                    self.writer.add_scalar('velocity_y', self.env.character.velocity[1], self.step_n)
+                    self.writer.add_scalar('velocity_z', self.env.character.velocity[2], self.step_n)
+                    self.writer.add_scalar('t', self.env.character.t, self.step_n)
+                    self.writer.add_scalar('diameter', self.env.character.diameter, self.step_n)
+                    self.writer.add_scalar('battery_level', self.env.character.battery_level, self.step_n)
                     self.writer.add_scalar('min_dist', self.env.character.min_dist, self.step_n)
                     self.writer.add_scalar('action', action, self.step_n)
 
@@ -267,6 +282,10 @@ class Agent:
 
                     self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
                     self.writer.add_scalar('reward_epi', self.env.reward_epi, self.step_n)
+
+                    if yaml_p['world_est'] == True:
+                        self.writer.add_scalar('measurement_x', self.env.character.measurement[0], self.step_n)
+                        self.writer.add_scalar('measurement_y', self.env.character.measurement[1], self.step_n)
 
                     if yaml_p['log_world_est_error']:
                         self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
@@ -616,7 +635,7 @@ class Agent:
         vel_y = character.velocity[1]
 
         if p is None:
-            k_1 = 0.85 #0.4 for vicon 0.85 for sim
+            k_1 = 1
             k_2 = 0
 
             v_min = 0.1
@@ -691,4 +710,5 @@ class Agent:
             action = 0.2
         else:
             action = -1
+        action = 0.4
         return action

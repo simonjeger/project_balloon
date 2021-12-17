@@ -103,7 +103,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
     text = text + "reuse_weights: True" + '\n'
     text = text + "log_world_est_error: False" + '\n'
-    text = text + "log_frequency: 3" + '\n'
+    text = text + "log_frequency: 1" + '\n'
     text = text + 'duration: 30' + '\n'
     text = text + 'fps: 15' + '\n'
     text = text + 'overview: True' + '\n'

@@ -41,7 +41,7 @@ with ag.agent.eval_mode():
         log = ag.run_epoch()
         print('epoch: ' + str(int(i)) + ' reward: ' + str(log))
 
-time.sleep(80) #make sure the writing of tensorboard files is done
+time.sleep(100) #make sure the writing of tensorboard files is done
 if yaml_p['overview']:
     write_overview()
 

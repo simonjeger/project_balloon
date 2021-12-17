@@ -12,6 +12,7 @@ import os
 import torch
 from sklearn.linear_model import LinearRegression
 from scipy.stats import beta
+from scipy.interpolate import interpn
 
 from utils.load_tf import tflog2pandas, many_logs2pandas
 
@@ -256,17 +257,23 @@ def plot_2d_path():
         if draw:
             dydx = np.linspace(0,1,int(yaml_p['T']/yaml_p['delta_t']))  # first derivative
 
+            #dense lines
             points = np.array([df_loc_cut['position_y'], df_loc_cut['position_z']]).T.reshape(-1, 1, 2)
             segments = np.concatenate([points[:-1], points[1:]], axis=1)
-
-            # Create a continuous norm to map from data points to colors
             norm = plt.Normalize(dydx.min(), dydx.max())
             lc = LineCollection(segments, cmap='viridis', norm=norm)
-
-            # Set the values used for colormapping
             lc.set_array(dydx)
-            #lc.set_linewidth(2)
             line = ax.add_collection(lc)
+
+            """
+            #transparent lines
+            points_transp = np.array([df_loc['position_y'][end::], df_loc['position_z'][end::]]).T.reshape(-1, 1, 2)
+            segments_transp = np.concatenate([points_transp[:-1], points_transp[1:]], axis=1)
+            norm_transp = plt.Normalize(dydx.max(),1)
+            lc_transp = LineCollection(segments_transp, cmap='viridis', norm=norm, alpha=0.1)
+            line_transp = ax.add_collection(lc_transp)
+            """
+
             ax.scatter(df_loc_cut['position_y'].iloc[-1], df_loc_cut['position_z'].iloc[-1], c=end, vmin=0, vmax=int(yaml_p['T']/yaml_p['delta_t']), cmap='viridis')
             ax.scatter(df_loc['target_y'],df_loc['target_z'], color='red', zorder=1000) #zorder so the target is always above everything else
 
@@ -282,6 +289,87 @@ def plot_2d_path():
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/2dpath.png'
     plt.savefig(path, dpi=150)
     plt.close()
+
+def make_2d_gif():
+    Path('temp').mkdir(parents=True, exist_ok=True)
+
+    # read in logger file as pandas
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    df['position_x'] *= yaml_p['unit_xy']
+    df['position_y'] *= yaml_p['unit_xy']
+    df['position_z'] *= yaml_p['unit_z']
+    df['target_x'] *= yaml_p['unit_xy']
+    df['target_y'] *= yaml_p['unit_xy']
+    df['target_z'] *= yaml_p['unit_z']
+
+    d = 0
+    for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
+        if j == 12: #2,4,(6),10,12!,13,(14)
+            df_loc = df[df['epi_n'].isin([j])]
+            for g in range(len(df_loc)):
+                fig, ax = plt.subplots(1, 1, sharex=True, sharey=True)
+                min_proj_dist = np.sqrt(((df_loc['target_x'].iloc[-1] - df_loc['position_x'])*yaml_p['unit_xy'])**2 + ((df_loc['target_y'].iloc[-1] - df_loc['position_y'])*yaml_p['unit_xy'])**2 + ((df_loc['target_z'].iloc[-1] - df_loc['position_z'])*yaml_p['unit_z'])**2)
+                end = np.argmin(df_loc['min_proj_dist'])
+                end = np.argmin(min_proj_dist)+1
+                df_loc_cut = df_loc.iloc[0:min(g,end)+1]
+
+                if d != 0:
+                    draw = False
+
+                dydx = np.linspace(0,1,int(yaml_p['T']/yaml_p['delta_t']))  # first derivative
+
+                #dense lines
+                points = np.array([df_loc_cut['position_y'], df_loc_cut['position_z']]).T.reshape(-1, 1, 2)
+                segments = np.concatenate([points[:-1], points[1:]], axis=1)
+                norm = plt.Normalize(dydx.min(), dydx.max())
+                lc = LineCollection(segments, cmap='viridis', norm=norm)
+                lc.set_array(dydx)
+                line = ax.add_collection(lc)
+
+                if g >= end:
+                    ax.scatter(df_loc['position_y'].iloc[end], df_loc['position_z'].iloc[end], c=end, vmin=0, vmax=int(yaml_p['T']/yaml_p['delta_t']), cmap='viridis')
+
+                #transparent lines
+                if g >= end:
+                    points_transp = np.array([df_loc['position_y'][0:g+1], df_loc['position_z'][0:g+1]]).T.reshape(-1, 1, 2)
+                    segments_transp = np.concatenate([points_transp[:-1], points_transp[1:]], axis=1)
+                    norm_transp = plt.Normalize(dydx.max(),1)
+                    lc_transp = LineCollection(segments_transp, cmap='viridis', norm=norm, alpha=0.1)
+                    line_transp = ax.add_collection(lc_transp)
+
+                ax.scatter(df_loc['target_y'],df_loc['target_z'], color='red', zorder=1000) #zorder so the target is always above everything else
+
+                ax.set_xlabel('position [m]')
+                ax.set_ylabel('height [m]')
+                ax.set_xlim(0,(yaml_p['size_y'] - 1)*yaml_p['unit_xy'])
+                ax.set_ylim(0,(yaml_p['size_z'] - 1)*yaml_p['unit_z'])
+
+                #fig.suptitle(str(int(i/n_f*100)) + ' %')
+                #plt.subplots_adjust(wspace=0.5, hspace=1)
+
+                path = 'temp/' + str(g).zfill(2) + '.png'
+                plt.savefig(path, dpi=150)
+                plt.close()
+
+    # Build GIF
+    with imageio.get_writer('debug_2d.gif', mode='I', fps=1/yaml_p['delta_t']) as writer:
+        path = 'temp/'
+        name_list = os.listdir(path)
+        name_list.sort()
+        n = 0
+        for name in name_list:
+            image = imageio.imread(path + '/' + name)
+            writer.append_data(image)
+            print('generating gif: ' + str(int(n/len(name_list)*100)) + ' %')
+            n += 1
+
+    # Delete temp folder
+    shutil.rmtree(path)
 
 def tuning(directory_compare=None):
     # read in logger file as pandas
@@ -398,6 +486,53 @@ def dist_hist(abs_path_list=None):
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/dist_hist.png'
     plt.savefig(path, dpi=150)
     plt.close()
+
+def wind_est():
+    # read in logger file as pandas
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    from scipy.interpolate import LinearNDInterpolator
+    import seaborn as sns
+    points = np.vstack([df['position_x'],df['position_y'],df['position_z']]).T
+    interp = LinearNDInterpolator(points, df['measurement_y'])
+
+    world_est = np.zeros((yaml_p['size_x'], yaml_p['size_y'], yaml_p['size_z']))
+    for i in range(yaml_p['size_x']):
+        for j in range(yaml_p['size_y']):
+            for k in range(yaml_p['size_z']):
+                world_est[i,j,k] = interp([i,j,k])
+
+    fig, axs = plt.subplots(2)
+    if yaml_p['balloon'] == 'outdoor_balloon':
+        limit = 10
+    elif yaml_p['balloon'] == 'indoor_balloon':
+        limit = 1.5
+    else:
+        print('ERROR: Choose an existing balloon type')
+
+    world_name = np.random.choice(os.listdir(yaml_p['data_path'] +'test/tensor'))
+    h = 0
+    world = torch.load(yaml_p['data_path'] + 'test/tensor/' + world_name)
+
+    cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+
+    world_est_mean = np.nanmean(world_est,axis=0)
+    world_gt_mean = np.nanmean(world[2],axis=0)
+
+    #axs[0].imshow(world_est[int(yaml_p['size_x']/2),:,:].T, origin='lower', cmap=cmap, alpha=1, vmin=-limit, vmax=limit)
+    axs[0].imshow(world_est_mean.T, origin='lower', cmap=cmap, alpha=1, vmin=-limit, vmax=limit)
+    axs[1].imshow(world_gt_mean.T, origin='lower', cmap=cmap, alpha=1, vmin=-limit, vmax=limit)
+
+    axs[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+    axs[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
+
+    plt.savefig('debug_windest.png')
+    plt.close()
+
 
 def write_overview():
     # read in logger file as pandas

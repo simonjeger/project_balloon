@@ -146,7 +146,7 @@ def tuning(delta_t):
     return action
 
 character = character_vicon()
-offset = 0.06 #0.22
+offset = 0.11
 scale = 0.7
 
 llc = ll_controler()
