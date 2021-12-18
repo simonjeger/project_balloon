@@ -5,7 +5,7 @@ time.sleep(1) # If this delay is removed you will get an error
 import pigpio
 
 class raspi_esc:
-    def __init__():
+    def __init__(self):
         self.ESC=13  #Connect the ESC in this GPIO pin
         pi = pigpio.pi()
         pi.set_servo_pulsewidth(self.ESC, 0)

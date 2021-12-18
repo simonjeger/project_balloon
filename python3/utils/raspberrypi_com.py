@@ -3,7 +3,7 @@ import serial
 import time
 
 class raspi_com:
-	def __init__():
+	def __init__(self):
 		ser = serial.Serial('/dev/ttyUSB2',115200)
 		ser.flushInput()
 
