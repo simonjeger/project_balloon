@@ -6,9 +6,20 @@ import json
 
 from build_ll_controller import ll_controler
 from utils.ekf import ekf
+
 from utils.raspberrypi_com import raspi_com
 from utils.raspberrypi_esc import raspi_esc
 from utils.raspberrypi_gps import raspi_gps
+
+import yaml
+import argparse
+
+# Get yaml parameter
+parser = argparse.ArgumentParser()
+parser.add_argument('yaml_file')
+args = parser.parse_args()
+with open(args.yaml_file, 'rt') as fh:
+    yaml_p = yaml.safe_load(fh)
 
 def send(data):
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
@@ -19,7 +30,7 @@ def send(data):
 def receive():
     successful = False
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
-    start = time.time()
+    t_start = time.time()
     corrupt = False
     while not successful:
         with open(path + 'action.txt') as json_file:
@@ -29,14 +40,23 @@ def receive():
             except:
                 corrupt = True
     if corrupt:
-        print('data corrupted, lag of ' + str(np.round(time.time() - start,3)) + '[s]')
+        print('data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
     return data
+
+def update_est(position,u,c,delta_t):
+    est_x.one_cycle(0,position[0],c,delta_t)
+    est_y.one_cycle(0,position[1],c,delta_t)
+    est_z.one_cycle(u,position[2],c,delta_t)
+    position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
+    return position_est
 
 com = raspi_com()
 esc = raspi_esc()
 gps = raspi_gps()
 
-position_gps = gps.get_gps_position()
+lat,lon,height = gps.get_gps_position()
+position_gps = [lat,lon,height]
+
 est_x = ekf(position_gps[0])
 est_y = ekf(position_gps[1])
 est_z = ekf(position_gps[2])
@@ -51,25 +71,18 @@ path = []
 path_est = []
 not_done = True
 
-plot_time = []
-plot_pos_x = []
-plot_pos_y = []
-plot_pos_z = []
-plot_vel = []
-plot_u = []
-plot_action = []
-plot_residual = np.inf
-
 U = 0
 u = 0
 min_proj_dist = np.inf
 
 global_start = time.time()
 while True:
-    start = time.time()
+    t_start = time.time()
 
-    position_gps = gps.get_gps_position()
+    lat,lon,height = gps.get_gps_position()
     velocity = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
+    c = 1 #only placeholder, nescessary for estimation functions
+    delta_t = 1 #only placeholder, nescessary for estimation functions
     position_est = np.divide(update_est(position_gps,u,c,delta_t),[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]) #uses an old action for position estimation, because first estimation and then action
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
@@ -109,13 +122,15 @@ while True:
         if (rel_pos_est < 0) | (rel_pos_est >= 1):
             print('z out of bounds')
             not_done = False
-        if self.t < 0: #check if flight time is over
+        """
+        if t < 0: #check if flight time is over
             not_done = False
         if self.battery_level < 0: #check if battery is empty
             not_done = False
+        """
 
         #action = tuning(time.time() - global_start)
-        u_raw = llc.pid(action, rel_pos, rel_vel)
+        u_raw = llc.pid(action, rel_pos_est, rel_vel_est)
         u = offset + u_raw*scale
 
         if yaml_p['mode'] == 'tuning':
@@ -125,20 +140,11 @@ while True:
         if (not not_done) | (action < 0):
             u = 0
             esc.control(u)
-            plot_pid(plot_time, plot_pos_z, plot_vel, plot_u, plot_action)
 
-        stop = time.time()
-        delta_t = stop - start
+        t_stop = time.time()
+        delta_t = t_stop - t_start
 
         path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
-
-        plot_pos_x.append(position_est[0])
-        plot_pos_y.append(position_est[1])
-        plot_pos_z.append(position_est[2])
-        plot_vel.append(velocity_est[2])
-        plot_u.append(u)
-        plot_action.append(action*ceiling)
-        plot_time.append(time.time())
 
         U += abs(u*delta_t)
 
@@ -150,7 +156,6 @@ while True:
         if min_proj_dist_prop < min_proj_dist:
             min_proj_dist = min_proj_dist_prop
             min_dist = min_dist_prop
-            plot_residual = target*np.array([yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]) - position_est
 
         data = {
         'U': U,

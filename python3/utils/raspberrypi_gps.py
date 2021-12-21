@@ -5,8 +5,8 @@ import time
 
 class raspi_gps:
 	def __init__(self):
-		ser = serial.Serial('/dev/ttyUSB2',115200)
-		ser.flushInput()
+		self.ser = serial.Serial('/dev/ttyUSB2',115200)
+		self.ser.flushInput()
 
 		power_key = 6
 		rec_buff = ''
@@ -16,21 +16,18 @@ class raspi_gps:
 		try:
 			self.power_on(power_key)
 		except:
-			if ser != None:
-				ser.close()
+			if self.ser != None:
+				self.ser.close()
 			self.power_down(power_key)
 			GPIO.cleanup()
-		if ser != None:
-				ser.close()
-				GPIO.cleanup()
 
 	def send_at(self,command,back,timeout):
 		rec_buff = ''
-		ser.write((command+'\r\n').encode())
+		self.ser.write((command+'\r\n').encode())
 		time.sleep(timeout)
-		if ser.inWaiting():
+		if self.ser.inWaiting():
 			time.sleep(0.01 )
-			rec_buff = ser.read(ser.inWaiting())
+			rec_buff = self.ser.read(self.ser.inWaiting())
 		if rec_buff != '':
 			if back not in rec_buff.decode():
 				print(command + ' ERROR')
@@ -59,15 +56,18 @@ class raspi_gps:
 					rec_null = False
 					time.sleep(1)
 				else:
-						lat = str(result)[30:41]
-						lon = str(result)[44:56]
-						year = str(result)[59:61]
-						month = str(result)[61:63]
-						day = str(result)[63:65]
-						hour = str(result)[66:68]
-						minute = str(result)[68:70]
-						second = str(result)[70:72]
-						return lat,lon,year,month,day,hour,minute,second
+						result_array = str(result)[30::].split(",")
+						lat = float(result_array[0])
+						lon = float(result_array[2])
+						year = int(result_array[4][0:2])
+						month = int(result_array[4][2:4])
+						day = int(result_array[4][4:6])
+						hour = int(result_array[5][0:2])
+						minute = int(result_array[5][2:4])
+						second = int(result_array[5][4:6])
+						height = float(result_array[6])
+						
+						return lat,lon,height
 			else:
 				print('error %d'%answer)
 				rec_buff = ''
@@ -77,7 +77,7 @@ class raspi_gps:
 
 
 	def power_on(self,power_key):
-		print('SIM7600X is starting:')
+		print('SIM7600X GPS is starting:')
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setwarnings(False)
 		GPIO.setup(power_key,GPIO.OUT)
@@ -86,11 +86,11 @@ class raspi_gps:
 		time.sleep(2)
 		GPIO.output(power_key,GPIO.LOW)
 		time.sleep(20)
-		ser.flushInput()
-		print('SIM7600X is ready')
+		self.ser.flushInput()
+		print('SIM7600X GPS is ready')
 
 	def power_down(self,power_key):
-		print('SIM7600X is loging off:')
+		print('SIM7600X GPS is loging off:')
 		GPIO.output(power_key,GPIO.HIGH)
 		time.sleep(3)
 		GPIO.output(power_key,GPIO.LOW)

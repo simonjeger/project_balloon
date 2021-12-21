@@ -43,7 +43,7 @@ class raspi_com:
 				GPIO.cleanup()
 
 	def power_on(self, power_key):
-		print('SIM7600X is starting:')
+		print('SIM7600X COM is starting:')
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setwarnings(False)
 		GPIO.setup(power_key,GPIO.OUT)
@@ -53,10 +53,10 @@ class raspi_com:
 		GPIO.output(power_key,GPIO.LOW)
 		time.sleep(20)
 		ser.flushInput()
-		print('SIM7600X is ready')
+		print('SIM7600X COM is ready')
 
 	def power_down(self, power_key):
-		print('SIM7600X is loging off:')
+		print('SIM7600X COM is loging off:')
 		GPIO.output(power_key,GPIO.HIGH)
 		time.sleep(3)
 		GPIO.output(power_key,GPIO.LOW)
