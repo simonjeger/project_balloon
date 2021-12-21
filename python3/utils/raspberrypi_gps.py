@@ -5,63 +5,72 @@ import time
 
 class raspi_gps:
 	def __init__(self):
-		self.ser = serial.Serial('/dev/ttyUSB2',115200)
-		self.ser.flushInput()
+		ser = serial.Serial('/dev/ttyUSB2',115200)
+		ser.flushInput()
 
 		power_key = 6
-		self.rec_buff = ''
+		rec_buff = ''
+		rec_buff2 = ''
 		time_count = 0
 
 		try:
 			self.power_on(power_key)
-			self.get_gps_position()
-			self.power_down(power_key)
 		except:
-			if self.ser != None:
-				self.ser.close()
+			if ser != None:
+				ser.close()
 			self.power_down(power_key)
 			GPIO.cleanup()
-		if self.ser != None:
-				self.ser.close()
+		if ser != None:
+				ser.close()
 				GPIO.cleanup()
 
 	def send_at(self,command,back,timeout):
-		self.rec_buff = ''
-		self.ser.write((command+'\r\n').encode())
+		rec_buff = ''
+		ser.write((command+'\r\n').encode())
 		time.sleep(timeout)
-		if self.ser.inWaiting():
+		if ser.inWaiting():
 			time.sleep(0.01 )
-			self.rec_buff = self.ser.read(self.ser.inWaiting())
-		if self.rec_buff != '':
-			if back not in self.rec_buff.decode():
+			rec_buff = ser.read(ser.inWaiting())
+		if rec_buff != '':
+			if back not in rec_buff.decode():
 				print(command + ' ERROR')
-				print(command + ' back:\t' + self.rec_buff.decode())
-				return 0
+				print(command + ' back:\t' + rec_buff.decode())
+				return 0, rec_buff
 			else:
-				print(self.rec_buff.decode())
-				return 1
+				print(rec_buff.decode())
+				return 1, rec_buff
 		else:
 			print('GPS is not ready')
-			return 0
+			return 0, rec_buff
 
 	def get_gps_position(self):
 		rec_null = True
 		answer = 0
 		print('Start GPS session...')
-		self.rec_buff = ''
+		rec_buff = ''
 		self.send_at('AT+CGPS=1,1','OK',1)
 		time.sleep(2)
 		while rec_null:
-			answer = self.send_at('AT+CGPSINFO','+CGPSINFO: ',1)
+			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',1)
 			if 1 == answer:
 				answer = 0
-				if ',,,,,,' in self.rec_buff:
+				if ',,,,,,' in str(result):
 					print('GPS is not ready')
 					rec_null = False
 					time.sleep(1)
+				else:
+						lat = str(result)[30:41]
+						lon = str(result)[44:56]
+						year = str(result)[59:61]
+						month = str(result)[61:63]
+						day = str(result)[63:65]
+						hour = str(result)[66:68]
+						minute = str(result)[68:70]
+						second = str(result)[70:72]
+						return lat,lon,year,month,day,hour,minute,second
 			else:
 				print('error %d'%answer)
-				self.rec_buff = ''
+				rec_buff = ''
 				self.send_at('AT+CGPS=0','OK',1)
 				return False
 			time.sleep(1.5)
@@ -77,7 +86,7 @@ class raspi_gps:
 		time.sleep(2)
 		GPIO.output(power_key,GPIO.LOW)
 		time.sleep(20)
-		self.ser.flushInput()
+		ser.flushInput()
 		print('SIM7600X is ready')
 
 	def power_down(self,power_key):
