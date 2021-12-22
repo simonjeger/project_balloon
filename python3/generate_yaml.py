@@ -122,7 +122,7 @@ measurement_info = True
 
 prop_mag_min = 0
 
-process_nr = 8360
+process_nr = 9630
 global_buffer_N = 20
 global_buffer_nr = process_nr
 

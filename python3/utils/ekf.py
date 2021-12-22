@@ -14,7 +14,7 @@ class ekf():
         self.Q_0[1,1] = 0.0001
         self.Q_0[2,2] = 0.5                                                 #the wind is not actually zero
         self.Q_0[3,3] = 0.01                                                #but the wind comes from a uniform distribution
-        self.R_0 = [1, 100, 1000, 1000]      #measurement noise (dim_z, dim_z)
+        self.R_0 = [1, 100, 1000, 1000]                                     #measurement noise (dim_z, dim_z)
         self.H_0 = np.eye((4))                                              #measurement function (dim_x, dim_x)
 
         self.hist_p = []                        #for plotting

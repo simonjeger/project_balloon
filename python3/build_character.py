@@ -55,7 +55,7 @@ class character():
         self.esterror_wind = 0
 
         if yaml_p['balloon'] == 'outdoor_balloon':
-            self.mass_structure = 0.6 #kg
+            self.mass_structure = 1.2 #kg
             self.delta_f_up = 1 #N
             self.delta_f_down = 1 #N
             self.delay = 1 #s
@@ -63,7 +63,7 @@ class character():
             self.consumption_down = 23 #W
             self.rest_consumption = 2.5 #W
             self.battery_capacity = 319680 #Ws
-            self.c_w = 0.45
+            self.c_w = 0.7 #0.45
 
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 0.049 #kg
@@ -238,7 +238,10 @@ class character():
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
             rel_pos = dist_bottom / (dist_top + dist_bottom)
-            u = self.ll_controler.pid(action, rel_pos, self.p_z)
+            if yaml_p['balloon'] == 'indoor_balloon':
+                u = self.ll_controler.pid(action, rel_pos, self.p_z)
+            elif yaml_p['balloon'] == 'outdoor_balloon':
+                u = self.ll_controler.bangbang(action, rel_pos)
 
             #update physics model
             self.adapt_volume(u)

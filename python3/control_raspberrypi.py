@@ -107,15 +107,9 @@ while True:
 
     lat,lon,height = gps.get_gps_position()
     position_gps = gps_to_position(lat,lon,height,lat_start,lon_start)
-    print('u: ' + str(u))
+    u = 0
     position_est = update_est(position_gps,u,c,delta_t) #uses an old action for position estimation, because first estimation and then action
     velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
-
-    print(position_gps)
-    print('--')
-    print(position_est)
-    print(velocity_est)
-    print('--------')
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(1)
