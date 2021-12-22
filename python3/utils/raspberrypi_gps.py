@@ -30,11 +30,11 @@ class raspi_gps:
 			rec_buff = self.ser.read(self.ser.inWaiting())
 		if rec_buff != '':
 			if back not in rec_buff.decode():
-				print(command + ' ERROR')
-				print(command + ' back:\t' + rec_buff.decode())
+				#print(command + ' ERROR')
+				#print(command + ' back:\t' + rec_buff.decode())
 				return 0, rec_buff
 			else:
-				print(rec_buff.decode())
+				#print(rec_buff.decode())
 				return 1, rec_buff
 		else:
 			print('GPS is not ready')
@@ -53,21 +53,20 @@ class raspi_gps:
 				answer = 0
 				if ',,,,,,' in str(result):
 					print('GPS is not ready')
-					rec_null = False
 					time.sleep(1)
 				else:
-						result_array = str(result)[30::].split(",")
-						lat = float(result_array[0])
-						lon = float(result_array[2])
-						year = int(result_array[4][0:2])
-						month = int(result_array[4][2:4])
-						day = int(result_array[4][4:6])
-						hour = int(result_array[5][0:2])
-						minute = int(result_array[5][2:4])
-						second = int(result_array[5][4:6])
-						height = float(result_array[6])
-						
-						return lat,lon,height
+					result_array = str(result)[30::].split(",")
+					lat = float(result_array[0])
+					lon = float(result_array[2])
+					year = int(result_array[4][0:2])
+					month = int(result_array[4][2:4])
+					day = int(result_array[4][4:6])
+					hour = int(result_array[5][0:2])
+					minute = int(result_array[5][2:4])
+					second = int(result_array[5][4:6])
+					height = float(result_array[6])
+
+					return lat,lon,height
 			else:
 				print('error %d'%answer)
 				rec_buff = ''

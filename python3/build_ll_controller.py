@@ -25,9 +25,20 @@ class ll_controler():
                 self.k_d = 80
                 self.k_i = 0
             else:
-                self.k_p = 20 #20
-                self.k_d = 120 #120
-                self.k_i = 0 #0
+                print('ERROR: choose a valid environment type')
+        elif yaml_p['balloon'] == 'outdoor_balloon':
+            if yaml_p['environment'] == 'python3':
+                self.k_p = 3 #3.5
+                self.k_d = 80 #50
+                self.k_i = 0
+            elif yaml_p['environment'] == 'vicon':
+                self.k_p = 9.5
+                self.k_d = 80
+                self.k_i = 0
+            else:
+                print('ERROR: choose a valid environment type')
+        else:
+            print('ERROR: choose a valid balloon type')
 
     def pid(self, set, position, velocity):
         error = set - position

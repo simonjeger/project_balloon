@@ -97,7 +97,7 @@ def dist(lat_1, lon_1, lat_2, lon_2):
     R = 6371*1000 #radius of earth in meters
     phi = lat_2 - lat_1
     lam = lon_2 - lon_1
-    a = np.sin(phi/2)**2 + np.cos(lat_1) * np.cos(lat_2) * sin(lam/2)**2
+    a = np.sin(phi/2)**2 + np.cos(lat_1) * np.cos(lat_2) * np.sin(lam/2)**2
     c = 2*np.arctan2(np.sqrt(a), np.sqrt(1-a))
     d = R * c
     return d
