@@ -91,7 +91,8 @@ def receive():
         print('data corrupted, lag of ' + str(np.round(time.time() - start,3)) + '[s]')
     return data
 
-def update_est(position,u,c,delta_t):
+def update_est(position,u,c,delta_t,delta_f_up,delta_f_down,mass_total):
+    force_est = (max(0,u)*delta_f_up + min(0,u)*delta_f_down)/yaml_p['unit_z']/mass_total
     est_x.one_cycle(0,position[0],c,delta_t)
     est_y.one_cycle(0,position[1],c,delta_t)
     est_z.one_cycle(u,position[2],c,delta_t)
@@ -151,9 +152,9 @@ scale = 0.7
 
 llc = ll_controler()
 
-est_x = ekf(character.position[0])
-est_y = ekf(character.position[1])
-est_z = ekf(character.position[2])
+est_x = ekf(character.position[0]/yaml_p['unit_xy'])
+est_y = ekf(character.position[1]/yaml_p['unit_xy'])
+est_z = ekf(character.position[2]/yaml_p['unit_z'])
 
 path = []
 path_est = []
@@ -196,6 +197,9 @@ while True:
         target = data['target']
         ceiling = data['ceiling']
         c = data['c']
+        delta_f_up = data['delta_f_up']
+        delta_f_down = data['delta_f_down']
+        mass_total = data['mass_total']
 
         character.set_vicon()
         terrain = 0
@@ -235,7 +239,7 @@ while True:
         stop = time.time()
         delta_t = stop - start
 
-        position_est = np.divide(update_est(character.position,u,c,delta_t),[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
+        position_est = update_est(np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]),u,c,delta_t,delta_f_up,delta_f_down,mass_total))
 
         path.append(np.divide(character.position,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
         path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())

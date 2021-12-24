@@ -312,7 +312,8 @@ class character():
                 not_done = False
 
             # update EKF
-            self.update_est(u,self.c, self.delta_tn)
+            force_est = (max(0,u)*self.delta_f_up + min(0,u)*self.delta_f_down)/yaml_p['unit_z']/self.mass_total
+            self.update_est(force_est,self.c, self.delta_tn)
             self.set_measurement(self.est_x.wind(),self.est_y.wind())
 
         self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t']
@@ -328,7 +329,10 @@ class character():
         'action': self.action,
         'target': self.target.tolist(),
         'c': self.c,
-        'ceiling': self.ceiling*yaml_p['unit_z'] #in meters
+        'ceiling': self.ceiling*yaml_p['unit_z'], #in meters
+        'delta_f_up': self.delta_f_up,
+        'delta_f_down': self.delta_f_down,
+        'mass_total': self.mass_total
         }
         self.send(data) #write action to file
 

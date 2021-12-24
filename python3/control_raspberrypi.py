@@ -43,7 +43,8 @@ def receive():
         print('data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
     return data
 
-def update_est(position,u,c,delta_t):
+def update_est(position,u,c,delta_t,delta_f_up,delta_f_down,mass_total):
+    force_est = (max(0,u)*delta_f_up + min(0,u)*delta_f_down)/yaml_p['unit_z']/mass_total
     est_x.one_cycle(0,position[0],c,delta_t)
     est_y.one_cycle(0,position[1],c,delta_t)
     est_z.one_cycle(u,position[2],c,delta_t)
@@ -108,7 +109,7 @@ while True:
     lat,lon,height = gps.get_gps_position()
     position_gps = gps_to_position(lat,lon,height,lat_start,lon_start)
     u = 0
-    position_est = update_est(position_gps,u,c,delta_t) #uses an old action for position estimation, because first estimation and then action
+    position_est = update_est(position_gps,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
     velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
@@ -132,6 +133,9 @@ while True:
         target = data['target']
         ceiling = data['ceiling']
         c = data['c']
+        delta_f_up = data['delta_f_up']
+        delta_f_down = data['delta_f_down']
+        mass_total = data['mass_total']
 
         terrain = 0
 

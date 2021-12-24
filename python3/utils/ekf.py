@@ -5,16 +5,16 @@ class ekf():
     def __init__(self, x_0):
         self.xhat_0 = np.array([x_0,0,0,0])                                 #predicted state
 
-        self.z_hist = [0,0]                                                 #memory states
+        self.z_hist = [x_0,x_0]                                                 #memory states
 
         self.P_0 = np.ones((4))                                             #error covariance (dim_x, dim_x)
         self.W_0 = np.ones((4))                                             #noise covariance (dim_x, dim_x)
         self.Q_0 = np.eye((4))                                              #process noise (dim_x, dim_x)
-        self.Q_0[0,0] = 0.0001
-        self.Q_0[1,1] = 0.0001
-        self.Q_0[2,2] = 0.5                                                 #the wind is not actually zero
-        self.Q_0[3,3] = 0.01                                                #but the wind comes from a uniform distribution
-        self.R_0 = [1, 100, 1000, 1000]                                     #measurement noise (dim_z, dim_z)
+        self.Q_0[0,0] = 1
+        self.Q_0[1,1] = 1
+        self.Q_0[2,2] = 10                                                  #the acceleration is not actually zero
+        self.Q_0[3,3] = 10                                                  #the wind is not actually zero
+        self.R_0 = [1, 1, 1, 1]                                             #measurement noise (dim_z, dim_z)
         self.H_0 = np.eye((4))                                              #measurement function (dim_x, dim_x)
 
         self.hist_p = []                        #for plotting
@@ -35,7 +35,6 @@ class ekf():
 
     def h(self):
         return self.xhat_0
-
 
     def project_state(self):
         self.xhat_0 = self.f()
@@ -73,18 +72,21 @@ class ekf():
         o =  v_min1 - np.sign(block)*np.sqrt(abs(block))
 
         self.z_0 = [p, v, a, o]
+        #print('measure: ' + str(self.z_0))
 
-    def predict(self, u_0,c):
+    def predict(self, u_0, c):
         self.c = c
         self.u_0 = u_0
         self.project_state()
         self.project_error()
+        #print('predict: ' + str(self.xhat_0))
 
     def correct(self, z_0):
         self.measure(z_0)
         self.kalman_gain()
         self.update_estimate()
         self.update_covariance()
+        #print('correct: ' + str(self.xhat_0))
 
     def one_cycle(self, u_0, z_0, c, delta_t):
         self.delta_t = delta_t
@@ -115,7 +117,7 @@ class ekf():
         axs[1].scatter([0], [0], color='white')
         axs[1].set_ylabel('velocity')
 
-        axs[2].plot(np.diff(np.diff(self.meas_p[50:]))/self.delta_t**2, color='red')
+        axs[2].plot(np.diff(np.diff(self.meas_p))/self.delta_t**2, color='red')
         axs[2].plot(self.hist_a, color='green')
         axs[2].scatter([0], [0], color='white')
         axs[2].set_ylabel('acceleration')
