@@ -114,7 +114,6 @@ class character():
         # interpolation for terrain
         x = np.linspace(0,self.size_x,len(self.world[0,:,0,0]))
         y = np.linspace(0,self.size_y,len(self.world[0,0,:,0]))
-
         self.f_terrain = scipy.interpolate.interp2d(x,y,self.world[0,:,:,0].T)
 
         self.seed = seed
@@ -157,10 +156,10 @@ class character():
         self.world = world
         self.world_squished = squish(self.world, self.ceiling)
 
-        if yaml_p['environment'] == 'vicon':
-            not_done = self.live_particle()
-        else:
+        if yaml_p['environment'] == 'python3':
             not_done = self.move_particle()
+        else:
+            not_done = self.live_particle()
 
         dist_bottom = self.height_above_ground()
         dist_top = self.dist_to_ceiling()

@@ -73,6 +73,7 @@ class raspi_gps:
 				rec_buff = ''
 				self.send_at('AT+CGPS=0','OK',1)
 			time.sleep(1.5)
+		print('ERROR: time out')
 
 
 	def power_on(self,power_key):

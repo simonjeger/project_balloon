@@ -31,7 +31,7 @@ class ll_controler():
                 self.k_p = 3
                 self.k_d = 80
                 self.k_i = 0
-            elif yaml_p['environment'] == 'vicon':
+            elif yaml_p['environment'] == 'gps':
                 self.k_p = 9.5
                 self.k_d = 80
                 self.k_i = 0

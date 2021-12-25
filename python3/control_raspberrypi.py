@@ -3,6 +3,8 @@ import time
 import os
 import time
 import json
+import torch
+import scipy.interpolate
 
 from build_ll_controller import ll_controler
 from utils.ekf import ekf
@@ -74,6 +76,13 @@ def gps_to_position(lat,lon,height, lat_start,lon_start):
     else:
         print('ERROR: please use start_test = "center_determ" when testing')
 
+# interpolation for terrain
+world = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
+x = np.linspace(0,len(world[0,:,0,0]),len(world[0,:,0,0]))
+y = np.linspace(0,len(world[0,0,:,0]),len(world[0,0,:,0]))
+f_terrain = scipy.interpolate.interp2d(x,y,world[0,:,:,0].T)
+
+# initialize devices
 com = raspi_com()
 esc = raspi_esc()
 gps = raspi_gps()
@@ -134,13 +143,13 @@ while True:
         delta_f_down = data['delta_f_down']
         mass_total = data['mass_total']
 
-        terrain = 0 #still TODO!!
-
         #get GPS data and use it
         lat,lon,height = gps.get_gps_position()
         position_gps = gps_to_position(lat,lon,height,lat_start,lon_start)
         position_est = update_est(position_gps,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
         velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
+        terrain = f_terrain(position_est[0], position_est[1])[0]
+
         rel_pos_est = (position_est[2] - terrain)/(ceiling-terrain)
         rel_vel_est = velocity_est[2] / (ceiling-terrain)
 
