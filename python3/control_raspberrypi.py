@@ -47,7 +47,7 @@ def update_est(position,u,c,delta_t,delta_f_up,delta_f_down,mass_total):
     force_est = (max(0,u)*delta_f_up + min(0,u)*delta_f_down)/yaml_p['unit_z']/mass_total
     est_x.one_cycle(0,position[0],c,delta_t)
     est_y.one_cycle(0,position[1],c,delta_t)
-    est_z.one_cycle(u,position[2],c,delta_t)
+    est_z.one_cycle(force_est,position[2],c,delta_t)
     position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
     return position_est
 
@@ -72,7 +72,7 @@ def gps_to_position(lat,lon,height, lat_start,lon_start):
         p_x, p_y = dist_xy(lat,lon,lat_start,lon_start)/yaml_p['unit_xy'] + np.array([offset_x, offset_y])
         return [p_x, p_y, height]
     else:
-        print('ERROR: please use start_test = "center" when testing')
+        print('ERROR: please use start_test = "center_determ" when testing')
 
 com = raspi_com()
 esc = raspi_esc()
@@ -84,6 +84,7 @@ position_gps = gps_to_position(lat_start,lon_start,height_start,lat_start,lon_st
 est_x = ekf(position_gps[0])
 est_y = ekf(position_gps[1])
 est_z = ekf(position_gps[2])
+
 velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
 offset = 0
@@ -106,26 +107,22 @@ global_start = time.time()
 while True:
     t_start = time.time()
 
-    lat,lon,height = gps.get_gps_position()
-    position_gps = gps_to_position(lat,lon,height,lat_start,lon_start)
-    u = 0
-    position_est = update_est(position_gps,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
-    velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
-
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(1)
         print('waiting for the algorithm to publish')
 
         data = {
         'U': U,
-        'position': np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
-        'velocity': np.divide(velocity_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+        'position': position_gps,
+        'velocity': [0,0,0],
         'path': [],
-        'position_est': np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+        'position_est': position_gps,
         'path_est': [],
         'measurement': [0, 0],
         'min_proj_dist': 0,
         'not_done': not_done}
+
+        action = 0 #there is no command to reveive anything from, so I assume the action = 0 (only important for break out condition at the end)
 
     else:
         data = receive()
@@ -137,8 +134,13 @@ while True:
         delta_f_down = data['delta_f_down']
         mass_total = data['mass_total']
 
-        terrain = 0
+        terrain = 0 #still TODO!!
 
+        #get GPS data and use it
+        lat,lon,height = gps.get_gps_position()
+        position_gps = gps_to_position(lat,lon,height,lat_start,lon_start)
+        position_est = update_est(position_gps,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
+        velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
         rel_pos_est = (position_est[2] - terrain)/(ceiling-terrain)
         rel_vel_est = velocity_est[2] / (ceiling-terrain)
 
@@ -159,8 +161,7 @@ while True:
             not_done = False
         """
 
-        #action = tuning(time.time() - global_start)
-        u_raw = llc.pid(action, rel_pos_est, rel_vel_est)
+        u_raw = llc.bangbang(action, rel_pos_est)
         u = offset + u_raw*scale
 
         if yaml_p['mode'] == 'tuning':

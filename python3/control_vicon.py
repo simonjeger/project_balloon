@@ -95,7 +95,7 @@ def update_est(position,u,c,delta_t,delta_f_up,delta_f_down,mass_total):
     force_est = (max(0,u)*delta_f_up + min(0,u)*delta_f_down)/yaml_p['unit_z']/mass_total
     est_x.one_cycle(0,position[0],c,delta_t)
     est_y.one_cycle(0,position[1],c,delta_t)
-    est_z.one_cycle(u,position[2],c,delta_t)
+    est_z.one_cycle(force_est,position[2],c,delta_t)
     position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
     return position_est
 
@@ -191,11 +191,13 @@ while True:
         'min_proj_dist': 0,
         'not_done': not_done}
 
+        action = 0 #there is no command to reveive anything from, so I assume the action = 0 (only important for break out condition at the end)
+
     else:
         data = receive()
         action = data['action']
         target = data['target']
-        ceiling = data['ceiling']
+        ceiling = data['ceiling']*yaml_p['unit_z'] #in meters
         c = data['c']
         delta_f_up = data['delta_f_up']
         delta_f_down = data['delta_f_down']

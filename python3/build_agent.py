@@ -328,8 +328,11 @@ class Agent:
                 data = {
                 'action': -1,
                 'target': [-10,-10,-10],
-                'c': 1,
-                'ceiling': 1
+                'c': self.env.character.c,
+                'ceiling': self.env.character.ceiling, #in meters
+                'delta_f_up': self.env.character.delta_f_up,
+                'delta_f_down': self.env.character.delta_f_down,
+                'mass_total': self.env.character.mass_total
                 }
                 self.env.character.send(data)
                 time.sleep(3) #so we are sure the system reads it
