@@ -24,28 +24,30 @@ with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
 def convert_map(start_t):
+    Path(yaml_p['process_path'] + 'data_cosmo').mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['process_path'] + 'data_cosmo/tensor').mkdir(parents=True, exist_ok=True)
+    Path(yaml_p['process_path'] + 'data_cosmo/coord').mkdir(parents=True, exist_ok=True)
+
     #size_x = 362
     #size_y = 252
 
-    size_x = 100
+    size_x = 200
     size_y = 100
     size_z = 105
 
     world = np.zeros(shape=(1+4,size_x,size_y,size_z))
+    coord = np.zeros(shape=(2,size_x,size_y))
 
     #min_lat :48.096786
     #max_lat :45.50961
     #min_lon :10.868285
     #max_lon :5.5040283
 
-    center_lat = 46.803198 #46.803198
-    center_lon = 8.18615665 #10
-
-    #center_lat = 46.5
-    #center_lon = 6
-
     step_x = size_x/2*yaml_p['unit_xy']
     step_y = size_y/2*yaml_p['unit_xy']
+
+    center_lat = 46.803198
+    center_lon = 8.18615665
 
     start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
     end_lat, end_lon = step(center_lat, center_lon, step_x, step_y)
@@ -72,6 +74,10 @@ def convert_map(start_t):
                     q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
                     q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
 
+                    # write down coordinates
+                    coord[0,i,j] = q_lat
+                    coord[1,i,j] = q_lon
+
                     # write terrain
                     world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
 
@@ -91,7 +97,8 @@ def convert_map(start_t):
         print('------- converted to tensor -------')
 
         # save
-        torch.save(world, 'data_cosmo/tensor/wind_map_CH_' + str(t).zfill(2) + '.pt')
+        torch.save(world, yaml_p['process_path'] + 'data_cosmo/tensor/wind_map_CH_' + str(t).zfill(2) + '.pt')
+        torch.save(coord, yaml_p['process_path'] + 'data_cosmo/coord/coord_map_CH_' + str(t).zfill(2) + '.pt')
 
 def dist(lat_1, lon_1, lat_2, lon_2):
     R = 6371*1000 #radius of earth in meters
@@ -112,11 +119,12 @@ def build_set(num, n_h, train_or_test):
     Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
     Path(yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
     Path(yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
-
+    Path(yaml_p['data_path'] + train_or_test + '/coord').mkdir(parents=True, exist_ok=True)
 
     seed_overall = np.random.randint(0,2**32 - 1)
     for h in range(n_h):
-        tensor = torch.load('data_cosmo/tensor/wind_map_CH_' + str(h).zfill(2) + '.pt')
+        tensor = torch.load(yaml_p['process_path'] + 'data_cosmo/tensor/wind_map_CH_' + str(h).zfill(2) + '.pt')
+        coord = torch.load(yaml_p['process_path'] + 'data_cosmo/coord/coord_map_CH_' + str(h).zfill(2) + '.pt')
         size_c = len(tensor)
         size_x = yaml_p['size_x']
         size_y = yaml_p['size_y']
@@ -155,15 +163,17 @@ def build_set(num, n_h, train_or_test):
                     idx_y = np.random.randint(0,global_size_y - size_y - 1)
 
                     world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
+                    coord_center = coord[:,idx_x + int(size_x/2), idx_y + int(size_y/2)] #only save the center coordinate (lat,lon)
 
                 torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
+                torch.save(coord_center, yaml_p['data_path'] + train_or_test + '/coord/coord_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
 
                 print('generated ' + str(o*N + n + 1) + ' of ' + str(num) + ' maps at ' + str(h).zfill(2) + ':00')
 
 def visualize_real_data(dimension):
     # reading the nc file and creating Dataset
-    nc_terrain = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_ana_const.nc')
-    nc_wind = netCDF4.Dataset('data_cosmo/cosmo-1_ethz_fcst_2018112300.nc')
+    nc_terrain = netCDF4.Dataset(yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_ana_const.nc')
+    nc_wind = netCDF4.Dataset(yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_fcst_2018112300.nc')
 
     if dimension == 'z':
         N = min(len(nc_wind['U'][0,:,0,:]), len(nc_wind['U'][0,:,:,0]))
@@ -251,14 +261,14 @@ def visualize_real_data(dimension):
             im.callbacksSM.connect('changed', update)
 
         # Build folder structure if it doesn't exist yet
-        path = 'data_cosmo/temp'
+        path = yaml_p['process_path'] + 'data_cosmo/temp'
         Path(path).mkdir(parents=True, exist_ok=True)
         plt.savefig(path + '/gif_' + str(n).zfill(5) + '.png')
         plt.close()
         print('saving frame nr. ' + str(n))
 
     # Build GIF
-    with imageio.get_writer('data_cosmo/cosmo_' + dimension + '.gif', mode='I') as writer:
+    with imageio.get_writer(yaml_p['process_path'] + 'data_cosmo/cosmo_' + dimension + '.gif', mode='I') as writer:
         name_list = os.listdir(path)
         name_list.sort()
         for name in name_list:

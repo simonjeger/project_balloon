@@ -149,7 +149,7 @@ class balloon3d(Env):
             self.set_target()
         else:
             self.start = self.character.path[0]
-            self.target = target
+            self.target = np.array(target)
 
         # if started "under ground"
         above_ground_start = self.size_z/100

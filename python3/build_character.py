@@ -120,7 +120,8 @@ class character():
         self.set_ceiling()
         self.world_squished = squish(self.world, self.ceiling)
 
-        self.set_noise()
+        if yaml_p['environment'] == 'python3':
+            self.set_noise()
 
         self.residual = self.target - self.position
         self.measurement = self.interpolate(self.world_squished)[0:2]
@@ -255,11 +256,12 @@ class character():
             # add noise
             avg_mag = np.mean(abs(self.world[1:4]))
 
-            noise = self.interpolate(self.noise,noise=True)
-            n_x, n_y, n_z = avg_mag*self.prop_mag*noise
+            if yaml_p['environment'] == 'python3':
+                noise = self.interpolate(self.noise,noise=True)
+                n_x, n_y, n_z = avg_mag*self.prop_mag*noise
 
-            if yaml_p['3d'] == False: #because there is so much noise in x direction when it's a 2d field
-                n_x *= 1.3
+                if yaml_p['3d'] == False: #because there is so much noise in x direction when it's a 2d field
+                    n_x *= 1.3
 
             w_x += n_x
             w_y += n_y
