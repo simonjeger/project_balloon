@@ -23,7 +23,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def convert_map(start_t):
+def convert_map(start_t,N_t):
     Path(yaml_p['process_path'] + 'data_cosmo').mkdir(parents=True, exist_ok=True)
     Path(yaml_p['process_path'] + 'data_cosmo/tensor').mkdir(parents=True, exist_ok=True)
     Path(yaml_p['process_path'] + 'data_cosmo/coord').mkdir(parents=True, exist_ok=True)
@@ -65,7 +65,7 @@ def convert_map(start_t):
 
     ext = extracter(yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', terrain_file=yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_ana_const.nc')
 
-    for t in np.arange(start_t,24):
+    for t in np.arange(start_t,start_t + N_t):
         for i in range(size_x):
             for j in range(size_y):
                 out = ext.extract_cosmo_data(start_lat + j*step_lat, start_lon + i*step_lon, t) #used to be 46.947225, 8.693297, 3
@@ -281,7 +281,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map(21)
+convert_map(0,3)
 
 #build_set(1000, 7, 'train')
 #build_set(500, 7, 'test')

@@ -98,6 +98,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'world_est: ' + str(world_est) + '\n'
     text = text + 'measurement_info: ' + str(measurement_info) + '\n'
     text = text + 'wind_info: ' + str(wind_info) + '\n'
+    text = text + 'QNH: 1013.25' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
