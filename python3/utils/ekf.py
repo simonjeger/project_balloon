@@ -10,11 +10,11 @@ class ekf():
         self.P_0 = np.ones((4))                                             #error covariance (dim_x, dim_x)
         self.W_0 = np.ones((4))                                             #noise covariance (dim_x, dim_x)
         self.Q_0 = np.eye((4))                                              #process noise (dim_x, dim_x)
-        self.Q_0[0,0] = 1
+        self.Q_0[0,0] = 100
         self.Q_0[1,1] = 1
-        self.Q_0[2,2] = 10                                                  #the acceleration is not actually zero
-        self.Q_0[3,3] = 10                                                  #the wind is not actually zero
-        self.R_0 = [1, 1, 1, 1]                                             #measurement noise (dim_z, dim_z)
+        self.Q_0[2,2] = 1                                                  #the acceleration is not actually zero
+        self.Q_0[3,3] = 1                                                  #the wind is not actually zero
+        self.R_0 = [100, 1000, 10000, 1000]                                       #measurement noise (dim_z, dim_z)
         self.H_0 = np.eye((4))                                              #measurement function (dim_x, dim_x)
 
         self.hist_p = []                        #for plotting
@@ -25,11 +25,14 @@ class ekf():
         self.pred_basic = []
 
     def f(self):
-        p = self.xhat_0[0] + self.xhat_0[1]*self.delta_t
-        v = self.xhat_0[1] + self.xhat_0[2]*self.delta_t
+        #p = self.xhat_0[0] + self.xhat_0[1]*self.delta_t
+        #v = self.xhat_0[1] + self.xhat_0[2]*self.delta_t
 
-        v_rel = v - self.xhat_0[1]
-        a = self.u_0 - np.sign(v_rel)*self.c*v_rel**2
+        #v_rel = v - self.xhat_0[1]
+        #a = self.u_0 - np.sign(v_rel)*self.c*v_rel**2
+        a = 0
+        v = self.xhat_0[1]
+        p = self.xhat_0[0] + v*self.delta_t
         o = self.xhat_0[3]
         return np.array([p,v,a,o])
 
@@ -112,17 +115,17 @@ class ekf():
         axs[0].plot(self.hist_p, color='green')
         axs[0].set_ylabel('position')
 
-        axs[1].plot(np.diff(self.meas_p)/self.delta_t, color='red')
+        axs[1].plot(np.arange(1,len(self.hist_a),1),np.diff(self.meas_p)/self.delta_t, color='red')
         axs[1].plot(self.hist_v, color='green')
         axs[1].scatter([0], [0], color='white')
         axs[1].set_ylabel('velocity')
 
-        axs[2].plot(np.diff(np.diff(self.meas_p))/self.delta_t**2, color='red')
+        axs[2].plot(np.arange(2,len(self.hist_a),1),np.diff(np.diff(self.meas_p))/self.delta_t**2, color='red')
         axs[2].plot(self.hist_a, color='green')
         axs[2].scatter([0], [0], color='white')
         axs[2].set_ylabel('acceleration')
 
-        axs[3].plot(self.pred_basic, color='red')
+        axs[3].plot(np.arange(1,len(self.hist_a),1),self.pred_basic, color='red')
         axs[3].plot(self.pred, color='green')
         axs[3].scatter([0], [0], color='white')
         axs[3].set_ylabel('offset')
@@ -130,9 +133,11 @@ class ekf():
         plt.savefig('debug_ekf.png')
         plt.close()
 
+        """
         self.hist_p = []
         self.hist_v = []
         self.hist_a = []
         self.meas_p = []
         self.pred = []
         self.pred_basic = []
+        """

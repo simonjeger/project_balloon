@@ -56,8 +56,8 @@ class raspi_gps:
 					time.sleep(1)
 				else:
 					result_array = str(result)[30::].split(",")
-					lat = float(result_array[0])
-					lon = float(result_array[2])
+					lat = self.convert_min_to_dec(result_array[0])
+					lon = self.convert_min_to_dec(result_array[2])
 					year = int(result_array[4][0:2])
 					month = int(result_array[4][2:4])
 					day = int(result_array[4][4:6])
@@ -75,6 +75,11 @@ class raspi_gps:
 			time.sleep(1.5)
 		print('ERROR: time out')
 
+	def convert_min_to_dec(self,lat_or_lon):
+		deg = str(lat_or_lon)[0:-9]
+		min = str(lat_or_lon)[-9:-1]
+		res = float(deg) + float(min)/60
+		return res
 
 	def power_on(self,power_key):
 		print('SIM7600X GPS is starting:')

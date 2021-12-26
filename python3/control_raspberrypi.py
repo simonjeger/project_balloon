@@ -12,6 +12,7 @@ from utils.ekf import ekf
 from utils.raspberrypi_com import raspi_com
 from utils.raspberrypi_esc import raspi_esc
 from utils.raspberrypi_gps import raspi_gps
+from utils.raspberrypi_alt import raspi_alt
 
 import yaml
 import argparse
@@ -77,24 +78,24 @@ def gps_to_position(lat,lon,height, lat_start,lon_start):
         print('ERROR: please use start_test = "center_determ" when testing')
 
 # interpolation for terrain
-"""
 world = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
 x = np.linspace(0,len(world[0,:,0,0]),len(world[0,:,0,0]))
 y = np.linspace(0,len(world[0,0,:,0]),len(world[0,0,:,0]))
 f_terrain = scipy.interpolate.interp2d(x,y,world[0,:,:,0].T)
-"""
 
 # initialize devices
 com = raspi_com()
 esc = raspi_esc()
 gps = raspi_gps()
+alt = raspi_alt()
 
 lat_start,lon_start,height_start = gps.get_gps_position()
-position_gps = gps_to_position(lat_start,lon_start,height_start,lat_start,lon_start)
+position_meas = gps_to_position(lat_start,lon_start,height_start,lat_start,lon_start)
+position_meas[2] = alt.get_altitude()
 
-est_x = ekf(position_gps[0])
-est_y = ekf(position_gps[1])
-est_z = ekf(position_gps[2])
+est_x = ekf(position_meas[0])
+est_y = ekf(position_meas[1])
+est_z = ekf(position_meas[2])
 
 velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
@@ -124,10 +125,10 @@ while True:
 
         data = {
         'U': U,
-        'position': position_gps,
+        'position': position_meas,
         'velocity': [0,0,0],
         'path': [],
-        'position_est': position_gps,
+        'position_est': position_meas,
         'path_est': [],
         'measurement': [0, 0],
         'min_proj_dist': 0,
@@ -147,11 +148,13 @@ while True:
 
         #get GPS data and use it
         lat,lon,height = gps.get_gps_position()
-        position_gps = gps_to_position(lat,lon,height,lat_start,lon_start)
-        position_est = update_est(position_gps,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
+        position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
+        position_meas[2] = alt.get_altitude()
+        position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
         velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
-        #terrain = f_terrain(position_est[0], position_est[1])[0]
-        terrain = 0
+        terrain = f_terrain(position_est[0], position_est[1])[0]
+
+        est_y.plot()
 
         rel_pos_est = (position_est[2] - terrain)/(ceiling-terrain)
         rel_vel_est = velocity_est[2] / (ceiling-terrain)
