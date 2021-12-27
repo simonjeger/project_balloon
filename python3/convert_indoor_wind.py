@@ -107,7 +107,7 @@ def generate_world(num, n_t, train_or_test):
 
         # save
         for t in range(n_t):
-            torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(n).zfill(5) + '_' + str(t).zfill(2) + '.pt')
+            torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(n).zfill(13) + '_' + str(t).zfill(2) + '.pt')
         print('generated ' + str(n+1) + ' of ' + str(num) + ' worlds')
 
 def generate_terrain(size_x, size_y, size_z):

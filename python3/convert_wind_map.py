@@ -23,7 +23,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def convert_map(start_t,N_t):
+def convert_map():
     Path(yaml_p['process_path'] + 'data_cosmo').mkdir(parents=True, exist_ok=True)
     Path(yaml_p['process_path'] + 'data_cosmo/tensor').mkdir(parents=True, exist_ok=True)
     Path(yaml_p['process_path'] + 'data_cosmo/coord').mkdir(parents=True, exist_ok=True)
@@ -65,40 +65,40 @@ def convert_map(start_t,N_t):
 
     ext = extracter(yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_fcst_2018112300.nc', terrain_file=yaml_p['process_path'] + 'data_cosmo/cosmo-1_ethz_ana_const.nc')
 
-    for t in np.arange(start_t,start_t + N_t):
-        for i in range(size_x):
-            for j in range(size_y):
-                out = ext.extract_cosmo_data(start_lat + j*step_lat, start_lon + i*step_lon, t) #used to be 46.947225, 8.693297, 3
-                for k in range(size_z):
-                    # finding closest quadrant
-                    q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
-                    q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
+    t = yaml_p['h']
+    for i in range(size_x):
+        for j in range(size_y):
+            out = ext.extract_cosmo_data(start_lat + j*step_lat, start_lon + i*step_lon, t) #used to be 46.947225, 8.693297, 3
+            for k in range(size_z):
+                # finding closest quadrant
+                q_lat = int(np.argmin(abs(out['lat']-start_lat + i*step_lat))/2)
+                q_lon = np.argmin(abs(out['lon'][q_lat]-start_lon + i*step_lon))
 
-                    # write down coordinates
-                    coord[0,i,j] = q_lat
-                    coord[1,i,j] = q_lon
+                # write down coordinates
+                coord[0,i,j] = start_lat + j*step_lat
+                coord[1,i,j] = start_lon + i*step_lon
 
-                    # write terrain
-                    world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
+                # write terrain
+                world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
 
-                    if step_z*k < out['z'][-1,q_lat,q_lon] - lowest:
-                        world[-4,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
-                        world[-3,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
-                        world[-2,i,j,k] = np.mean(out['wind_z'][0,q_lat,q_lon])
-                        #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
-                    else:
-                        idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*k))
-                        world[-4,i,j,k] = np.mean(out['wind_x'][idx,q_lat,q_lon])
-                        world[-3,i,j,k] = np.mean(out['wind_y'][idx,q_lat,q_lon])
-                        world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
-                        #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
+                if step_z*k < out['z'][-1,q_lat,q_lon] - lowest:
+                    world[-4,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
+                    world[-3,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
+                    world[-2,i,j,k] = np.mean(out['wind_z'][0,q_lat,q_lon])
+                    #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
+                else:
+                    idx = np.argmin(abs(out['z'][:,q_lat,q_lon] - lowest - step_z*k))
+                    world[-4,i,j,k] = np.mean(out['wind_x'][idx,q_lat,q_lon])
+                    world[-3,i,j,k] = np.mean(out['wind_y'][idx,q_lat,q_lon])
+                    world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
+                    #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
-            print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor at ' + str(t).zfill(2) + ':00')
-        print('------- converted to tensor -------')
+        print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor at ' + str(t).zfill(2) + ':00')
+    print('------- converted to tensor -------')
 
-        # save
-        torch.save(world, yaml_p['process_path'] + 'data_cosmo/tensor/wind_map_CH_' + str(t).zfill(2) + '.pt')
-        torch.save(coord, yaml_p['process_path'] + 'data_cosmo/coord/coord_map_CH_' + str(t).zfill(2) + '.pt')
+    # save
+    torch.save(world, yaml_p['process_path'] + 'data_cosmo/tensor/wind_map_CH_' + str(t).zfill(2) + '.pt')
+    torch.save(coord, yaml_p['process_path'] + 'data_cosmo/coord/coord_map_CH_' + str(t).zfill(2) + '.pt')
 
 def dist(lat_1, lon_1, lat_2, lon_2):
     R = 6371*1000 #radius of earth in meters
@@ -119,7 +119,6 @@ def build_set(num, n_h, train_or_test):
     Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
     Path(yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
     Path(yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
-    Path(yaml_p['data_path'] + train_or_test + '/coord').mkdir(parents=True, exist_ok=True)
 
     seed_overall = np.random.randint(0,2**32 - 1)
     for h in range(n_h):
@@ -165,8 +164,10 @@ def build_set(num, n_h, train_or_test):
                     world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
                     coord_center = coord[:,idx_x + int(size_x/2), idx_y + int(size_y/2)] #only save the center coordinate (lat,lon)
 
-                torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/wind_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
-                torch.save(coord_center, yaml_p['data_path'] + train_or_test + '/coord/coord_map' + str(o*N + n).zfill(5) + '_' + str(h).zfill(2) + '.pt')
+                digits = 4
+                name = str(np.round(coord_center[0],digits)).zfill(digits+2) + '_' + str(np.round(coord_center[1],digits)).zfill(digits+2) + '_' + str(o) + '_' + str(h).zfill(2) + '.pt'
+                print(name)
+                torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/' + name)
 
                 print('generated ' + str(o*N + n + 1) + ' of ' + str(num) + ' maps at ' + str(h).zfill(2) + ':00')
 
@@ -281,7 +282,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map(0,3)
+convert_map()
 
-#build_set(1000, 7, 'train')
-#build_set(500, 7, 'test')
+#build_set(10, 7, 'train')
+#build_set(10, 7, 'test')

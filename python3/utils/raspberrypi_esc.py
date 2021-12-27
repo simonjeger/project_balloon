@@ -6,46 +6,51 @@ import pigpio
 
 class raspi_esc:
     def __init__(self):
-        self.ESC=13  #Connect the ESC in this GPIO pin
+        self.ESC0=13  #Connect the ESC in this GPIO pin
+        self.ESC1=12  #Connect the ESC in this GPIO pin
         self.pi = pigpio.pi()
-        self.pi.set_servo_pulsewidth(self.ESC, 0)
+        self.pi.set_servo_pulsewidth(self.ESC0, 0)
+        self.pi.set_servo_pulsewidth(self.ESC1, 0)
 
         self.max_value = 2000 #ESC's max value
         self.min_value = 700  #ESC's min value
 
     def calibrate(self):   #This is the auto calibration procedure of a normal ESC
-        self.pi.set_servo_pulsewidth(self.ESC, 0)
+        self.pi.set_servo_pulsewidth(self.ESC0, 0)
+        self.pi.set_servo_pulsewidth(self.ESC1, 0)
         print("Disconnect the battery and press Enter")
         inp = input()
         if inp == '':
-            self.pi.set_servo_pulsewidth(self.ESC, self.max_value)
+            self.pi.set_servo_pulsewidth(self.ESC0, self.max_value)
+            self.pi.set_servo_pulsewidth(self.ESC1, self.max_value)
             print("Connect the battery NOW. You will here two beeps, then wait for a gradual falling tone then press Enter")
             inp = input()
             if inp == '':
-                self.pi.set_servo_pulsewidth(self.ESC, self.min_value)
-                self.pi.set_servo_pulsewidth(self.ESC, 0)
-                time.sleep(2)
-                print("Arming self.ESC now")
-                self.pi.set_servo_pulsewidth(self.ESC, self.min_value)
-                time.sleep(1)
-                print("Armed")
-                control() # You can change this to any other function you want
+                self.pi.set_servo_pulsewidth(self.ESC0, self.min_value)
+                self.pi.set_servo_pulsewidth(self.ESC1, self.min_value)
+                time.sleep(10)
+                print('Calibration done')
+                self.arm()
 
     def arm(self): #This is the arming procedure of an ESC
-        self.pi.set_servo_pulsewidth(self.ESC, 0)
+        print("Arming ESC now")
+        self.pi.set_servo_pulsewidth(self.ESC0, 0)
+        self.pi.set_servo_pulsewidth(self.ESC1, 0)
         time.sleep(1)
-        self.pi.set_servo_pulsewidth(self.ESC, self.max_value)
+        self.pi.set_servo_pulsewidth(self.ESC0, self.max_value)
+        self.pi.set_servo_pulsewidth(self.ESC1, self.max_value)
         time.sleep(1)
-        self.pi.set_servo_pulsewidth(self.ESC, self.min_value)
+        self.pi.set_servo_pulsewidth(self.ESC0, self.min_value)
+        self.pi.set_servo_pulsewidth(self.ESC1, self.min_value)
         time.sleep(1)
-        control()
+        print("Armed")
 
     def control(self,u):
-        pwm_low = 700
-        pwm_high = 2000
-        pwm = pwm_low + (pwm_high - pwm_low)*u
-        self.pi.set_servo_pulsewidth(self.ESC, pwm)
+        pwm = self.min_value + (self.max_value - self.min_value)*u
+        self.pi.set_servo_pulsewidth(self.ESC0, pwm)
+        self.pi.set_servo_pulsewidth(self.ESC1, pwm)
 
     def stop(self): #This will stop every action your Pi is performing for ESC
-        self.pi.set_servo_pulsewidth(self.ESC, 0)
+        self.pi.set_servo_pulsewidth(self.ESC0, 0)
+        self.pi.set_servo_pulsewidth(self.ESC1, 0)
         self.pi.stop()
