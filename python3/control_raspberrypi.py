@@ -92,7 +92,8 @@ gps = raspi_gps()
 alt = raspi_alt()
 
 lat_start,lon_start = get_center()
-position_meas = gps_to_position(lat_start,lon_start,height_start,lat_start,lon_start)
+lat,lon,height = gps.get_gps_position()
+position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
 position_meas[2] = alt.get_altitude()
 
 est_x = ekf(position_meas[0])

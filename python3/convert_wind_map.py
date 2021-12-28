@@ -93,7 +93,7 @@ def convert_map():
                     world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                     #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
-        print('converted ' + str(np.round(i/size_x*100,1)) + '% of the wind field into tensor at ' + str(t).zfill(2) + ':00')
+            print('converted ' + str(np.round((i*size_x+j)/(size_x*size_y)*100,2)) + '% of the wind field into tensor at ' + str(t).zfill(2) + ':00')
     print('------- converted to tensor -------')
 
     # save
@@ -164,9 +164,13 @@ def build_set(num, n_h, train_or_test):
                     world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
                     coord_center = coord[:,idx_x + int(size_x/2), idx_y + int(size_y/2)] #only save the center coordinate (lat,lon)
 
+                # naming convention
                 digits = 4
-                name = str(np.round(coord_center[0],digits)).zfill(digits+2) + '_' + str(np.round(coord_center[1],digits)).zfill(digits+2) + '_' + str(o) + '_' + str(h).zfill(2) + '.pt'
-                print(name)
+                name_lat = str(int(np.round(coord_center[0],digits)*10**digits)).zfill(digits+2)
+                name_lon = str(int(np.round(coord_center[1],digits)*10**digits)).zfill(digits+2)
+                name_lat = name_lat[0:2] + '.' + name_lat[2::]
+                name_lon = name_lon[0:2] + '.' + name_lon[2::]
+                name = name_lat + '_' + name_lon + '_' + str(o) + '_' + str(h).zfill(2) + '.pt'
                 torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/' + name)
 
                 print('generated ' + str(o*N + n + 1) + ' of ' + str(num) + ' maps at ' + str(h).zfill(2) + ':00')
@@ -282,7 +286,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map()
+#convert_map()
 
-#build_set(10, 7, 'train')
-#build_set(10, 7, 'test')
+build_set(5000, 4, 'train')
+build_set(500, 4, 'test')
