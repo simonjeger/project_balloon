@@ -153,9 +153,15 @@ while True:
         mass_total = data['mass_total']
 
         #get GPS data and use it
-        lat,lon,height = gps.get_gps_position()
+        try:
+            lat,lon,height = gps.get_gps_position()
+        except:
+            print("WARNING: Couldn't get GPS measurement")
         position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
-        position_meas[2] = alt.get_altitude()
+        try:
+            position_meas[2] = alt.get_altitude()
+        except:
+            print("WARNING: Couldn't get ALT measurement")
         position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
         velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
         terrain = f_terrain(position_est[0], position_est[1])[0]
