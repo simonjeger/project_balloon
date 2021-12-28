@@ -5,6 +5,7 @@ import time
 import json
 import torch
 import scipy.interpolate
+import sys
 
 from build_ll_controller import ll_controler
 from utils.ekf import ekf
@@ -60,6 +61,11 @@ def dist_xy(lat_1, lon_1, lat_2, lon_2):
     return np.array([d_x, d_y])
 
 def dist(lat_1, lon_1, lat_2, lon_2):
+    lat_1 = np.radians(lat_1)
+    lon_1 = np.radians(lon_1)
+    lat_2 = np.radians(lat_2)
+    lon_2 = np.radians(lon_2)
+
     R = 6371*1000 #radius of earth in meters
     phi = lat_2 - lat_1
     lam = lon_2 - lon_1
@@ -73,7 +79,7 @@ def gps_to_position(lat,lon,height, lat_start,lon_start):
     offset_x = (yaml_p['size_x']-1)/2
     offset_y = (yaml_p['size_y']-1)/2
     p_x, p_y = dist_xy(lat,lon,lat_start,lon_start)/yaml_p['unit_xy'] + np.array([offset_x, offset_y])
-    return [p_x, p_y, height]
+    return [p_x, p_y, height/yaml_p['unit_z']]
 
 def get_center():
     center = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
@@ -94,7 +100,7 @@ alt = raspi_alt()
 lat_start,lon_start = get_center()
 lat,lon,height = gps.get_gps_position()
 position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
-position_meas[2] = alt.get_altitude()
+position_meas[2] = alt.get_altitude()/yaml_p['unit_z']
 
 est_x = ekf(position_meas[0])
 est_y = ekf(position_meas[1])
