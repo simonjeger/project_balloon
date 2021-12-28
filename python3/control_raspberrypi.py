@@ -143,90 +143,97 @@ while True:
         action = 0 #there is no command to reveive anything from, so I assume the action = 0 (only important for break out condition at the end)
 
     else:
-        data = receive()
-        action = data['action']
-        target = data['target']
-        ceiling = data['ceiling']
-        c = data['c']
-        delta_f_up = data['delta_f_up']
-        delta_f_down = data['delta_f_down']
-        mass_total = data['mass_total']
+        try: #if anything breaks, just cut the motors
+            data = receive()
+            action = data['action']
+            target = data['target']
+            ceiling = data['ceiling']
+            c = data['c']
+            delta_f_up = data['delta_f_up']
+            delta_f_down = data['delta_f_down']
+            mass_total = data['mass_total']
 
-        #get GPS data and use it
-        try:
-            lat,lon,height = gps.get_gps_position()
+            #get GPS data and use it
+            try:
+                lat,lon,height = gps.get_gps_position()
+            except:
+                print("WARNING: Couldn't get GPS measurement at " + str(int(global_start - t_start)) + 's after start.')
+            position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
+            try:
+                position_meas[2] = alt.get_altitude()
+            except:
+                print("WARNING: Couldn't get ALT measurement at " + str(int(global_start - t_start)) + 's after start.')
+            position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
+            velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
+            terrain = f_terrain(position_est[0], position_est[1])[0]
+
+            # degbug
+            #est_y.plot()
+
+            rel_pos_est = (position_est[2] - terrain)/(ceiling-terrain)
+            rel_vel_est = velocity_est[2] / (ceiling-terrain)
+
+            # check if done or not
+            if (position_est[0] < 0) | (position_est[0]/yaml_p['unit_xy'] > yaml_p['size_x'] - 1):
+                print('x out of bounds')
+                not_done = False
+            if (position_est[1] < 0) | (position_est[1]/yaml_p['unit_xy'] > yaml_p['size_y'] - 1):
+                print('y out of bounds')
+                not_done = False
+            """
+            if (rel_pos_est < 0) | (rel_pos_est >= 1):
+                print('z out of bounds')
+                not_done = False
+            if t < 0: #check if flight time is over
+                not_done = False
+            if self.battery_level < 0: #check if battery is empty
+                not_done = False
+            """
+
+            u_raw = llc.bangbang(action, rel_pos_est)
+            u = offset + u_raw*scale
+
+            if yaml_p['mode'] == 'tuning':
+                print(u)
+
+            esc.control(u)
+            if (not not_done) | (action < 0):
+                u = 0
+                esc.control(u)
+
+            t_stop = time.time()
+            delta_t = t_stop - t_start
+
+            path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
+
+            U += abs(u*delta_t)
+
+            # find min_proj_dist
+            render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
+            residual = target - np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
+            min_proj_dist_prop = np.sqrt((residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
+            min_dist_prop = np.sqrt((residual[1]*render_ratio)**2 + (residual[2])**2)*yaml_p['unit_z']
+            if min_proj_dist_prop < min_proj_dist:
+                min_proj_dist = min_proj_dist_prop
+                min_dist = min_dist_prop
+
+            data = {
+            'U': U,
+            'position': np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+            'velocity': np.divide(velocity_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+            'path': path_est,
+            'position_est': position_est,
+            'path_est': path_est,
+            'measurement': [est_x.wind(), est_y.wind()],
+            'min_proj_dist': min_proj_dist,
+            'min_dist': min_dist,
+            'not_done': not_done}
+
+            send(data)
+            if (not not_done) | (action < 0):
+                break
         except:
-            print("WARNING: Couldn't get GPS measurement")
-        position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
-        try:
-            position_meas[2] = alt.get_altitude()
-        except:
-            print("WARNING: Couldn't get ALT measurement")
-        position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
-        velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
-        terrain = f_terrain(position_est[0], position_est[1])[0]
-
-        est_y.plot()
-
-        rel_pos_est = (position_est[2] - terrain)/(ceiling-terrain)
-        rel_vel_est = velocity_est[2] / (ceiling-terrain)
-
-        # check if done or not
-        if (position_est[0] < 0) | (position_est[0]/yaml_p['unit_xy'] > yaml_p['size_x'] - 1):
-            print('x out of bounds')
-            not_done = False
-        if (position_est[1] < 0) | (position_est[1]/yaml_p['unit_xy'] > yaml_p['size_y'] - 1):
-            print('y out of bounds')
-            not_done = False
-        """
-        if (rel_pos_est < 0) | (rel_pos_est >= 1):
-            print('z out of bounds')
-            not_done = False
-        if t < 0: #check if flight time is over
-            not_done = False
-        if self.battery_level < 0: #check if battery is empty
-            not_done = False
-        """
-
-        u_raw = llc.bangbang(action, rel_pos_est)
-        u = offset + u_raw*scale
-
-        if yaml_p['mode'] == 'tuning':
-            print(u)
-
-        esc.control(u)
-        if (not not_done) | (action < 0):
+            print("WARNING: Something fatal broke down at " + str(int(global_start - t_start)) + 's after start.')
             u = 0
             esc.control(u)
-
-        t_stop = time.time()
-        delta_t = t_stop - t_start
-
-        path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
-
-        U += abs(u*delta_t)
-
-        # find min_proj_dist
-        render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
-        residual = target - np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
-        min_proj_dist_prop = np.sqrt((residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
-        min_dist_prop = np.sqrt((residual[1]*render_ratio)**2 + (residual[2])**2)*yaml_p['unit_z']
-        if min_proj_dist_prop < min_proj_dist:
-            min_proj_dist = min_proj_dist_prop
-            min_dist = min_dist_prop
-
-        data = {
-        'U': U,
-        'position': np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
-        'velocity': np.divide(velocity_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
-        'path': path_est,
-        'position_est': position_est,
-        'path_est': path_est,
-        'measurement': [est_x.wind(), est_y.wind()],
-        'min_proj_dist': min_proj_dist,
-        'min_dist': min_dist,
-        'not_done': not_done}
-
-    send(data)
-    if (not not_done) | (action < 0):
-        break
+            print("INFORMATION: Thrust set to zero.")
