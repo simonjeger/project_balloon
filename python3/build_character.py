@@ -29,8 +29,10 @@ with open(args.yaml_file, 'rt') as fh:
 
 class character():
     def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, train_or_test, seed):
-        self.n = int(yaml_p['delta_t']/yaml_p['delta_t_physics'])
-        self.delta_tn = yaml_p['delta_t']/self.n
+        if train_or_test == 'train': #only testing is affected by denser logging to avoid messing up the learning
+            yaml_p['delta_t_logger'] = yaml_p['delta_t']
+        self.n = int(yaml_p['delta_t_logger']/yaml_p['delta_t_physics'])
+        self.delta_tn = yaml_p['delta_t_logger']/self.n
 
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
         self.radius_xy = radius_xy
@@ -296,7 +298,7 @@ class character():
                 self.min_dist = min_dist
 
             # update time
-            self.t -= yaml_p['delta_t']/self.n
+            self.t -= yaml_p['delta_t_logger']/self.n
 
             # check if done or not
             if (self.position[0] < 0) | (self.position[0] > self.size_x - 1):
@@ -338,8 +340,8 @@ class character():
         self.send(data) #write action to file
 
         #timing of the when to receive the data from the hardware
-        while time.time() - self.real_time < yaml_p['delta_t']:
-            time.sleep(yaml_p['delta_t']/100)
+        delta_t = time.time() - self.real_time
+        time.sleep(yaml_p['delta_t_logger'] - delta_t)
         self.real_time = time.time()
         data = self.receive()
 
@@ -356,7 +358,7 @@ class character():
         self.min_dist = data['min_dist']
 
         # update time
-        self.t -= yaml_p['delta_t']
+        self.t -= yaml_p['delta_t_logger']
 
         # update EKF
         self.set_measurement(data['measurement'][0],data['measurement'][1])

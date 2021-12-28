@@ -195,6 +195,10 @@ class balloon3d(Env):
 
         # remove suffix and timestamp
         self.world_name = self.world_name[:-6]
+        center_lat = self.world_name[8:14]
+        center_lon = self.world_name[15:21]
+        center = [center_lat, center_lon]
+        torch.save(center, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
 
         # Interpolate the get the current world
         self.interpolate_world(yaml_p['T'])

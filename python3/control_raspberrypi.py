@@ -69,13 +69,15 @@ def dist(lat_1, lon_1, lat_2, lon_2):
     return d
 
 def gps_to_position(lat,lon,height, lat_start,lon_start):
-    if yaml_p['start_test'] == 'center_determ':
-        offset_x = (yaml_p['size_x']-1)/2
-        offset_y = (yaml_p['size_y']-1)/2
-        p_x, p_y = dist_xy(lat,lon,lat_start,lon_start)/yaml_p['unit_xy'] + np.array([offset_x, offset_y])
-        return [p_x, p_y, height]
-    else:
-        print('ERROR: please use start_test = "center_determ" when testing')
+    # lat_start and lon_start where measured in the middle of the map
+    offset_x = (yaml_p['size_x']-1)/2
+    offset_y = (yaml_p['size_y']-1)/2
+    p_x, p_y = dist_xy(lat,lon,lat_start,lon_start)/yaml_p['unit_xy'] + np.array([offset_x, offset_y])
+    return [p_x, p_y, height]
+
+def get_center():
+    center = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
+    return center[0], center[1]
 
 # interpolation for terrain
 world = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
@@ -89,7 +91,7 @@ esc = raspi_esc()
 gps = raspi_gps()
 alt = raspi_alt()
 
-lat_start,lon_start,height_start = gps.get_gps_position()
+lat_start,lon_start = get_center()
 position_meas = gps_to_position(lat_start,lon_start,height_start,lat_start,lon_start)
 position_meas[2] = alt.get_altitude()
 
@@ -118,6 +120,10 @@ delta_t = 20 #only placeholder, nescessary for estimation functions
 global_start = time.time()
 while True:
     t_start = time.time()
+
+    # load center of map (depending on when the agent starts this needs to be rechecked)
+    center = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
+    lat_start,lon_start = get_center()
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(1)

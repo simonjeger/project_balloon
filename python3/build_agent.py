@@ -54,6 +54,9 @@ class Agent:
         self.writer = writer
         self.seed = 0
 
+        if train_or_test == 'train': #only testing is affected by denser logging to avoid messing up the learning
+            yaml_p['delta_t_logger'] = yaml_p['delta_t']
+
         self.clip = 0.01
 
         acts = env.action_space
@@ -194,63 +197,66 @@ class Agent:
         self.HER_target = []
         self.HER_residual = []
 
+        decision_count = 0
         while True:
-            if yaml_p['mode'] == 'reinforcement_learning':
-                action_RL = self.agent.act(obs) #uses self.agent.model to decide next step
-                action = np.clip(action_RL[0],self.clip,1-self.clip) #gym sometimes violates the conditions set in the environment
+            # only take a decision when it's the time to do so, otherwise just log
+            if (self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count:
+                decision_count += 1
+                if yaml_p['mode'] == 'reinforcement_learning':
+                    action_RL = self.agent.act(obs) #uses self.agent.model to decide next step
+                    action = np.clip(action_RL[0],self.clip,1-self.clip) #gym sometimes violates the conditions set in the environment
 
-            elif yaml_p['mode'] == 'game':
-                action_user = self.user_input()
-                if action_user is not None:
-                    action = action_user
+                elif yaml_p['mode'] == 'game':
+                    action_user = self.user_input()
+                    if action_user is not None:
+                        action = action_user
 
-                _ = self.agent.act(obs) #this is only so it works in training mode
-                action = np.clip(action,self.clip,1-self.clip)
-                action_RL = action #this is only so it works with HER
+                    _ = self.agent.act(obs) #this is only so it works in training mode
+                    action = np.clip(action,self.clip,1-self.clip)
+                    action_RL = action #this is only so it works with HER
 
-            elif yaml_p['mode'] == 'simple':
-                _ = self.agent.act(obs) #this is only so it works in training mode
-                action = self.act_simple(self.env.character)
-                action_RL = action #this is only so it works with HER
+                elif yaml_p['mode'] == 'simple':
+                    _ = self.agent.act(obs) #this is only so it works in training mode
+                    action = self.act_simple(self.env.character)
+                    action_RL = action #this is only so it works with HER
 
-            elif yaml_p['mode'] == 'hybrid':
-                action_RL = self.agent.act(obs) #this is only so it works in training mode
-                action = self.act_simple(self.env.character, action_RL[0])
+                elif yaml_p['mode'] == 'hybrid':
+                    action_RL = self.agent.act(obs) #this is only so it works in training mode
+                    action = self.act_simple(self.env.character, action_RL[0])
 
-            elif yaml_p['mode'] == 'tuning':
-                _ = self.agent.act(obs) #this is only so it works in training mode
-                action = self.tuning()
-                action_RL = action #this is only so it works with HER
+                elif yaml_p['mode'] == 'tuning':
+                    _ = self.agent.act(obs) #this is only so it works in training mode
+                    action = self.tuning()
+                    action_RL = action #this is only so it works with HER
 
-            else:
-                print('ERROR: Please choose one of the available modes.')
+                else:
+                    print('ERROR: Please choose one of the available modes.')
 
             if yaml_p['render']:
                 self.env.render(mode=True, action=action)
 
             # logger
             if self.writer is not None:
-                if (self.step_n % yaml_p['log_frequency'] == 0):
-                    self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
-                    self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
-                    self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
-                    self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
-                    self.writer.add_scalar('velocity_x', self.env.character.velocity[0], self.step_n)
-                    self.writer.add_scalar('velocity_y', self.env.character.velocity[1], self.step_n)
-                    self.writer.add_scalar('velocity_z', self.env.character.velocity[2], self.step_n)
-                    self.writer.add_scalar('t', self.env.character.t, self.step_n)
-                    self.writer.add_scalar('diameter', self.env.character.diameter, self.step_n)
-                    self.writer.add_scalar('battery_level', self.env.character.battery_level, self.step_n)
-                    self.writer.add_scalar('min_proj_dist', self.env.character.min_proj_dist, self.step_n)
-                    self.writer.add_scalar('action', action, self.step_n)
-                    self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
+                self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
+                self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
+                self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
+                self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
+                self.writer.add_scalar('velocity_x', self.env.character.velocity[0], self.step_n)
+                self.writer.add_scalar('velocity_y', self.env.character.velocity[1], self.step_n)
+                self.writer.add_scalar('velocity_z', self.env.character.velocity[2], self.step_n)
+                self.writer.add_scalar('t', self.env.character.t, self.step_n)
+                self.writer.add_scalar('diameter', self.env.character.diameter, self.step_n)
+                self.writer.add_scalar('battery_level', self.env.character.battery_level, self.step_n)
+                self.writer.add_scalar('min_proj_dist', self.env.character.min_proj_dist, self.step_n)
+                self.writer.add_scalar('action', action, self.step_n)
+                self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
 
-                    if yaml_p['world_est'] == True:
-                        self.writer.add_scalar('measurement_x', self.env.character.measurement[0], self.step_n)
-                        self.writer.add_scalar('measurement_y', self.env.character.measurement[1], self.step_n)
+                if yaml_p['world_est'] == True:
+                    self.writer.add_scalar('measurement_x', self.env.character.measurement[0], self.step_n)
+                    self.writer.add_scalar('measurement_y', self.env.character.measurement[1], self.step_n)
 
-                    if yaml_p['log_world_est_error']:
-                        self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
+                if yaml_p['log_world_est_error']:
+                    self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
 
             # do the actual step
             obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
