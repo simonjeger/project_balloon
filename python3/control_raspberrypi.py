@@ -119,6 +119,7 @@ c = 1 #only placeholder, nescessary for estimation functions
 delta_t = 20 #only placeholder, nescessary for estimation functions
 
 global_start = time.time()
+print('System ready')
 while True:
     t_start = time.time()
 
@@ -237,6 +238,10 @@ while True:
             if action < 0:
                 print('INFORMATION: run was cancalled deliberately.')
                 break
+
+        except KeyboardInterrupt:
+            print("WARNING: Maual kill.")
+            sys.exit()
 
         except:
             print("WARNING: Something fatal broke down at " + str(int(global_start - t_start)) + 's after start.')
