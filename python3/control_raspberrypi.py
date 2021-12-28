@@ -158,12 +158,13 @@ while True:
             try:
                 lat,lon,height = gps.get_gps_position()
             except:
-                print("WARNING: Couldn't get GPS measurement at " + str(int(global_start - t_start)) + 's after start.')
+                time.sleep(1) #that's usually about as long as it takes for a measurement to get in
+                print("WARNING: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + 's after start.')
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
             try:
                 position_meas[2] = alt.get_altitude()
             except:
-                print("WARNING: Couldn't get ALT measurement at " + str(int(global_start - t_start)) + 's after start.')
+                print("WARNING: Couldn't get ALT measurement at " + str(int(t_start - global_start)) + 's after start.')
             position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
             velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
             terrain = f_terrain(position_est[0], position_est[1])[0]
@@ -230,9 +231,13 @@ while True:
             'min_dist': min_dist,
             'not_done': not_done}
 
-            send(data)
-            if (not not_done) | (action < 0):
+            if not not_done:
+                print('INFORMATION: system ran out of bounds.')
                 break
+            if action < 0:
+                print('INFORMATION: run was cancalled deliberately.')
+                break
+
         except:
             print("WARNING: Something fatal broke down at " + str(int(global_start - t_start)) + 's after start.')
             u = 0

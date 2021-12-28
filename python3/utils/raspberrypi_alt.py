@@ -19,5 +19,5 @@ class raspi_alt:
 		self.bmp.sea_level_pressure = yaml_p['QNH']
 
 	def get_altitude(self):
-		print('alt: ' + str(self.bmp.altitude))
+		#print('alt: ' + str(self.bmp.altitude))
 		return self.bmp.altitude

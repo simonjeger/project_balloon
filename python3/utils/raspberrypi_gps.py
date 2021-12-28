@@ -42,11 +42,11 @@ class raspi_gps:
 
 	def get_gps_position(self):
 		answer = 0
-		print('Start GPS session...')
+		#print('Start GPS session...')
 		rec_buff = ''
 		self.send_at('AT+CGPS=1,1','OK',1)
 		time.sleep(2)
-		max_cycles = 50
+		max_cycles = 10
 		for c in range(max_cycles):
 			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',1)
 			if 1 == answer:
@@ -65,7 +65,7 @@ class raspi_gps:
 					minute = int(result_array[5][2:4])
 					second = int(result_array[5][4:6])
 					height = float(result_array[6])
-					print('... lat: ' + str(lat) + ', lon: ' + str(lon) + ', height: ' + str(height))
+					#print('... lat: ' + str(lat) + ', lon: ' + str(lon) + ', height: ' + str(height))
 
 					return lat,lon,height
 			else:

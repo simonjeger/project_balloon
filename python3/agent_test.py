@@ -33,6 +33,20 @@ ag.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) 
 with ag.agent.eval_mode():
     for i in range(yaml_p['num_epochs_test']):
         if yaml_p['environment'] != 'python3':
+
+            # make sure the communication file is in the right form
+            data = {
+                'action': 0,
+                'target': [-10,-10,-10],
+                'c': ag.env.character.c,
+                'ceiling': ag.env.character.ceiling, #in meters
+                'delta_f_up': ag.env.character.delta_f_up,
+                'delta_f_down': ag.env.character.delta_f_down,
+                'mass_total': ag.env.character.mass_total
+                }
+            ag.env.character.send(data)
+
+            # wait for human to give the go
             start = 'no'
             while start != 'yes':
                 print('write "yes" if you want to start the episode')
