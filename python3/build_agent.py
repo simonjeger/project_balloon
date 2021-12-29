@@ -220,11 +220,13 @@ class Agent:
                 elif yaml_p['mode'] == 'simple':
                     _ = self.agent.act(obs) #this is only so it works in training mode
                     action = self.act_simple(self.env.character)
+                    action = np.clip(action,self.clip,1-self.clip)
                     action_RL = action #this is only so it works with HER
 
                 elif yaml_p['mode'] == 'hybrid':
                     action_RL = self.agent.act(obs) #this is only so it works in training mode
                     action = self.act_simple(self.env.character, action_RL[0])
+                    action = np.clip(action,self.clip,1-self.clip)
 
                 elif yaml_p['mode'] == 'tuning':
                     _ = self.agent.act(obs) #this is only so it works in training mode
@@ -711,15 +713,10 @@ class Agent:
 
     def tuning(self):
         t = np.round(yaml_p['T'] - self.env.character.t,1) #because in simulation there is a slight rounding rest because of the discritization
-        if t < 5:
-            action = 0.8
-        elif t < 14:
-            action = 0.2
-        elif t < 22:
-            action = 0.8
-        elif t < 31:
-            action = 0.2
+        if t < 60:
+            action = 0.003
+        elif t < 120:
+            action = 0.001
         else:
             action = -1
-        action = 0.4
         return action

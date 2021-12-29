@@ -147,8 +147,8 @@ def tuning(delta_t):
     return action
 
 character = character_vicon()
-offset = 0.11
-scale = 0.7
+offset = yaml_p['offset']
+scale = yaml_p['scale']
 
 llc = ll_controler()
 

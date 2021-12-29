@@ -16,6 +16,8 @@ class raspi_esc:
         self.min_value = 1000  #ESC's min value
         self.center_value = 1500
 
+        self.arm()
+
     def calibrate(self):   #This is the auto calibration procedure of a normal ESC
         self.pi.set_servo_pulsewidth(self.ESC0, 0)
         self.pi.set_servo_pulsewidth(self.ESC1, 0)

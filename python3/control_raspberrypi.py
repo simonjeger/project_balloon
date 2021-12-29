@@ -92,7 +92,7 @@ y = np.linspace(0,len(world[0,0,:,0]),len(world[0,0,:,0]))
 f_terrain = scipy.interpolate.interp2d(x,y,world[0,:,:,0].T)
 
 # initialize devices
-com = raspi_com()
+#com = raspi_com()
 esc = raspi_esc()
 gps = raspi_gps()
 alt = raspi_alt()
@@ -108,8 +108,8 @@ est_z = ekf(position_meas[2])
 
 velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
-offset = 0
-scale = 0.1
+offset = yaml_p['offset']
+scale = yaml_p['scale']
 
 llc = ll_controler()
 

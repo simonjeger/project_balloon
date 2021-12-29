@@ -53,7 +53,7 @@ class ll_controler():
 
     def bangbang(self, set, position):
         error = set - position
-        tolerance = 0.01
+        tolerance = 0.001
         if error > tolerance:
             u = 1
         elif error < -tolerance:
