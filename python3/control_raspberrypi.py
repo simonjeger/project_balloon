@@ -180,7 +180,6 @@ while True:
             #est_y.plot()
 
             rel_pos_est = (position_est[2] - terrain)/(ceiling-terrain)
-            print('rel_pos_est: ' + str(rel_pos_est))
             rel_vel_est = velocity_est[2] / (ceiling-terrain)
 
             # check if done or not
@@ -204,13 +203,16 @@ while True:
             u = offset + u_raw*scale
 
             if yaml_p['mode'] == 'tuning':
-                print('t: ' + str(t_start - global_start) + 's')
+                print('position_est: ' + str(position_est))
+                print('pos_est_rel: ' + str(rel_pos_est))
+                print('terrain: ' + str(terrain) + ' m')
+                print('t: ' + str(int(t_start - global_start)) + ' s')
                 print('u: ' + str(u))
+                print('--- tuning ---')
 
             esc.control(u)
             if (not not_done) | (action < 0):
-                u = 0
-                esc.control(u)
+                esc.stop()
 
             t_stop = time.time()
             delta_t = t_stop - t_start
@@ -250,10 +252,8 @@ while True:
         except KeyboardInterrupt:
             print("WARNING: Maual kill.")
             esc.stop()
-            print("INFORMATION: Thrust set to zero.")
             sys.exit()
 
         except:
             print("WARNING: Something fatal broke down at " + str(int(global_start - t_start)) + 's after start.')
             esc.stop()
-            print("INFORMATION: Thrust set to zero.")

@@ -61,3 +61,4 @@ class raspi_esc:
         self.pi.set_servo_pulsewidth(self.ESC0, 0)
         self.pi.set_servo_pulsewidth(self.ESC1, 0)
         self.pi.stop()
+        print("INFORMATION: Motor stopped.")

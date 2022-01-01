@@ -52,7 +52,7 @@ class raspi_gps:
 			if 1 == answer:
 				answer = 0
 				if ',,,,,,' in str(result):
-					print('GPS is not ready (' + str(c) + ' out of ' + str(max_cycles) + ' tries)')
+					print('GPS is not ready (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
 					time.sleep(1)
 				else:
 					result_array = str(result)[30::].split(",")
@@ -69,7 +69,7 @@ class raspi_gps:
 
 					return lat,lon,height
 			else:
-				print('error %d'%answer + ' (' + str(c) + ' out of ' + str(max_cycles) + ' tries)')
+				print('error %d'%answer + ' (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
 				rec_buff = ''
 				self.send_at('AT+CGPS=0','OK',1)
 			time.sleep(1.5)
