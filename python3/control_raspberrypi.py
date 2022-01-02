@@ -169,7 +169,7 @@ while True:
                 print("WARNING: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + 's after start.')
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
             try:
-                position_meas[2] = alt.get_altitude()
+                position_meas[2] = alt.get_altitude()/yaml_p['unit_z']
             except:
                 print("WARNING: Couldn't get ALT measurement at " + str(int(t_start - global_start)) + 's after start.')
             position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
@@ -184,18 +184,17 @@ while True:
 
             # check if done or not
             if (position_est[0] < 0) | (position_est[0]/yaml_p['unit_xy'] > yaml_p['size_x'] - 1):
-                print('x out of bounds')
+                print('INFORMATION: X out of bounds')
                 not_done = False
             if (position_est[1] < 0) | (position_est[1]/yaml_p['unit_xy'] > yaml_p['size_y'] - 1):
-                print('y out of bounds')
+                print('INFORMATION: Y out of bounds')
                 not_done = False
+            if t_start - global_start > yaml_p['T']: #check if flight time is over
+                not_done = False
+                print('INFORMATION: Out of time')
             """
             if (rel_pos_est < 0) | (rel_pos_est >= 1):
                 print('z out of bounds')
-                not_done = False
-            if t < 0: #check if flight time is over
-                not_done = False
-            if self.battery_level < 0: #check if battery is empty
                 not_done = False
             """
 
@@ -203,6 +202,7 @@ while True:
             u = offset + u_raw*scale
 
             if yaml_p['mode'] == 'tuning':
+                print('altitude: ' + str(alt.get_altitude()) + ' m')
                 print('position_est: ' + str(position_est))
                 print('pos_est_rel: ' + str(rel_pos_est))
                 print('terrain: ' + str(terrain) + ' m')
