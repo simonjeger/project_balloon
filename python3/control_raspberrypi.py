@@ -241,6 +241,8 @@ while True:
             'min_proj_dist': min_proj_dist,
             'min_dist': min_dist,
             'not_done': not_done}
+            
+            send(data)
 
             if not not_done:
                 print('INFORMATION: system ran out of bounds.')
