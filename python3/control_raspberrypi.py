@@ -204,7 +204,7 @@ while True:
             if yaml_p['mode'] == 'tuning':
                 print('altitude: ' + str(alt.get_altitude()) + ' m')
                 print('position_est: ' + str(position_est))
-                print('pos_est_rel: ' + str(rel_pos_est))
+                print('rel_pos_est: ' + str(rel_pos_est))
                 print('terrain: ' + str(terrain) + ' m')
                 print('t: ' + str(int(t_start - global_start)) + ' s')
                 print('u: ' + str(u))
@@ -241,7 +241,7 @@ while True:
             'min_proj_dist': min_proj_dist,
             'min_dist': min_dist,
             'not_done': not_done}
-            
+
             send(data)
 
             if not not_done:

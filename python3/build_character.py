@@ -332,7 +332,7 @@ class character():
         'action': self.action,
         'target': self.target.tolist(),
         'c': self.c,
-        'ceiling': self.ceiling*yaml_p['unit_z'], #in meters
+        'ceiling': self.ceiling,
         'delta_f_up': self.delta_f_up,
         'delta_f_down': self.delta_f_down,
         'mass_total': self.mass_total

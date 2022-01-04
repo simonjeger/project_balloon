@@ -39,7 +39,7 @@ with ag.agent.eval_mode():
                 'action': 0,
                 'target': [-10,-10,-10],
                 'c': ag.env.character.c,
-                'ceiling': ag.env.character.ceiling, #in meters
+                'ceiling': ag.env.character.ceiling,
                 'delta_f_up': ag.env.character.delta_f_up,
                 'delta_f_down': ag.env.character.delta_f_down,
                 'mass_total': ag.env.character.mass_total

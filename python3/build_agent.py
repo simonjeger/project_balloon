@@ -339,7 +339,7 @@ class Agent:
                 'action': -1,
                 'target': [-10,-10,-10],
                 'c': self.env.character.c,
-                'ceiling': self.env.character.ceiling, #in meters
+                'ceiling': self.env.character.ceiling,
                 'delta_f_up': self.env.character.delta_f_up,
                 'delta_f_down': self.env.character.delta_f_down,
                 'mass_total': self.env.character.mass_total
@@ -713,9 +713,9 @@ class Agent:
 
     def tuning(self):
         t = np.round(yaml_p['T'] - self.env.character.t,1) #because in simulation there is a slight rounding rest because of the discritization
-        if t < 600:
+        if t < 300:
             action = 0.01
-        elif t < 1200:
+        elif t < 600:
             action = 0.001
         else:
             action = -1

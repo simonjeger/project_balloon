@@ -92,7 +92,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
 
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
-    text = text + 'ceiling_width: 0.1' + '\n'
+    text = text + 'ceiling_width: 0' + '\n'
     text = text + 'noise_path: "/cluster/scratch/sjeger/noise_20x20/"' + '\n'
     text = text + 'prop_mag_min: ' + str(prop_mag_min) + '\n'
     text = text + 'prop_mag_max: ' + str(prop_mag_max) + '\n'
