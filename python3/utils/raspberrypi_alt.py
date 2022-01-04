@@ -20,7 +20,6 @@ class raspi_alt:
         self.bmp = adafruit_bmp3xx.BMP3XX_I2C(i2c, address=0x77)
 
     def set_QNH(self,terrain):
-        terrain = 11/yaml_p['unit_z']
         QNH_min = 930
         QNH_max = 1070
         print('ALT is setting QNH')
