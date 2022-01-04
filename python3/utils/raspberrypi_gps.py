@@ -88,7 +88,7 @@ class raspi_gps:
 		return res
 
 	def power_on(self,power_key):
-		print('SIM7600X GPS is starting')
+		print('GPS is starting')
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setwarnings(False)
 		GPIO.setup(power_key,GPIO.OUT)
@@ -98,10 +98,10 @@ class raspi_gps:
 		GPIO.output(power_key,GPIO.LOW)
 		time.sleep(20)
 		self.ser.flushInput()
-		print('SIM7600X GPS is loging on')
+		print('GPS is loging on')
 
 	def power_down(self,power_key):
-		print('SIM7600X GPS is loging off')
+		print('GPS is loging off')
 		GPIO.output(power_key,GPIO.HIGH)
 		time.sleep(3)
 		GPIO.output(power_key,GPIO.LOW)

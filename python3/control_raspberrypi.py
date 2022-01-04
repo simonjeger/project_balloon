@@ -100,6 +100,10 @@ alt = raspi_alt()
 lat_start,lon_start = get_center()
 lat,lon,height = gps.get_gps_position()
 position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
+
+#set the altimeter
+terrain = f_terrain(position_meas[0], position_meas[1])[0]
+alt.set_QNH(terrain)
 position_meas[2] = alt.get_altitude()/yaml_p['unit_z']
 
 est_x = ekf(position_meas[0])
@@ -165,7 +169,7 @@ while True:
             try:
                 lat,lon,height = gps.get_gps_position()
             except:
-                time.sleep(1) #that's usually about as long as it takes for a measurement to get in
+                time.sleep(4) #that's usually about as long as it takes for a measurement to get in
                 print("WARNING: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + 's after start.')
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
             try:
@@ -189,7 +193,7 @@ while True:
             if (position_est[1] < 0) | (position_est[1] > yaml_p['size_y'] - 1):
                 print('INFORMATION: Y out of bounds')
                 not_done = False
-            if t_start - global_start > yaml_p['T']: #check if flight time is over
+            if t_start - global_start > yaml_p['T'] + 60: #check if flight time is over and give a minute of buffer because usually the raspi get's started earlier
                 not_done = False
                 print('INFORMATION: Out of time')
             """
