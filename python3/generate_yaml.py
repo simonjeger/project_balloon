@@ -35,7 +35,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'unit_noise_xy: 250' + '\n'
     text = text + 'unit_noise_z: 15.24' + '\n'
     text = text + 'delta_t: ' + str(delta_t) + '\n'
-    text = text + 'delta_t_logger: 5' + '\n'
+    text = text + 'delta_t_logger: 4' + '\n'
     text = text + 'delta_t_physics: ' + str(delta_t_physics) + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'

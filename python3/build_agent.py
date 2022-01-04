@@ -241,6 +241,7 @@ class Agent:
 
             # logger
             if self.writer is not None:
+                self.writer.add_scalar('step_n', self.step_n , self.step_n)
                 self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
                 self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
                 self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
@@ -716,7 +717,7 @@ class Agent:
         if t < 300:
             action = 0.01
         elif t < 600:
-            action = 0.001
+            action = 0.003
         else:
             action = -1
         return action

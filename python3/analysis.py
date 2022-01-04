@@ -386,6 +386,7 @@ def tuning(directory_compare=None):
         for i in range(len(name_list)):
             name_list[i] = path_logger + name_list[i]
         df = many_logs2pandas(name_list)
+        df.to_csv('data.csv')
         cmap0 = plt.cm.get_cmap('winter')
         cmap1 = plt.cm.get_cmap('autumn')
 
