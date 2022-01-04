@@ -22,7 +22,6 @@ class raspi_alt:
     def set_QNH(self,terrain):
         QNH_min = 930
         QNH_max = 1070
-        print('ALT is setting QNH')
         x = np.arange(QNH_min,QNH_max,0.1) #range of realistic QNH values at a resolution of 0.1
         y = []
         for x_i in x:
@@ -34,7 +33,7 @@ class raspi_alt:
         range = (QNH_max-QNH_min)*0.1
         if (QNH < QNH_min + range) | (QNH > QNH_max - range):
             print('WARNING: Choose larger QNH-range')
-        print('ALT set QNH at ' + str(np.round(QNH,1)) + ' hPa')
+        print('ALT: QNH set at ' + str(np.round(QNH,1)) + ' hPa')
 
     def error(self,QNH,terrain):
         self.bmp.sea_level_pressure = QNH

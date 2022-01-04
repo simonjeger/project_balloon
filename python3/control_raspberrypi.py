@@ -44,7 +44,7 @@ def receive():
             except:
                 corrupt = True
     if corrupt:
-        print('data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
+        print('RBP: data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
     return data
 
 def update_est(position,u,c,delta_t,delta_f_up,delta_f_down,mass_total):
@@ -93,7 +93,6 @@ f_terrain = scipy.interpolate.interp2d(x,y,world[0,:,:,0].T)
 
 # initialize devices
 #com = raspi_com()
-esc = raspi_esc()
 gps = raspi_gps()
 alt = raspi_alt()
 
@@ -129,7 +128,9 @@ c = 1 #only placeholder, nescessary for estimation functions
 delta_t = 20 #only placeholder, nescessary for estimation functions
 
 global_start = time.time()
-print('System ready')
+esc = raspi_esc() #only arm when ready
+print('RBP: ready')
+
 while True:
     t_start = time.time()
 
@@ -139,7 +140,7 @@ while True:
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(1)
-        print('waiting for the algorithm to publish')
+        print('RBP: waiting for the algorithm to publish')
 
         data = {
         'U': U,
@@ -170,12 +171,12 @@ while True:
                 lat,lon,height = gps.get_gps_position()
             except:
                 time.sleep(4) #that's usually about as long as it takes for a measurement to get in
-                print("WARNING: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + 's after start.')
+                print("RBP: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + ' s after start.')
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
             try:
                 position_meas[2] = alt.get_altitude()/yaml_p['unit_z']
             except:
-                print("WARNING: Couldn't get ALT measurement at " + str(int(t_start - global_start)) + 's after start.')
+                print("RBP: Couldn't get ALT measurement at " + str(int(t_start - global_start)) + ' s after start.')
             position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
             velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
             terrain = f_terrain(position_est[0], position_est[1])[0]
@@ -188,17 +189,17 @@ while True:
 
             # check if done or not
             if (position_est[0] < 0) | (position_est[0] > yaml_p['size_x'] - 1):
-                print('INFORMATION: X out of bounds')
+                print('RBP: X out of bounds')
                 not_done = False
             if (position_est[1] < 0) | (position_est[1] > yaml_p['size_y'] - 1):
-                print('INFORMATION: Y out of bounds')
+                print('RBP: Y out of bounds')
                 not_done = False
             if t_start - global_start > yaml_p['T'] + 60: #check if flight time is over and give a minute of buffer because usually the raspi get's started earlier
                 not_done = False
-                print('INFORMATION: Out of time')
+                print('RBP: Out of time')
             """
             if (rel_pos_est < 0) | (rel_pos_est >= 1):
-                print('z out of bounds')
+                print('RBP: Z out of bounds')
                 not_done = False
             """
 
@@ -206,17 +207,18 @@ while True:
             u = offset + u_raw*scale
 
             if yaml_p['mode'] == 'tuning':
+                print('--- tuning ---')
                 print('altitude: ' + str(alt.get_altitude()) + ' m')
                 print('position_est: ' + str(position_est))
                 print('rel_pos_est: ' + str(rel_pos_est))
                 print('terrain: ' + str(terrain) + ' m')
                 print('t: ' + str(int(t_start - global_start)) + ' s')
                 print('u: ' + str(u))
-                print('--- tuning ---')
 
             esc.control(u)
             if (not not_done) | (action < 0):
                 esc.stop()
+                gps.power_off()
 
             t_stop = time.time()
             delta_t = t_stop - t_start
@@ -249,17 +251,20 @@ while True:
             send(data)
 
             if not not_done:
-                print('INFORMATION: system ran out of bounds.')
+                # I don't need to print anything because that's already taken care of above
                 break
             if action < 0:
-                print('INFORMATION: run was cancalled deliberately.')
+                print('RBP: run was cancalled deliberately')
                 break
 
         except KeyboardInterrupt:
-            print("WARNING: Maual kill.")
+            print("RBP: Maual kill.")
             esc.stop()
+            gps.power_off()
             sys.exit()
 
         except:
-            print("WARNING: Something fatal broke down at " + str(int(global_start - t_start)) + 's after start.')
+            print("RBP: Something fatal broke down at " + str(int(global_start - t_start)) + ' s after start')
             esc.stop()
+            gps.power_off()
+            sys.exit()

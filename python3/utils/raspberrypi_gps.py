@@ -8,17 +8,17 @@ class raspi_gps:
 		self.ser = serial.Serial('/dev/ttyUSB2',115200)
 		self.ser.flushInput()
 
-		power_key = 6
+		self.power_key = 6
 		rec_buff = ''
 		rec_buff2 = ''
 		time_count = 0
 
 		try:
-			self.power_on(power_key)
+			self.power_on()
 		except:
 			if self.ser != None:
 				self.ser.close()
-			self.power_down(power_key)
+			self.power_down()
 			GPIO.cleanup()
 
 	def send_at(self,command,back,timeout):
@@ -37,7 +37,7 @@ class raspi_gps:
 				#print(rec_buff.decode())
 				return 1, rec_buff
 		else:
-			print('GPS is not ready')
+			print('GPS: not ready')
 			return 0, rec_buff
 
 	def get_gps_position(self):
@@ -52,7 +52,7 @@ class raspi_gps:
 			if 1 == answer:
 				answer = 0
 				if ',,,,,,' in str(result):
-					print('GPS is not ready (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
+					print('GPS: not ready (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
 					time.sleep(1)
 				else:
 					result_array = str(result)[30::].split(",")
@@ -79,7 +79,7 @@ class raspi_gps:
 				rec_buff = ''
 				self.send_at('AT+CGPS=0','OK',1)
 			time.sleep(1.5)
-		print('ERROR: time out')
+		print('GPS: time out')
 
 	def convert_min_to_dec(self,lat_or_lon):
 		deg = str(lat_or_lon)[0:-9]
@@ -87,23 +87,21 @@ class raspi_gps:
 		res = float(deg) + float(min)/60
 		return res
 
-	def power_on(self,power_key):
-		print('GPS is starting')
+	def power_on(self):
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setwarnings(False)
-		GPIO.setup(power_key,GPIO.OUT)
+		GPIO.setup(self.power_key,GPIO.OUT)
 		time.sleep(0.1)
-		GPIO.output(power_key,GPIO.HIGH)
+		GPIO.output(self.power_key,GPIO.HIGH)
 		time.sleep(2)
-		GPIO.output(power_key,GPIO.LOW)
+		GPIO.output(self.power_key,GPIO.LOW)
 		time.sleep(20)
 		self.ser.flushInput()
-		print('GPS is loging on')
+		print('GPS: powered on')
 
-	def power_down(self,power_key):
-		print('GPS is loging off')
-		GPIO.output(power_key,GPIO.HIGH)
+	def power_off(self):
+		GPIO.output(self.power_key,GPIO.HIGH)
 		time.sleep(3)
-		GPIO.output(power_key,GPIO.LOW)
+		GPIO.output(self.power_key,GPIO.LOW)
 		time.sleep(18)
-		print('Good bye')
+		print('GPS: powered down')

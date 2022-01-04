@@ -36,21 +36,9 @@ class raspi_esc:
                 self.arm()
 
     def arm(self): #This is the arming procedure of an ESC
-        print("ESC is arming now")
-        """ #this was for a unidirectional ESC
-        self.pi.set_servo_pulsewidth(self.ESC0, 0)
-        self.pi.set_servo_pulsewidth(self.ESC1, 0)
-        time.sleep(1)
-        self.pi.set_servo_pulsewidth(self.ESC0, self.max_value)
-        self.pi.set_servo_pulsewidth(self.ESC1, self.max_value)
-        time.sleep(1)
-        self.pi.set_servo_pulsewidth(self.ESC0, self.min_value)
-        self.pi.set_servo_pulsewidth(self.ESC1, self.min_value)
-        time.sleep(1)
-        """
         self.control(0)
         time.sleep(2)
-        print("ESC is armed")
+        print("ESC: armed")
 
     def control(self,u):
         pwm = self.center_value + max((self.max_value - self.center_value)*u,0) + min((self.center_value - self.min_value)*u,0)
@@ -61,4 +49,4 @@ class raspi_esc:
         self.pi.set_servo_pulsewidth(self.ESC0, 0)
         self.pi.set_servo_pulsewidth(self.ESC1, 0)
         self.pi.stop()
-        print("INFORMATION: Motor stopped.")
+        print("ESC: motor stopped")
