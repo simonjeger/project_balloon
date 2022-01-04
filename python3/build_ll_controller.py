@@ -52,6 +52,7 @@ class ll_controler():
         return u
 
     def bangbang(self, set, position):
+        print('bb_: ' + str(set) + ', ' + str(position))
         error = set - position
         tolerance = 0.003 #roughly 10 meters
         if error > tolerance:

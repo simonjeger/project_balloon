@@ -238,8 +238,8 @@ while True:
 
             data = {
             'U': U,
-            'position': np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
-            'velocity': np.divide(velocity_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist(),
+            'position': position_est,
+            'velocity': velocity_est,
             'path': path_est,
             'position_est': position_est,
             'path_est': path_est,

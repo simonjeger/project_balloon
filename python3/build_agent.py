@@ -715,9 +715,9 @@ class Agent:
     def tuning(self):
         t = np.round(yaml_p['T'] - self.env.character.t,1) #because in simulation there is a slight rounding rest because of the discritization
         if t < 300:
-            action = 0.01
+            action = 0.02
         elif t < 600:
-            action = 0.003
+            action = 0.005
         else:
             action = -1
         return action

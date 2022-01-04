@@ -386,7 +386,6 @@ def tuning(directory_compare=None):
         for i in range(len(name_list)):
             name_list[i] = path_logger + name_list[i]
         df = many_logs2pandas(name_list)
-        df.to_csv('data.csv')
         cmap0 = plt.cm.get_cmap('winter')
         cmap1 = plt.cm.get_cmap('autumn')
 
@@ -396,7 +395,7 @@ def tuning(directory_compare=None):
             df_loc = df[df['epi_n'].isin([j])]
             end = np.argmin(df_loc['action'])
             end = np.argmin(abs(np.gradient(df_loc['position_x'])))
-            end = 100
+            end = 1000
             df_loc_cut = df_loc.iloc[0:end]
             time = yaml_p['T'] - df_loc_cut['t']
 
@@ -409,6 +408,7 @@ def tuning(directory_compare=None):
             axs[0].plot(time, df_loc_cut['position_x']*yaml_p['unit_xy'], color=color, linewidth=0.2)
             axs[1].plot(time, df_loc_cut['position_y']*yaml_p['unit_xy'], color=color, linewidth=0.2)
             axs[2].plot(time, df_loc_cut['position_z']*yaml_p['unit_z'], color=color, linewidth=0.2)
+
             #axs[3].plot(time, np.gradient(df_loc_cut['position_x']*yaml_p['unit_xy']), color=color, linewidth=0.2)
             #axs[4].plot(time, np.gradient(df_loc_cut['position_y']*yaml_p['unit_xy']), color=color, linewidth=0.2)
             #axs[5].plot(time, np.gradient(df_loc_cut['position_z']*yaml_p['unit_z']), color=color, linewidth=0.2)
@@ -416,9 +416,11 @@ def tuning(directory_compare=None):
             #fig.suptitle(str(int(i/n_f*100)) + ' %')
             #plt.subplots_adjust(wspace=0.5, hspace=1)
 
+    axs[0].set_ylim(0,yaml_p['size_x']*yaml_p['unit_xy'])
+    axs[1].set_ylim(0,yaml_p['size_y']*yaml_p['unit_xy'])
+    axs[2].set_ylim(0,yaml_p['size_z']*yaml_p['unit_z'])
     for a in range(3):
         axs[a].set_xlim(0,yaml_p['T'])
-        axs[a].set_ylim(0,yaml_p['size_z']*yaml_p['unit_z'])
         axs[a].set_xlabel('time [s]')
 
         axs[a].grid(which='minor', alpha=0.2, linewidth=0.5)

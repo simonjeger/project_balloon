@@ -18,7 +18,7 @@ class raspi_gps:
 		except:
 			if self.ser != None:
 				self.ser.close()
-			self.power_down()
+			self.power_off()
 			GPIO.cleanup()
 
 	def send_at(self,command,back,timeout):
