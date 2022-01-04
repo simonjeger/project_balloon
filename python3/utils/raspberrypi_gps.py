@@ -57,7 +57,9 @@ class raspi_gps:
 				else:
 					result_array = str(result)[30::].split(",")
 					lat = self.convert_min_to_dec(result_array[0])
+					lat_dir = result_array[1]
 					lon = self.convert_min_to_dec(result_array[2])
+					lon_dir = result_array[3]
 					year = int(result_array[4][0:2])
 					month = int(result_array[4][2:4])
 					day = int(result_array[4][4:6])
@@ -65,7 +67,11 @@ class raspi_gps:
 					minute = int(result_array[5][2:4])
 					second = int(result_array[5][4:6])
 					height = float(result_array[6])
-					#print('... lat: ' + str(lat) + ', lon: ' + str(lon) + ', height: ' + str(height))
+
+					if lat_dir == 'S':
+						lat *= -1
+					if lon_dir == 'W':
+						lon *= -1
 
 					return lat,lon,height
 			else:

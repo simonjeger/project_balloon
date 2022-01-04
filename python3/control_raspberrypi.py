@@ -183,10 +183,10 @@ while True:
             rel_vel_est = velocity_est[2] / (ceiling-terrain)
 
             # check if done or not
-            if (position_est[0] < 0) | (position_est[0]/yaml_p['unit_xy'] > yaml_p['size_x'] - 1):
+            if (position_est[0] < 0) | (position_est[0] > yaml_p['size_x'] - 1):
                 print('INFORMATION: X out of bounds')
                 not_done = False
-            if (position_est[1] < 0) | (position_est[1]/yaml_p['unit_xy'] > yaml_p['size_y'] - 1):
+            if (position_est[1] < 0) | (position_est[1] > yaml_p['size_y'] - 1):
                 print('INFORMATION: Y out of bounds')
                 not_done = False
             if t_start - global_start > yaml_p['T']: #check if flight time is over

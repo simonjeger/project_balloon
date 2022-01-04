@@ -189,8 +189,12 @@ class balloon3d(Env):
             hour = int(self.world_name[-5:-3])
             self.takeoff_time = hour*60*60 + np.random.randint(0,60)
 
-            #if self.takeoff_time + yaml_p['T'] < 23*60*60:
-            if self.takeoff_time + yaml_p['T'] < 6*60*60:
+            #find what's the largest time in the dataset
+            max_hour = os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor')
+            max_hour.sort()
+            max_hour = int(max_hour[-1][-5:-3])
+            
+            if self.takeoff_time + yaml_p['T'] < max_hour*60*60:
                 break
 
         # remove suffix and timestamp
