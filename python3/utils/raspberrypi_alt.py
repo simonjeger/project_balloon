@@ -32,7 +32,7 @@ class raspi_alt:
 
         range = (QNH_max-QNH_min)*0.1
         if (QNH < QNH_min + range) | (QNH > QNH_max - range):
-            print('WARNING: Choose larger QNH-range')
+            print('ALT: Choose larger QNH-range')
         print('ALT: QNH set at ' + str(np.round(QNH,1)) + ' hPa')
 
     def error(self,QNH,terrain):

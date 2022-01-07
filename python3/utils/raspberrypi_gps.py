@@ -40,13 +40,12 @@ class raspi_gps:
 			print('GPS: not ready')
 			return 0, rec_buff
 
-	def get_gps_position(self):
+	def get_gps_position(self,max_cycles=1):
 		answer = 0
 		#print('Start GPS session...')
 		rec_buff = ''
 		self.send_at('AT+CGPS=1,1','OK',1)
 		time.sleep(2)
-		max_cycles = 10
 		for c in range(max_cycles):
 			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',1)
 			if 1 == answer:
@@ -79,7 +78,6 @@ class raspi_gps:
 				rec_buff = ''
 				self.send_at('AT+CGPS=0','OK',1)
 			time.sleep(1.5)
-		print('GPS: time out')
 
 	def convert_min_to_dec(self,lat_or_lon):
 		deg = str(lat_or_lon)[0:-9]

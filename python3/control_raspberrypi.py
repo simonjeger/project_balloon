@@ -97,7 +97,7 @@ gps = raspi_gps()
 alt = raspi_alt()
 
 lat_start,lon_start = get_center()
-lat,lon,height = gps.get_gps_position()
+lat,lon,height = gps.get_gps_position(max_cycles=10)
 position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
 
 #set the altimeter
@@ -211,17 +211,19 @@ while True:
                 u_raw = llc.bangbang(action, rel_pos_est)
                 if not_done == False:
                     cutoff_height = 0.05
-                    d_m = max(int((position[2] - (ceiling - terrain)*cutoff_height)*yaml_p['unit_z']),0)
+                    d_m = np.max([int((position_est[2] - ((ceiling - terrain)*cutoff_height + terrain))*yaml_p['unit_z']),0])
                     print('RBP: landing with ' + str(d_m) + ' m to go until motor cut-off')
                     if rel_pos_est > cutoff_height:
                         u_raw = -1
                     else:
                         u_raw = 0
                         landed = True
+                        print('RBP: landed')
                 u = offset + u_raw*scale
                 if not landed:
                     esc.control(u)
                 else:
+                    u = 0 #just for the print during tuning
                     esc.stop()
 
             if yaml_p['mode'] == 'tuning':
@@ -262,7 +264,7 @@ while True:
             'not_done': not_done,
             'gps_lat': lat,
             'gps_lon': lon,
-            'gps_height' height}
+            'gps_height': height}
 
             send(data)
 
@@ -273,7 +275,7 @@ while True:
             sys.exit()
 
         except:
-            print("RBP: Something fatal broke down at " + str(int(global_start - t_start)) + ' s after start')
+            print("RBP: Something fatal broke down at " + str(int(t_start - global_start)) + ' s after start')
             esc.stop()
             gps.power_off()
             sys.exit()
