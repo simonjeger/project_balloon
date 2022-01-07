@@ -378,8 +378,7 @@ def tuning(directory_compare=None):
         path_logger_list.append(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/' + directory_compare + '/')
     path_logger_list.append(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/')
 
-    #fig, axs = plt.subplots(6, 1)
-    fig, axs = plt.subplots(3, 1)
+    fig, axs = plt.subplots(5, 1)
     for p in range(len(path_logger_list)):
         path_logger = path_logger_list[p]
         name_list = os.listdir(path_logger)
@@ -401,17 +400,15 @@ def tuning(directory_compare=None):
 
             if p == 0:
                 if (j == 0) & (yaml_p['mode'] == 'tuning'): #beacuse when tuning it's always the same action cycle
-                    axs[2].plot(time, df_loc_cut['action']*yaml_p['size_z']*yaml_p['unit_z'], color='grey', linewidth=0.5)
+                    axs[3].plot(time, df_loc_cut['action'], color='grey', linewidth=0.5)
                 color=cmap0(1-j/iter_max)
             else:
                 color=cmap1(1-j/iter_max)
             axs[0].plot(time, df_loc_cut['position_x']*yaml_p['unit_xy'], color=color, linewidth=0.2)
             axs[1].plot(time, df_loc_cut['position_y']*yaml_p['unit_xy'], color=color, linewidth=0.2)
             axs[2].plot(time, df_loc_cut['position_z']*yaml_p['unit_z'], color=color, linewidth=0.2)
-
-            #axs[3].plot(time, np.gradient(df_loc_cut['position_x']*yaml_p['unit_xy']), color=color, linewidth=0.2)
-            #axs[4].plot(time, np.gradient(df_loc_cut['position_y']*yaml_p['unit_xy']), color=color, linewidth=0.2)
-            #axs[5].plot(time, np.gradient(df_loc_cut['position_z']*yaml_p['unit_z']), color=color, linewidth=0.2)
+            axs[3].plot(time, df_loc_cut['rel_pos_est']*yaml_p['unit_z'])
+            axs[4].plot(time, df_loc_cut['velocity_z']*yaml_p['unit_z'])
 
             #fig.suptitle(str(int(i/n_f*100)) + ' %')
             #plt.subplots_adjust(wspace=0.5, hspace=1)
@@ -419,7 +416,9 @@ def tuning(directory_compare=None):
     axs[0].set_ylim(0,yaml_p['size_x']*yaml_p['unit_xy'])
     axs[1].set_ylim(0,yaml_p['size_y']*yaml_p['unit_xy'])
     axs[2].set_ylim(0,yaml_p['size_z']*yaml_p['unit_z'])
-    for a in range(3):
+    axs[3].set_ylim(-0.1,1.1)
+    axs[4].set_ylim(-3,3)
+    for a in range(5):
         axs[a].set_xlim(0,yaml_p['T'])
         axs[a].set_xlabel('time [s]')
 
@@ -429,9 +428,8 @@ def tuning(directory_compare=None):
     axs[0].set_ylabel('pos x [m]')
     axs[1].set_ylabel('pos y [m]')
     axs[2].set_ylabel('pos z [m]')
-    #axs[3].set_ylabel('vel x [m/s]')
-    #axs[4].set_ylabel('vel y [m/s]')
-    #axs[5].set_ylabel('vel z [m/s]')
+    axs[3].set_ylabel('rel pos z')
+    axs[4].set_ylabel('vel z [m]')
 
     # Build folder structure if it doesn't exist yet
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/tuning.png'
@@ -554,10 +552,6 @@ def write_overview():
     maximum = max(mean_reward_epi)
     mean = np.mean(mean_reward_epi)
 
-    # mean of normalized reward
-    rew_epi_norm = np.array(df['reward_epi_norm'].dropna())
-    mean_norm = np.mean(rew_epi_norm)
-
     # std of action
     action = np.array(df['action'].dropna())
     action_std = np.std(action)
@@ -575,7 +569,6 @@ def write_overview():
     df_reward = pd.DataFrame(dic_copy)
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)
-    df_reward.insert(len(df_reward.columns),'rew_epi_norm_mean', mean_norm, True)
     df_reward.insert(len(df_reward.columns),'action_std', action_std, True)
     df_reward.insert(len(df_reward.columns),'success_rate', success_rate, True)
 
@@ -656,14 +649,6 @@ def disp_overview():
                 if df_mean_mean.columns[0] != df_mean_mean.columns[1]:
                     mean_rew_mean = df_mean_mean.groupby(df_mean_mean.columns[0]).mean().reset_index()
                     axs[i,j].scatter(mean_rew_mean.iloc[:,0], mean_rew_mean.iloc[:,1], s=0.3, color=color_mean)
-
-                """
-                # mean_norm
-                df_mean_norm = pd.concat([df.iloc[:,x], df['rew_epi_norm_mean']], axis=1)
-                if df_mean_norm.columns[0] != df_mean_norm.columns[1]:
-                    mean_rew_norm = df_mean_norm.groupby(df_mean_norm.columns[0]).mean().reset_index()
-                    axs[i,j].scatter(mean_rew_norm.iloc[:,0], mean_rew_norm.iloc[:,1], s=0.3, color=color_norm)
-                """
 
                 # success
                 df_mean_success = pd.concat([df.iloc[:,x], df['success_rate']], axis=1)

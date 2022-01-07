@@ -119,6 +119,7 @@ llc = ll_controler()
 path = []
 path_est = []
 not_done = True
+landed = False
 
 U = 0
 u = 0
@@ -187,24 +188,41 @@ while True:
             rel_pos_est = (position_est[2] - terrain)/(ceiling-terrain)
             rel_vel_est = velocity_est[2] / (ceiling-terrain)
 
-            # check if done or not
-            if (position_est[0] < 0) | (position_est[0] > yaml_p['size_x'] - 1):
-                print('RBP: X out of bounds')
-                not_done = False
-            if (position_est[1] < 0) | (position_est[1] > yaml_p['size_y'] - 1):
-                print('RBP: Y out of bounds')
-                not_done = False
-            if t_start - global_start > yaml_p['T'] + 60: #check if flight time is over and give a minute of buffer because usually the raspi get's started earlier
-                not_done = False
-                print('RBP: Out of time')
-            """
-            if (rel_pos_est < 0) | (rel_pos_est >= 1):
-                print('RBP: Z out of bounds')
-                not_done = False
-            """
+            if not landed:
+                # check if done or not
+                if (position_est[0] < 0) | (position_est[0] > yaml_p['size_x'] - 1):
+                    if not_done:
+                        print('RBP: X out of bounds')
+                    not_done = False
+                if (position_est[1] < 0) | (position_est[1] > yaml_p['size_y'] - 1):
+                    if not_done:
+                        print('RBP: Y out of bounds')
+                    not_done = False
+                if t_start - global_start > yaml_p['T'] + 60: #check if flight time is over and give a minute of buffer because usually the raspi get's started earlier
+                    if not_done:
+                        print('RBP: Out of time')
+                    not_done = False
+                if action < 0:
+                    if not_done:
+                        print('RBP: run was cancalled deliberately')
+                    not_done = False
 
-            u_raw = llc.bangbang(action, rel_pos_est)
-            u = offset + u_raw*scale
+                # control input u for flight case and landing
+                u_raw = llc.bangbang(action, rel_pos_est)
+                if not_done == False:
+                    cutoff_height = 0.05
+                    d_m = max(int((position[2] - (ceiling - terrain)*cutoff_height)*yaml_p['unit_z']),0)
+                    print('RBP: landing with ' + str(d_m) + ' m to go until motor cut-off')
+                    if rel_pos_est > cutoff_height:
+                        u_raw = -1
+                    else:
+                        u_raw = 0
+                        landed = True
+                u = offset + u_raw*scale
+                if not landed:
+                    esc.control(u)
+                else:
+                    esc.stop()
 
             if yaml_p['mode'] == 'tuning':
                 print('--- tuning ---')
@@ -214,11 +232,6 @@ while True:
                 print('terrain: ' + str(terrain) + ' m')
                 print('t: ' + str(int(t_start - global_start)) + ' s')
                 print('u: ' + str(u))
-
-            esc.control(u)
-            if (not not_done) | (action < 0):
-                esc.stop()
-                gps.power_off()
 
             t_stop = time.time()
             delta_t = t_stop - t_start
@@ -246,19 +259,15 @@ while True:
             'measurement': [est_x.wind(), est_y.wind()],
             'min_proj_dist': min_proj_dist,
             'min_dist': min_dist,
-            'not_done': not_done}
+            'not_done': not_done,
+            'gps_lat': lat,
+            'gps_lon': lon,
+            'gps_height' height}
 
             send(data)
 
-            if not not_done:
-                # I don't need to print anything because that's already taken care of above
-                break
-            if action < 0:
-                print('RBP: run was cancalled deliberately')
-                break
-
         except KeyboardInterrupt:
-            print("RBP: Maual kill.")
+            print("RBP: Maual kill")
             esc.stop()
             gps.power_off()
             sys.exit()

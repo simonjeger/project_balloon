@@ -156,8 +156,8 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                                                                 for update_interval in [1]:
                                                                     for minibatch_size in [1000]:
                                                                         for repeat in range(global_buffer_N):
-                                                                            for h in range(23):
-                                                                                #global_buffer_nr = 0
-                                                                                write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h)
-                                                                                process_nr += 1
-                                                                            global_buffer_nr = process_nr
+                                                                            #for h in range(24):
+                                                                            #global_buffer_nr = 0
+                                                                            write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h)
+                                                                            process_nr += 1
+                                                                        global_buffer_nr = process_nr

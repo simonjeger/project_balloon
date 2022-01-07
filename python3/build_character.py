@@ -57,9 +57,9 @@ class character():
         self.esterror_wind = 0
 
         if yaml_p['balloon'] == 'outdoor_balloon':
-            self.mass_structure = 1.2 #kg
-            self.delta_f_up = 1 #N
-            self.delta_f_down = 1 #N
+            self.mass_structure = 0.839 + 0.247 #1.2 #kg
+            self.delta_f_up = 2 #N
+            self.delta_f_down = 2 #N
             self.delay = 1 #s
             self.consumption_up = 23 #W
             self.consumption_down = 23 #W
@@ -130,6 +130,7 @@ class character():
 
         self.importance = None
         self.adapt_volume(0) #initial volume with u=0
+        self.rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
         self.set_state()
 
         self.path = [self.position.copy(), self.position.copy()]
@@ -163,10 +164,6 @@ class character():
             not_done = self.move_particle()
         else:
             not_done = self.live_particle()
-
-        dist_bottom = self.height_above_ground()
-        dist_top = self.dist_to_ceiling()
-        rel_pos = dist_bottom / (dist_top + dist_bottom)
 
         # update state
         self.set_state()
@@ -203,9 +200,8 @@ class character():
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 
-        rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
         total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
-        boundaries = np.array([self.normalize_pos(self.position_est[0]-self.start[0]), self.normalize_pos(self.position_est[1]-self.start[1]), rel_pos_est, total_z])
+        boundaries = np.array([self.normalize_pos(self.position_est[0]-self.start[0]), self.normalize_pos(self.position_est[1]-self.start[1]), self.rel_pos_est, total_z])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))
@@ -239,11 +235,11 @@ class character():
 
             dist_bottom = self.height_above_ground()
             dist_top = self.dist_to_ceiling()
-            rel_pos = dist_bottom / (dist_top + dist_bottom)
+            self.rel_pos = dist_bottom / (dist_top + dist_bottom)
             if yaml_p['balloon'] == 'indoor_balloon':
-                u = self.ll_controler.pid(action, rel_pos, self.p_z)
+                u = self.ll_controler.pid(action, self.rel_pos, self.p_z)
             elif yaml_p['balloon'] == 'outdoor_balloon':
-                u = self.ll_controler.bangbang(action, rel_pos)
+                u = self.ll_controler.bangbang(action, self.rel_pos)
 
             #update physics model
             self.adapt_volume(u)
@@ -260,7 +256,7 @@ class character():
 
             if yaml_p['environment'] == 'python3':
                 noise = self.interpolate(self.noise,noise=True)
-                n_x, n_y, n_z = avg_mag*self.prop_mag*noise
+                n_x, n_y, n_z = avg_mag*self.prop_mag*noise*[1,1,0.25] #usually noise in z is a lot less than in x or y
 
                 if yaml_p['3d'] == False: #because there is so much noise in x direction when it's a 2d field
                     n_x *= 1.3
@@ -412,10 +408,12 @@ class character():
         return f_net #N
 
     def height_above_ground(self, est=False):
+        self.terrain_est = self.f_terrain(self.position_est[0], self.position_est[1])[0]
+        self.terrain = self.f_terrain(self.position_est[0], self.position[1])[0] #is used by the logger
         if est:
-            return self.position_est[2] - self.f_terrain(self.position_est[0], self.position_est[1])[0]
+            return self.position_est[2] - self.terrain_est
         else:
-            return self.position[2] - self.f_terrain(self.position[0], self.position[1])[0]
+            return self.position[2] - self.terrain
 
     def set_ceiling(self):
         np.random.seed(self.seed) #this is needed so the same ceiling is used when the target is set
@@ -436,9 +434,9 @@ class character():
         else:
             self.esterror_wind = np.inf
 
-        rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
+        self.rel_pos_est = self.height_above_ground(est=True)/(self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))
         if yaml_p['world_est']:
-            self.set_world_est(rel_pos_est,self.measurement)
+            self.set_world_est(self.rel_pos_est,self.measurement)
 
     def interpolate(self, world, position=None, noise=False):
         if position is None: #for self.proj_action()

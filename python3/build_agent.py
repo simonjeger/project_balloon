@@ -168,6 +168,8 @@ class Agent:
         self.old_step_n = self.step_n
         self.render_ratio = yaml_p['unit_xy'] / yaml_p['unit_z']
 
+        self.landing_timer = None
+
     def run_epoch(self,importance=None):
         obs = self.env.reset()
         sum_r = 0
@@ -241,27 +243,7 @@ class Agent:
 
             # logger
             if self.writer is not None:
-                self.writer.add_scalar('step_n', self.step_n , self.step_n)
-                self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
-                self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
-                self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
-                self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
-                self.writer.add_scalar('velocity_x', self.env.character.velocity[0], self.step_n)
-                self.writer.add_scalar('velocity_y', self.env.character.velocity[1], self.step_n)
-                self.writer.add_scalar('velocity_z', self.env.character.velocity[2], self.step_n)
-                self.writer.add_scalar('t', self.env.character.t, self.step_n)
-                self.writer.add_scalar('diameter', self.env.character.diameter, self.step_n)
-                self.writer.add_scalar('battery_level', self.env.character.battery_level, self.step_n)
-                self.writer.add_scalar('min_proj_dist', self.env.character.min_proj_dist, self.step_n)
-                self.writer.add_scalar('action', action, self.step_n)
-                self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
-
-                if yaml_p['world_est'] == True:
-                    self.writer.add_scalar('measurement_x', self.env.character.measurement[0], self.step_n)
-                    self.writer.add_scalar('measurement_y', self.env.character.measurement[1], self.step_n)
-
-                if yaml_p['log_world_est_error']:
-                    self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
+                self.write_logger(action)
 
             # do the actual step
             obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
@@ -269,52 +251,7 @@ class Agent:
             # logger
             if self.writer is not None:
                 if done:
-                    self.writer.add_scalar('step_n', self.step_n , self.step_n)
-                    self.writer.add_scalar('epi_n', self.epi_n , self.step_n)
-                    self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
-                    self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
-                    self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
-                    self.writer.add_scalar('velocity_x', self.env.character.velocity[0], self.step_n)
-                    self.writer.add_scalar('velocity_y', self.env.character.velocity[1], self.step_n)
-                    self.writer.add_scalar('velocity_z', self.env.character.velocity[2], self.step_n)
-                    self.writer.add_scalar('t', self.env.character.t, self.step_n)
-                    self.writer.add_scalar('diameter', self.env.character.diameter, self.step_n)
-                    self.writer.add_scalar('battery_level', self.env.character.battery_level, self.step_n)
-                    self.writer.add_scalar('min_dist', self.env.character.min_dist, self.step_n)
-                    self.writer.add_scalar('action', action, self.step_n)
-
-                    self.writer.add_scalar('target_x', self.env.character.target[0], self.step_n)
-                    self.writer.add_scalar('target_y', self.env.character.target[1], self.step_n)
-                    self.writer.add_scalar('target_z', self.env.character.target[2], self.step_n)
-
-                    self.writer.add_scalar('size_x', self.env.size_x , self.step_n)
-                    self.writer.add_scalar('size_y', self.env.size_y , self.step_n)
-                    self.writer.add_scalar('size_z', self.env.size_z , self.step_n)
-
-                    self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
-                    self.writer.add_scalar('reward_epi', self.env.reward_epi, self.step_n)
-
-                    if yaml_p['world_est'] == True:
-                        self.writer.add_scalar('measurement_x', self.env.character.measurement[0], self.step_n)
-                        self.writer.add_scalar('measurement_y', self.env.character.measurement[1], self.step_n)
-
-                    if yaml_p['log_world_est_error']:
-                        self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
-
-                    if self.env.reward_roll_out is not None:
-                        self.writer.add_scalar('reward_epi_norm', self.env.reward_epi/self.env.reward_roll_out, self.step_n)
-                    else:
-                        self.writer.add_scalar('reward_epi_norm', 0, self.step_n)
-
-                    self.writer.add_scalar('success_n', self.env.success_n, self.step_n)
-
-                    if (len(self.agent.q_func1_loss_record) > 0):
-                        self.writer.add_scalar('q_func1_loss', self.agent.q_func1_loss_record[-1], self.step_n)
-                        self.writer.add_scalar('q_func2_loss', self.agent.q_func2_loss_record[-1], self.step_n)
-                    self.writer.add_scalar('buffer_len', len(self.agent.replay_buffer.memory), self.step_n)
-                    self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n)
-                    self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n)
-
+                    self.write_logger(action, done=True)
 
             sum_r = sum_r + reward
             self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
@@ -637,6 +574,50 @@ class Agent:
         self.old_buffer_size = len(self.agent.replay_buffer.memory)
         self.old_step_n = self.step_n
 
+    def write_logger(self, action, done=False):
+        if not done:
+            self.writer.add_scalar('step_n', self.step_n, self.step_n)
+            self.writer.add_scalar('epi_n', self.epi_n, self.step_n)
+            self.writer.add_scalar('position_x', self.env.character.position[0], self.step_n)
+            self.writer.add_scalar('position_y', self.env.character.position[1], self.step_n)
+            self.writer.add_scalar('position_z', self.env.character.position[2], self.step_n)
+            self.writer.add_scalar('velocity_x', self.env.character.velocity[0], self.step_n)
+            self.writer.add_scalar('velocity_y', self.env.character.velocity[1], self.step_n)
+            self.writer.add_scalar('velocity_z', self.env.character.velocity[2], self.step_n)
+            self.writer.add_scalar('rel_pos_est', self.env.character.rel_pos_est, self.step_n)
+            self.writer.add_scalar('terrain', self.env.character.terrain, self.step_n)
+            self.writer.add_scalar('ceiling', self.env.character.ceiling, self.step_n)
+            self.writer.add_scalar('t', self.env.character.t, self.step_n)
+            self.writer.add_scalar('diameter', self.env.character.diameter, self.step_n)
+            self.writer.add_scalar('battery_level', self.env.character.battery_level, self.step_n)
+            self.writer.add_scalar('min_dist', self.env.character.min_dist, self.step_n)
+            self.writer.add_scalar('min_proj_dist', self.env.character.min_proj_dist, self.step_n)
+            self.writer.add_scalar('action', action, self.step_n)
+            self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
+
+            if yaml_p['world_est'] == True:
+                self.writer.add_scalar('measurement_x', self.env.character.measurement[0], self.step_n)
+                self.writer.add_scalar('measurement_y', self.env.character.measurement[1], self.step_n)
+
+            if yaml_p['log_world_est_error']:
+                self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
+
+            if yaml_p['log_world_est_error']:
+                self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
+
+        else:
+            self.writer.add_scalar('target_x', self.env.target[0], self.step_n)
+            self.writer.add_scalar('target_y', self.env.target[1], self.step_n)
+            self.writer.add_scalar('target_z', self.env.target[2], self.step_n)
+            self.writer.add_scalar('reward_epi', self.env.reward_epi, self.step_n)
+            self.writer.add_scalar('success_n', self.env.success_n, self.step_n)
+            self.writer.add_scalar('buffer_len', len(self.agent.replay_buffer.memory), self.step_n)
+            self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n)
+            self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n)
+            if (len(self.agent.q_func1_loss_record) > 0):
+                self.writer.add_scalar('q_func1_loss', self.agent.q_func1_loss_record[-1], self.step_n)
+                self.writer.add_scalar('q_func2_loss', self.agent.q_func2_loss_record[-1], self.step_n)
+
     def act_simple(self, character, p=None):
         tar_x = int(np.clip(character.target[0],0,self.env.size_x-1))
         tar_y = int(np.clip(character.target[1],0,self.env.size_y-1))
@@ -714,9 +695,9 @@ class Agent:
 
     def tuning(self):
         t = np.round(yaml_p['T'] - self.env.character.t,1) #because in simulation there is a slight rounding rest because of the discritization
-        if t < 300:
-            action = 0.02
-        elif t < 600:
+        if t < 1000:
+            action = 0.3
+        elif t < 2000:
             action = 0.005
         else:
             action = -1
