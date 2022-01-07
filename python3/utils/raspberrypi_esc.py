@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import time
 os.system ("sudo pigpiod") #Launching GPIO library
@@ -41,6 +42,7 @@ class raspi_esc:
         print("ESC: armed")
 
     def control(self,u):
+        u = self.transform(u)
         pwm = self.center_value + max((self.max_value - self.center_value)*u,0) + min((self.center_value - self.min_value)*u,0)
         self.pi.set_servo_pulsewidth(self.ESC0, pwm)
         self.pi.set_servo_pulsewidth(self.ESC1, pwm)
@@ -50,3 +52,10 @@ class raspi_esc:
         self.pi.set_servo_pulsewidth(self.ESC1, 0)
         self.pi.stop()
         print("ESC: motor stopped")
+
+    def transform(self,u):
+        s = np.sign(u)
+        u = abs(u)
+        # following values from calibrate_esc.py
+        a,b,c,d,e,f,g = [-0.02151806, -0.28606846, 0.65830371, -0.03707646, 3.88293423, -0.02374704, 6.47285477]
+        return s*abs(a + b*u**c + d*u**e + f*u**g)

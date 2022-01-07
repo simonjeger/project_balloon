@@ -58,14 +58,14 @@ class character():
 
         if yaml_p['balloon'] == 'outdoor_balloon':
             self.mass_structure = 0.839 + 0.247 #1.2 #kg
-            self.delta_f_up = 2 #N
-            self.delta_f_down = 2 #N
+            self.delta_f_up = 2.5 #N
+            self.delta_f_down = 2.5 #N
             self.delay = 1 #s
             self.consumption_up = 23 #W
             self.consumption_down = 23 #W
             self.rest_consumption = 2.5 #W
             self.battery_capacity = 319680 #Ws
-            self.c_w = 0.7 #0.45
+            self.c_w = 0.795
 
         elif yaml_p['balloon'] == 'indoor_balloon':
             self.mass_structure = 0.049 #kg
@@ -164,6 +164,7 @@ class character():
             not_done = self.move_particle()
         else:
             not_done = self.live_particle()
+        print(self.velocity[2]*yaml_p['unit_z'])
 
         # update state
         self.set_state()

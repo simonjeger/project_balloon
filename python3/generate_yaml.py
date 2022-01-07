@@ -102,7 +102,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
 
     text = text + '\n' + '# build_particle live' + '\n'
     text = text + 'offset: 0.1' + '\n'
-    text = text + 'scale: 0.3' + '\n'
+    text = text + 'scale: 0.5' + '\n'
 
     text = text + '\n' + '# build data set' + '\n'
     text = text + 'h: ' + str(h) + '\n'
