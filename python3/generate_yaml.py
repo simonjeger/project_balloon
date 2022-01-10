@@ -130,9 +130,10 @@ measurement_info = True
 
 prop_mag_min = 0
 
-process_nr = 9630
-global_buffer_N = 1
+process_nr = 9660
+global_buffer_N = 50
 global_buffer_nr = process_nr
+h = 0
 
 radius_xy = 10
 

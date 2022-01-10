@@ -61,9 +61,9 @@ class character():
             self.delta_f_up = 2.5 #N
             self.delta_f_down = 2.5 #N
             self.delay = 1 #s
-            self.consumption_up = 23 #W
-            self.consumption_down = 23 #W
-            self.rest_consumption = 2.5 #W
+            self.consumption_up = 70 #W
+            self.consumption_down = 70 #W
+            self.rest_consumption = 1.5 #W
             self.battery_capacity = 319680 #Ws
             self.c_w = 0.795
 
@@ -164,7 +164,6 @@ class character():
             not_done = self.move_particle()
         else:
             not_done = self.live_particle()
-        print(self.velocity[2]*yaml_p['unit_z'])
 
         # update state
         self.set_state()
@@ -266,9 +265,15 @@ class character():
             w_y += n_y
             w_z += n_z
 
+            # calculate new velocity
             v_x = (np.sign(w_x - self.p_x) * (w_x - self.p_x)**2 * self.c + 0)*self.delta_tn + self.p_x
             v_y = (np.sign(w_y - self.p_y) * (w_y - self.p_y)**2 * self.c + 0)*self.delta_tn + self.p_y
             v_z = (np.sign(w_z - self.p_z) * (w_z - self.p_z)**2 * self.c + b)*self.delta_tn + self.p_z
+
+            # make sure that for big delta_tn this doesn't explode
+            v_x = np.clip(v_x, -w_x, w_x)
+            v_y = np.clip(v_y, -w_y, w_y)
+            v_z = np.clip(v_z, -w_z + self.term_velocity[1], w_z + self.term_velocity[0])
 
             # update
             self.position += [v_x*self.delta_tn, v_y*self.delta_tn, v_z*self.delta_tn]
@@ -338,7 +343,10 @@ class character():
 
         #timing of the when to receive the data from the hardware
         delta_t = time.time() - self.real_time
-        time.sleep(yaml_p['delta_t_logger'] - delta_t)
+        if yaml_p['delta_t_logger'] - delta_t > 0:
+            time.sleep(yaml_p['delta_t_logger'] - delta_t)
+        else:
+            print('ERROR: Choose higher delta_t_logger')
         self.real_time = time.time()
         data = self.receive()
 
@@ -399,6 +407,9 @@ class character():
         self.area = (self.diameter/2)**2*np.pi #m^2
         self.mass_total = self.mass_structure + volume_init*rho_gas_init #kg
         self.c = self.area*self.rho_air*self.c_w/(2*self.mass_total)/(1/yaml_p['unit_z'])
+
+        # for update_particle
+        self.term_velocity = np.array([np.sqrt(2*self.delta_f_up/(self.c_w*self.rho_air*self.area)), -np.sqrt(2*self.delta_f_down/(self.c_w*self.rho_air*self.area))])/yaml_p['unit_z']
 
     def net_force(self,u):
         f_balloon = (self.volume*(self.rho_air-self.rho_gas) - self.mass_structure)*9.81

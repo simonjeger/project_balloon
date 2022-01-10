@@ -400,15 +400,15 @@ def tuning(directory_compare=None):
 
             if p == 0:
                 if (j == 0) & (yaml_p['mode'] == 'tuning'): #beacuse when tuning it's always the same action cycle
-                    axs[3].plot(time, df_loc_cut['action'], color='grey', linewidth=0.5)
+                    axs[4].plot(time, df_loc_cut['action'], color='grey', linewidth=0.5)
                 color=cmap0(1-j/iter_max)
             else:
                 color=cmap1(1-j/iter_max)
             axs[0].plot(time, df_loc_cut['position_x']*yaml_p['unit_xy'], color=color, linewidth=0.2)
             axs[1].plot(time, df_loc_cut['position_y']*yaml_p['unit_xy'], color=color, linewidth=0.2)
             axs[2].plot(time, df_loc_cut['position_z']*yaml_p['unit_z'], color=color, linewidth=0.2)
-            axs[3].plot(time, df_loc_cut['rel_pos_est']*yaml_p['unit_z'])
-            axs[4].plot(time, df_loc_cut['velocity_z']*yaml_p['unit_z'])
+            axs[3].plot(time, df_loc_cut['velocity_z']*yaml_p['unit_z'], color=color, linewidth=0.2)
+            axs[4].plot(time, df_loc_cut['rel_pos_est'], color=color, linewidth=0.2)
 
             #fig.suptitle(str(int(i/n_f*100)) + ' %')
             #plt.subplots_adjust(wspace=0.5, hspace=1)
@@ -416,8 +416,9 @@ def tuning(directory_compare=None):
     axs[0].set_ylim(0,yaml_p['size_x']*yaml_p['unit_xy'])
     axs[1].set_ylim(0,yaml_p['size_y']*yaml_p['unit_xy'])
     axs[2].set_ylim(0,yaml_p['size_z']*yaml_p['unit_z'])
-    axs[3].set_ylim(-0.1,1.1)
-    axs[4].set_ylim(-3,3)
+    axs[3].set_ylim(-3,3)
+    axs[4].set_ylim(-0.1,1.1)
+
     for a in range(5):
         axs[a].set_xlim(0,yaml_p['T'])
         axs[a].set_xlabel('time [s]')
@@ -428,8 +429,8 @@ def tuning(directory_compare=None):
     axs[0].set_ylabel('pos x [m]')
     axs[1].set_ylabel('pos y [m]')
     axs[2].set_ylabel('pos z [m]')
-    axs[3].set_ylabel('rel pos z')
-    axs[4].set_ylabel('vel z [m]')
+    axs[3].set_ylabel('vel z [m]')
+    axs[4].set_ylabel('rel pos z')
 
     # Build folder structure if it doesn't exist yet
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/tuning.png'
