@@ -606,6 +606,9 @@ class Agent:
                 self.writer.add_scalar('world_est_error', self.character.esterror_world, self.step_n)
 
         else:
+            self.writer.add_scalar('size_x', self.env.size_x, self.step_n)
+            self.writer.add_scalar('size_y', self.env.size_y, self.step_n)
+            self.writer.add_scalar('size_z', self.env.size_z, self.step_n)
             self.writer.add_scalar('target_x', self.env.target[0], self.step_n)
             self.writer.add_scalar('target_y', self.env.target[1], self.step_n)
             self.writer.add_scalar('target_z', self.env.target[2], self.step_n)

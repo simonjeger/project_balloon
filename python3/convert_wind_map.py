@@ -23,7 +23,7 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
-def convert_map():
+def convert_map(): #the terrain is already in simulation units, the wind is not
     Path(yaml_p['process_path'] + 'data_cosmo').mkdir(parents=True, exist_ok=True)
     Path(yaml_p['process_path'] + 'data_cosmo/tensor').mkdir(parents=True, exist_ok=True)
     Path(yaml_p['process_path'] + 'data_cosmo/coord').mkdir(parents=True, exist_ok=True)
@@ -79,11 +79,10 @@ def convert_map():
                 coord[1,i,j] = start_lon + i*step_lon
 
                 # write terrain
-                world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z
-
+                world[0,i,j,0] = (out['hsurf'][q_lat,q_lon] - lowest) / (highest - lowest) * size_z #in simmulation units
                 if step_z*k < out['z'][-1,q_lat,q_lon] - lowest:
                     world[-4,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
-                    world[-3,i,j,k] = np.mean(out['wind_x'][0,q_lat,q_lon])
+                    world[-3,i,j,k] = np.mean(out['wind_y'][0,q_lat,q_lon])
                     world[-2,i,j,k] = np.mean(out['wind_z'][0,q_lat,q_lon])
                     #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
                 else:
@@ -292,7 +291,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-#convert_map()
+convert_map()
 
-build_set(5000, 24, 'train')
-build_set(500, 24, 'test')
+#build_set(5000, 24, 'train')
+#build_set(500, 24, 'test')
