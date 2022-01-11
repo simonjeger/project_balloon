@@ -302,17 +302,20 @@ class Agent:
         return sum_r
 
     def reachability_study(self):
-        self.path_mt_pkl = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.pkl'
-        self.path_mt_png = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + self.env.world_name + '.png'
-        self.path_rs_pkl = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '.pkl'
-        self.path_rs_as = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '_as' +'.pkl'
-        self.path_rs_png = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + self.env.world_name + '.png'
+        world_name = self.env.world_name + '_'+ str(int(self.env.takeoff_time/60/60)).zfill(2)
+        self.path_mt_pkl = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + world_name + '.pkl'
+        self.path_mt_png = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/map_test/' + world_name + '.png'
+        self.path_rs_pkl = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + world_name + '.pkl'
+        self.path_rs_as = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + world_name + '_as' +'.pkl'
+        self.path_rs_png = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/' + world_name + '.png'
         self.path_rs_csv = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/percentage' + '.csv'
 
         if os.path.isfile(self.path_rs_as):
             with open(self.path_rs_as,'rb') as fid:
                 alpha_shape = pickle.load(fid)
         else:
+            if yaml_p['environment'] != 'python3':
+                print('WARNING: Reachability Study only makes sense in python3 environment')
             fig, ax = plt.subplots()
             ax.scatter(0,0,color='white')
             ax.scatter(self.env.size_x,self.env.size_y,color='white')
@@ -320,7 +323,7 @@ class Agent:
             x_global = []
             y_global = []
 
-            res = 10
+            res = 5
             for i in range(yaml_p['reachability_study']):
                 self.random_roll_out()
                 self.env.reset(target=[-10,-10,-10])
@@ -329,10 +332,10 @@ class Agent:
                 y = []
 
                 for j in range(res+1):
-                    if j <= res:
-                        k = int(j*len(self.env.path_reachability[-1][-1])/res - 1)
+                    if j < res:
+                        k = int(j*len(self.env.path_reachability[-1][-1])/res)
                     else:
-                        k = len(self.env.path_reachability[-1][-1]) - 1 #this is to make sure the last point is considered
+                        k = len(self.env.path_reachability[-1][-1]) -1 #this is to make sure the last point is considered
                     x_j = self.env.path_reachability[-1][-1][k][0]
                     y_j = self.env.path_reachability[-1][-1][k][1]
 
@@ -340,13 +343,13 @@ class Agent:
                     y.append(y_j)
                     x_global.append(x_j)
                     y_global.append(y_j)
-                ax.plot(x,y,color='grey')
+                ax.plot(x,y,color='black', linewidth=0.5)
                 print('reachability_study: ' + str(np.round(i/yaml_p['reachability_study']*100,0)) + ' %')
 
             points = list(zip(x_global,y_global))
 
             # Generate the alpha shape
-            alpha = 0.2
+            alpha = 0.4
 
             logging.disable() #to suppress: WARNING:root:Singular matrix. Likely caused by all points lying in an N-1 space.
             alpha_shape = alphashape.alphashape(points, alpha)
@@ -368,7 +371,7 @@ class Agent:
 
             plt.close()
 
-            df = pd.DataFrame([alpha_shape.area/(self.env.size_x*self.env.size_y)],[self.env.world_name])
+            df = pd.DataFrame([alpha_shape.area/(self.env.size_x*self.env.size_y)],[world_name])
             df.to_csv(self.path_rs_csv, mode='a', header=False)
 
         # Place target within shape

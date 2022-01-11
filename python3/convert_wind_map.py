@@ -92,7 +92,7 @@ def convert_map(): #the terrain is already in simulation units, the wind is not
                     world[-2,i,j,k] = np.mean(out['wind_z'][idx,q_lat,q_lon])
                     #world[-1,i,j,k] = np.mean(out['wind_z'][k,q_lat,q_lon]) #add variance later
 
-            print('converted ' + str(np.round((i*size_x+j)/(size_x*size_y)*100,2)) + '% of the wind field into tensor at ' + str(t).zfill(2) + ':00')
+            print('converted ' + str(np.round((i*size_y+j)/(size_x*size_y)*100,3)) + '% of the wind field into tensor at ' + str(t).zfill(2) + ':00')
     print('------- converted to tensor -------')
 
     # save

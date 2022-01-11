@@ -193,7 +193,7 @@ class balloon3d(Env):
             max_hour = os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor')
             max_hour.sort()
             max_hour = int(max_hour[-1][-5:-3])
-            
+
             if self.takeoff_time + yaml_p['T'] < max_hour*60*60:
                 break
 

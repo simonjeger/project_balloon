@@ -24,8 +24,8 @@ with open(args.yaml_file, 'rt') as fh:
 class HAE():
     def __init__(self):
         # define size
-        name_list = os.listdir(yaml_p['data_path'] + 'train/tensor/')
-        tensor = torch.load(yaml_p['data_path'] + 'train/tensor/' + name_list[0])
+        name_list = os.listdir(yaml_p['data_path'] + 'test/tensor/')
+        tensor = torch.load(yaml_p['data_path'] + 'test/tensor/' + name_list[0])
         self.size_c = len(tensor)
         self.size_x = len(tensor[0])
         self.size_y = len(tensor[0][0])

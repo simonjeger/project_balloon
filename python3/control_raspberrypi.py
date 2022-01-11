@@ -10,7 +10,6 @@ import sys
 from build_ll_controller import ll_controler
 from utils.ekf import ekf
 
-from utils.raspberrypi_com import raspi_com
 from utils.raspberrypi_esc import raspi_esc
 from utils.raspberrypi_gps import raspi_gps
 from utils.raspberrypi_alt import raspi_alt
@@ -92,7 +91,6 @@ y = np.linspace(0,len(world[0,0,:,0]),len(world[0,0,:,0]))
 f_terrain = scipy.interpolate.interp2d(x,y,world[0,:,:,0].T)
 
 # initialize devices
-#com = raspi_com()
 gps = raspi_gps()
 alt = raspi_alt()
 
@@ -125,8 +123,9 @@ U = 0
 u = 0
 min_proj_dist = np.inf
 
-c = 1 #only placeholder, nescessary for estimation functions
-delta_t = 20 #only placeholder, nescessary for estimation functions
+# only placeholder, nescessary for estimation functions
+c = 1
+delta_t = 4
 
 global_start = time.time()
 esc = raspi_esc() #only arm when ready

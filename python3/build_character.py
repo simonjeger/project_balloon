@@ -64,7 +64,7 @@ class character():
             self.consumption_up = 70 #W
             self.consumption_down = 70 #W
             self.rest_consumption = 1.5 #W
-            self.battery_capacity = 319680 #Ws
+            self.battery_capacity = 266400 #Ws
             self.c_w = 0.795
 
         elif yaml_p['balloon'] == 'indoor_balloon':

@@ -53,7 +53,7 @@ class ll_controler():
 
     def bangbang(self, set, position):
         error = set - position
-        tolerance = 0.003 #roughly 10 meters
+        tolerance = 0.006 #roughly 15 meters if wolrd is 2500 m wide/high
         if error > tolerance:
             u = 1
         elif error < -tolerance:

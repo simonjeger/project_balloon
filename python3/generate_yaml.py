@@ -35,7 +35,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'unit_noise_xy: 250' + '\n'
     text = text + 'unit_noise_z: 15.24' + '\n'
     text = text + 'delta_t: ' + str(delta_t) + '\n'
-    text = text + 'delta_t_logger: 4' + '\n'
+    text = text + 'delta_t_logger: ' + str(delta_t_physics) + '\n'
     text = text + 'delta_t_physics: ' + str(delta_t_physics) + '\n'
 
     text = text + '\n' + '# autoencoder' + '\n'
@@ -138,7 +138,7 @@ h = 0
 radius_xy = 10
 
 for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
-    for delta_t in [500]:
+    for delta_t in [180]:
         for burnin in ['advanced']:
             for HER in [False]:
                 for lr in [0.003]:

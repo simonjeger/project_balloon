@@ -54,7 +54,7 @@ def visualize_world(tensor, position, ceiling):
 
         if dim != 'xy':
             if yaml_p['balloon'] == 'outdoor_balloon':
-                limit = 10
+                limit = 20
             elif yaml_p['balloon'] == 'indoor_balloon':
                 limit = 1.5
             else:

@@ -1,82 +1,86 @@
+#!/usr/bin/python
+
 import RPi.GPIO as GPIO
 import serial
 import time
 
-class raspi_com:
+class raspi_com():
 	def __init__(self):
-		ser = serial.Serial('/dev/ttyUSB2',115200)
-		ser.flushInput()
+		self.ser = serial.Serial("/dev/ttyUSB2",115200)
+		self.ser.flushInput()
 
-		power_key = 6
-		rec_buff = ''
-		APN = 'CMNET'
-		ServerIP = '118.190.93.84'
-		Port = '2317'
-		Message = 'Waveshare'
+		self.phone_number = '07400173588' #********** change it to the phone number you want to call
+		self.power_key = 6
+		self.rec_buff = ''
 
 		try:
-			self.power_on(power_key)
-			self.send_at('AT+CSQ','OK',1)
-			self.send_at('AT+CREG?','+CREG: 0,1',1)
-			self.send_at('AT+CPSI?','OK',1)
-			self.send_at('AT+CGREG?','+CGREG: 0,1',0.5)
-			self.send_at('AT+CGSOCKCONT=1,\"IP\",\"'+APN+'\"','OK',1)
-			self.send_at('AT+CSOCKSETPN=1', 'OK', 1)
-			self.send_at('AT+CIPMODE=0', 'OK', 1)
-			self.send_at('AT+NETOPEN', '+NETOPEN: 0',5)
-			self.send_at('AT+IPADDR', '+IPADDR:', 1)
-			self.send_at('AT+CIPOPEN=0,\"TCP\",\"'+ServerIP+'\",'+Port,'+CIPOPEN: 0,0', 5)
-			self.send_at('AT+CIPSEND=0,', '>', 2)#If not sure the message number,write the command like this: AT+CIPSEND=0, (end with 1A(hex))
-			ser.write(Message.encode())
-			if 1 == send_at(b'\x1a'.decode(),'OK',5):
-				print('send message successfully!')
-			send_at('AT+CIPCLOSE=0','+CIPCLOSE: 0,0',15)
-			send_at('AT+NETCLOSE', '+NETCLOSE: 0', 1)
-			power_down(power_key)
-		except:
-			if ser != None:
+			self.power_on()
+			self.send_sms('Communication Initialized')
+		except :
+			if self.ser != None:
 				ser.close()
-				GPIO.cleanup()
+			GPIO.cleanup()
 
-		if ser != None:
-				ser.close()
-				GPIO.cleanup()
+	def send_at(self,command,back,timeout):
+		self.rec_buff = ''
+		self.ser.write((command+'\r\n').encode())
+		time.sleep(timeout)
+		if self.ser.inWaiting():
+			time.sleep(0.01 )
+			self.rec_buff = self.ser.read(self.ser.inWaiting())
+		if back not in self.rec_buff.decode():
+			print('COM: ' + command + ' ERROR')
+			print('COM: ' + command + ' back:\t' + self.rec_buff.decode())
+			return 0
+		else:
+			return 1
 
-	def power_on(self, power_key):
-		print('SIM7600X COM is starting:')
+	def send_sms(self,text_message):
+		self.send_at("AT+CMGF=1","OK",1)
+		answer = self.send_at("AT+CMGS=\""+self.phone_number+"\"",">",2)
+		if 1 == answer:
+			self.ser.write(text_message.encode())
+			self.ser.write(b'\x1A')
+			answer = self.send_at('','OK',20)
+			if 1 == answer:
+				print("COM: sent SMS successfully")
+			else:
+				print('COM: error')
+		else:
+			print('COM: error%d'%answer)
+
+	def receive_sms(self):
+		self.rec_buff = ''
+		self.send_at('AT+CMGF=1','OK',1)
+		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
+		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
+		answer = self.send_at('AT+CMGR=1','+CMGR:',2)
+		if 1 == answer:
+			answer = 0
+			if 'OK'.encode('utf-8') in self.rec_buff:
+				answer = 1
+				result = str(self.rec_buff).split("\\")[-7][1::]
+				return result
+		else:
+			print('COM: error%d'%answer)
+			return False
+		return True
+
+	def power_on(self):
 		GPIO.setmode(GPIO.BCM)
 		GPIO.setwarnings(False)
-		GPIO.setup(power_key,GPIO.OUT)
+		GPIO.setup(self.power_key,GPIO.OUT)
 		time.sleep(0.1)
-		GPIO.output(power_key,GPIO.HIGH)
+		GPIO.output(self.power_key,GPIO.HIGH)
 		time.sleep(2)
-		GPIO.output(power_key,GPIO.LOW)
+		GPIO.output(self.power_key,GPIO.LOW)
 		time.sleep(20)
-		ser.flushInput()
-		print('SIM7600X COM is ready')
+		self.ser.flushInput()
+		print('COM: powered on')
 
-	def power_down(self, power_key):
-		print('SIM7600X COM is loging off:')
-		GPIO.output(power_key,GPIO.HIGH)
+	def power_off(self):
+		GPIO.output(self.power_key,GPIO.HIGH)
 		time.sleep(3)
-		GPIO.output(power_key,GPIO.LOW)
+		GPIO.output(self.power_key,GPIO.LOW)
 		time.sleep(18)
-		print('Good bye')
-
-	def send_at(self, command, back, timeout):
-		rec_buff = ''
-		ser.write((command+'\r\n').encode())
-		time.sleep(timeout)
-		if ser.inWaiting():
-			time.sleep(0.1 )
-			rec_buff = ser.read(ser.inWaiting())
-		if rec_buff != '':
-			if back not in rec_buff.decode():
-				print(command + ' ERROR')
-				print(command + ' back:\t' + rec_buff.decode())
-				return 0
-			else:
-				print(rec_buff.decode())
-				return 1
-		else:
-			print(command + ' no responce')
+		print('COM: powered off')

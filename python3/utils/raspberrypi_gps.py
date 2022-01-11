@@ -102,4 +102,4 @@ class raspi_gps:
 		time.sleep(3)
 		GPIO.output(self.power_key,GPIO.LOW)
 		time.sleep(18)
-		print('GPS: powered down')
+		print('GPS: powered off')
