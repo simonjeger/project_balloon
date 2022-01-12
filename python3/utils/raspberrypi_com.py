@@ -3,6 +3,7 @@
 import RPi.GPIO as GPIO
 import serial
 import time
+import datetime
 
 class raspi_com():
 	def __init__(self):
@@ -45,9 +46,9 @@ class raspi_com():
 			if 1 == answer:
 				print("COM: sent SMS successfully")
 			else:
-				print('COM: error')
+				print('COM: sending error')
 		else:
-			print('COM: error%d'%answer)
+			print('COM: sending error%d'%answer)
 
 	def receive_sms(self):
 		self.rec_buff = ''
@@ -60,9 +61,17 @@ class raspi_com():
 			if 'OK'.encode('utf-8') in self.rec_buff:
 				answer = 1
 				result = str(self.rec_buff).split("\\")[-7][1::]
-				return result
+				year = 2000 + int(str(self.rec_buff).split("\\")[-9][-21:-19])
+				month = int(str(self.rec_buff).split("\\")[-9][-18:-16])
+				day = int(str(self.rec_buff).split("\\")[-9][-15:-13])
+				hour = int(str(self.rec_buff).split("\\")[-9][-12:-10])
+				minute = int(str(self.rec_buff).split("\\")[-9][-9:-7])
+				second = int(str(self.rec_buff).split("\\")[-9][-6:-4])
+
+				timestamp = datetime.datetime(year,month,day,hour,minute,second)
+				return result, timestamp
 		else:
-			print('COM: error%d'%answer)
+			print('COM: receiving error%d'%answer)
 			return False
 		return True
 

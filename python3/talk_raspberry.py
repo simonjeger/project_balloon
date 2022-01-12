@@ -2,6 +2,7 @@ import numpy as np
 import time
 import os
 import time
+import datetime
 import json
 import sys
 
@@ -33,7 +34,7 @@ def receive(file_name):
         print('RBP: data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
     return data
 
-def send(self, data):
+def send(data):
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
     with open(path + 'action.txt', 'w') as f:
         f.write(json.dumps(data))
@@ -43,6 +44,8 @@ com = raspi_com()
 interval = 60 #s
 
 global_start = time.time()
+timestamp_start = datetime.datetime.today()
+
 while True:
     t_start = time.time()
 
@@ -65,14 +68,21 @@ while True:
             info += 'rel_pos_est: ' + str(data['rel_pos_est']) + ', '
             info += 'U: ' + str(data['U']) + ', '
             info += 'action: ' + str(action['action'])
-            info += 'overrite_action: ' + str(action['overrite_action'])
+            info += 'action_overwrite: ' + str(action['action_overwrite'])
+
             com.send_sms(info)
 
-            message = com.receive_sms()
-            overrite_action = False
-            try:
-                overrite_action = float(message)
-            action['overrite_action'] = overrite_action
+            action_overwrite = False
+            message, timestamp = com.receive_sms()
+            if timestamp > timestamp_start:
+                try:
+                    action_overwrite = float(message)
+                    print('Overwriting action to: ' + str(action_overwrite))
+                except:
+                    print('Could not turn into float: ' + message)
+            else:
+                print('No new message, the latest one is from ' + str(timestamp))
+            action['action_overwrite'] = action_overwrite
             send(action)
 
         except KeyboardInterrupt:
@@ -85,6 +95,6 @@ while True:
             com.power_off()
             sys.exit()
 
-    wait = interval - (t_start - global_start)
+    wait = interval - (time.time() - t_start)
     if wait > 0:
         time.sleep(wait)

@@ -327,10 +327,16 @@ class character():
         return not_done
 
     def live_particle(self):
-        data = self.receive('data.txt') #so overwrite action can be done
+        #overwrite action
+        overrite_action = False
+        path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
+        if os.path.isfile(path + 'data.txt'):
+            data = self.receive('data.txt') #so overwrite action can be done
+            overwrite_action = data['overrite_action']
+
         data = {
         'action': self.action,
-        'overrite_action': data['overrite_action'],
+        'overrite_action': overwrite_action,
         'target': self.target.tolist(),
         'c': self.c,
         'ceiling': self.ceiling,

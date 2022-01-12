@@ -275,6 +275,8 @@ class Agent:
                 # stop the vicon system
                 data = {
                 'action': -1,
+                'overwrite_action': -1,
+                'overwrite_action': False,
                 'target': [-10,-10,-10],
                 'c': self.env.character.c,
                 'ceiling': self.env.character.ceiling,

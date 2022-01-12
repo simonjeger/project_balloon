@@ -37,6 +37,7 @@ with ag.agent.eval_mode():
             # make sure the communication file is in the right form
             data = {
                 'action': 0,
+                'action_overwrite': False,
                 'target': [-10,-10,-10],
                 'c': ag.env.character.c,
                 'ceiling': ag.env.character.ceiling,

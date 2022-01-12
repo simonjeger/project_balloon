@@ -95,7 +95,8 @@ gps = raspi_gps()
 alt = raspi_alt()
 
 lat_start,lon_start = get_center()
-lat,lon,height = gps.get_gps_position(max_cycles=10)
+#lat,lon,height = gps.get_gps_position(max_cycles=60)
+lat,lon,height = [51.498976, -0.174245, 11]
 position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
 
 #set the altimeter
@@ -150,18 +151,19 @@ while True:
         'position_est': position_meas,
         'path_est': [],
         'measurement': [0, 0],
-        'min_proj_dist': 0,
+        'min_proj_dist': 10,
         'not_done': not_done}
+        send(data)
 
         action = 0 #there is no command to reveive anything from, so I assume the action = 0 (only important for break out condition at the end)
 
     else:
         try: #if anything breaks, just cut the motors
             data = receive()
-            if not action['overwrite']:
+            if not data['action_overwrite']:
                 action = data['action']
             else:
-                action = data['overwrite']
+                action = data['action_overwrite']
             target = data['target']
             ceiling = data['ceiling']
             c = data['c']
