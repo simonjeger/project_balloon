@@ -95,8 +95,7 @@ gps = raspi_gps()
 alt = raspi_alt()
 
 lat_start,lon_start = get_center()
-#lat,lon,height = gps.get_gps_position(max_cycles=60)
-lat,lon,height = [51.498976, -0.174245, 11]
+lat,lon,height = gps.get_gps_position(max_cycles=60)
 position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
 
 #set the altimeter

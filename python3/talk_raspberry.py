@@ -85,6 +85,10 @@ while True:
             action['action_overwrite'] = action_overwrite
             send(action)
 
+            wait = interval - (time.time() - t_start)
+            if wait > 0:
+                time.sleep(wait)
+
         except KeyboardInterrupt:
             print("Maual kill")
             com.power_off()
@@ -94,7 +98,3 @@ while True:
             print("Something fatal broke down at " + str(int(t_start - global_start)) + ' s after start')
             com.power_off()
             sys.exit()
-
-    wait = interval - (time.time() - t_start)
-    if wait > 0:
-        time.sleep(wait)
