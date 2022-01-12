@@ -33,6 +33,12 @@ def receive(file_name):
         print('RBP: data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
     return data
 
+def send(self, data):
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
+    with open(path + 'action.txt', 'w') as f:
+        f.write(json.dumps(data))
+    return data
+
 com = raspi_com()
 interval = 60 #s
 
@@ -52,8 +58,22 @@ while True:
         try:
             action = receive('action.txt')
             data = receive('data.txt')
-            print(action)
-            print(data)
+            info = ''
+            info += 'gps_lat: ' + str(data['gps_lat']) + ', '
+            info += 'gps_lon: ' + str(data['gps_lon']) + ', '
+            info += 'gps_height: ' + str(data['gps_height']) + ', '
+            info += 'rel_pos_est: ' + str(data['rel_pos_est']) + ', '
+            info += 'U: ' + str(data['U']) + ', '
+            info += 'action: ' + str(action['action'])
+            info += 'overrite_action: ' + str(action['overrite_action'])
+            com.send_sms(info)
+
+            message = com.receive_sms()
+            overrite_action = False
+            try:
+                overrite_action = float(message)
+            action['overrite_action'] = overrite_action
+            send(action)
 
         except KeyboardInterrupt:
             print("Maual kill")

@@ -9,7 +9,7 @@ class raspi_com():
 		self.ser = serial.Serial("/dev/ttyUSB2",115200)
 		self.ser.flushInput()
 
-		self.phone_number = '07400173588' #********** change it to the phone number you want to call
+		self.phone_number = '07400173588' #********** change it to the phone number you want to text
 		self.power_key = 6
 		self.rec_buff = ''
 

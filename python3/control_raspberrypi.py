@@ -158,7 +158,10 @@ while True:
     else:
         try: #if anything breaks, just cut the motors
             data = receive()
-            action = data['action']
+            if not action['overwrite']:
+                action = data['action']
+            else:
+                action = data['overwrite']
             target = data['target']
             ceiling = data['ceiling']
             c = data['c']
@@ -261,9 +264,11 @@ while True:
             'min_proj_dist': min_proj_dist,
             'min_dist': min_dist,
             'not_done': not_done,
+            'delta_t': delta_t,
             'gps_lat': lat,
             'gps_lon': lon,
-            'gps_height': height}
+            'gps_height': height,
+            'rel_pos_est': rel_pos_est}
 
             send(data)
 

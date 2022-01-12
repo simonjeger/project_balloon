@@ -327,11 +327,10 @@ class character():
         return not_done
 
     def live_particle(self):
-        self.U = 0
-        not_done = True
-
+        data = self.receive('data.txt') #so overwrite action can be done
         data = {
         'action': self.action,
+        'overrite_action': data['overrite_action'],
         'target': self.target.tolist(),
         'c': self.c,
         'ceiling': self.ceiling,
@@ -348,7 +347,7 @@ class character():
         else:
             print('ERROR: Choose higher delta_t_logger')
         self.real_time = time.time()
-        data = self.receive()
+        data = self.receive('data.txt')
 
         # update
         self.position = np.array(data['position'])
@@ -363,7 +362,10 @@ class character():
         self.min_dist = data['min_dist']
 
         # update time
-        self.t -= yaml_p['delta_t_logger']
+        self.t -= data['delta_t']
+
+        self.U = data['U']
+        not_done = data['not_done']
 
         # update EKF
         self.set_measurement(data['measurement'][0],data['measurement'][1])
@@ -636,7 +638,7 @@ class character():
             f.write(json.dumps(data))
         return data
 
-    def receive(self):
+    def receive(self,filename):
         successful = False
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
         while not os.path.isfile(path + 'data.txt'):
@@ -645,7 +647,7 @@ class character():
         start = time.time()
         corrupt = False
         while not successful:
-            with open(path + 'data.txt') as json_file:
+            with open(path + filename) as json_file:
                 try:
                     data = json.load(json_file)
                     successful = True
