@@ -96,6 +96,8 @@ class character():
         self.diameter = 0
 
         self.world = world
+        self.mean_mag_xy = np.mean(abs(self.world[-4:-2]))
+        self.mean_mag_z = np.mean(abs(self.world[-2]))
 
         self.world_est = np.zeros_like(self.world)
         self.world_est[0] = self.world[0] #terrain is known
@@ -153,6 +155,8 @@ class character():
         self.real_time = copy.copy(time.time())
         self.position_old = self.position
         self.position_est_old = self.position_est
+
+        self.U_integrated_prev = 0 #only for live_particle
 
     def update(self, action, world):
         self.action = action
@@ -256,7 +260,7 @@ class character():
 
             if yaml_p['environment'] == 'python3':
                 noise = self.interpolate(self.noise,noise=True)
-                n_x, n_y, n_z = avg_mag*self.prop_mag*noise*[1,1,0.25] #usually noise in z is a lot less than in x or y
+                n_x, n_y, n_z = avg_mag*self.prop_mag*noise*[1,1,self.mean_mag_z/self.mean_mag_xy] #usually noise in z is a lot less than in x or y
 
                 if yaml_p['3d'] == False: #because there is so much noise in x direction when it's a 2d field
                     n_x *= 1.3
@@ -330,13 +334,13 @@ class character():
         #overwrite action
         overrite_action = False
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
-        if os.path.isfile(path + 'data.txt'):
-            data = self.receive('data.txt') #so overwrite action can be done
-            overwrite_action = data['overrite_action']
+        if os.path.isfile(path + 'action.txt'):
+            data = self.receive('action.txt') #so overwrite action can be done
+            action_overwrite = data['action_overwrite']
 
         data = {
         'action': self.action,
-        'overrite_action': overwrite_action,
+        'action_overwrite': action_overwrite,
         'target': self.target.tolist(),
         'c': self.c,
         'ceiling': self.ceiling,
@@ -370,7 +374,8 @@ class character():
         # update time
         self.t -= data['delta_t']
 
-        self.U = data['U']
+        self.U = data['U_integrated'] - self.U_integrated_prev #gives me the U that was generated in this episode
+        self.U_integrated_prev = data['U_integrated']
         not_done = data['not_done']
 
         # update EKF

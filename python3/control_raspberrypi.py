@@ -119,13 +119,13 @@ path_est = []
 not_done = True
 landed = False
 
-U = 0
+U_integrated = 0
 u = 0
 min_proj_dist = np.inf
 
 # only placeholder, nescessary for estimation functions
 c = 1
-delta_t = 4
+delta_t = 2
 
 global_start = time.time()
 esc = raspi_esc() #only arm when ready
@@ -143,15 +143,23 @@ while True:
         print('RBP: waiting for the algorithm to publish')
 
         data = {
-        'U': U,
-        'position': position_meas,
-        'velocity': [0,0,0],
-        'path': [],
-        'position_est': position_meas,
-        'path_est': [],
-        'measurement': [0, 0],
-        'min_proj_dist': 10,
-        'not_done': not_done}
+        'U_integrated': U_integrated,
+        'position': position_est,
+        'velocity': velocity_est,
+        'path': path_est,
+        'position_est': position_est,
+        'path_est': path_est,
+        'measurement': [est_x.wind(), est_y.wind()],
+        'min_proj_dist': 100,
+        'min_dist': 100,
+        'not_done': not_done,
+        'delta_t': delta_t,
+        'gps_lat': lat,
+        'gps_lon': lon,
+        'gps_height': height,
+        'rel_pos_est': 0,
+        'u': u}
+
         send(data)
 
         action = 0 #there is no command to reveive anything from, so I assume the action = 0 (only important for break out condition at the end)
@@ -174,7 +182,7 @@ while True:
             try:
                 lat,lon,height = gps.get_gps_position()
             except:
-                time.sleep(4) #that's usually about as long as it takes for a measurement to get in
+                time.sleep(2) #that's usually about as long as it takes for a measurement to get in
                 print("RBP: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + ' s after start.')
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
             try:
@@ -243,7 +251,7 @@ while True:
 
             path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
 
-            U += abs(u*delta_t)
+            U_integrated += abs(u*delta_t)
 
             # find min_proj_dist
             render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
@@ -255,7 +263,7 @@ while True:
                 min_dist = min_dist_prop
 
             data = {
-            'U': U,
+            'U_integrated': U_integrated,
             'position': position_est,
             'velocity': velocity_est,
             'path': path_est,
@@ -269,7 +277,8 @@ while True:
             'gps_lat': lat,
             'gps_lon': lon,
             'gps_height': height,
-            'rel_pos_est': rel_pos_est}
+            'rel_pos_est': rel_pos_est,
+            'u': u}
 
             send(data)
 

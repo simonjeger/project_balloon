@@ -6,11 +6,11 @@ import time
 import datetime
 
 class raspi_com():
-	def __init__(self):
+	def __init__(self,phone_number):
 		self.ser = serial.Serial("/dev/ttyUSB2",115200)
 		self.ser.flushInput()
 
-		self.phone_number = '07400173588' #********** change it to the phone number you want to text
+		self.phone_number = phone_number #********** change it to the phone number you want to text
 		self.power_key = 6
 		self.rec_buff = ''
 

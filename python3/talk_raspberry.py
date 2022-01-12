@@ -40,7 +40,7 @@ def send(data):
         f.write(json.dumps(data))
     return data
 
-com = raspi_com()
+com = raspi_com(yaml_p['phone_number'])
 interval = 60 #s
 
 global_start = time.time()
@@ -66,7 +66,7 @@ while True:
             info += 'gps_lon: ' + str(data['gps_lon']) + ', '
             info += 'gps_height: ' + str(data['gps_height']) + ', '
             info += 'rel_pos_est: ' + str(data['rel_pos_est']) + ', '
-            info += 'U: ' + str(data['U']) + ', '
+            info += 'u: ' + str(data['u']) + ', '
             info += 'action: ' + str(action['action'])
             info += 'action_overwrite: ' + str(action['action_overwrite'])
 

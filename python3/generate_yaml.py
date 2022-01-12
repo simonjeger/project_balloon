@@ -79,7 +79,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'set_reachable_target: True' + '\n'
     text = text + 'radius_xy: ' + str(radius_xy) + '\n'
     text = text + 'radius_z: ' + str(radius_xy) + '\n'
-    text = text + 'min_space: 0.5' + '\n'
+    text = text + 'min_space: 0.7' + '\n'
     text = text + 'hit: 1' + '\n'
     text = text + 'step: ' + f'{step:.10f}' + '\n'
     text = text + 'action: ' + f'{action:.10f}' + '\n'
@@ -103,6 +103,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + '\n' + '# build_particle live' + '\n'
     text = text + 'offset: 0.1' + '\n'
     text = text + 'scale: 0.5' + '\n'
+    text = text + 'phone number: "0786151786"' + '\n'
 
     text = text + '\n' + '# build data set' + '\n'
     text = text + 'h: ' + str(h) + '\n'
@@ -121,7 +122,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     file.close()
 
 balloon = '"outdoor_balloon"'
-delta_t_physics = 20
+delta_t_physics = 2
 time_train = 20*60*60
 step = -0.00003
 action = -0.00005
@@ -130,7 +131,7 @@ measurement_info = True
 
 prop_mag_min = 0
 
-process_nr = 9660
+process_nr = 9720
 global_buffer_N = 50
 global_buffer_nr = process_nr
 h = 0
