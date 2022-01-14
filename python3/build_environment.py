@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import scipy
 import os
+import datetime
 
 import yaml
 import argparse
@@ -41,7 +42,7 @@ class balloon3d(Env):
         self.step_n = step_n
         self.seed = 0
         self.success_hist = []
-        self.success_rate = 0
+        self.success_rate = np.nan
 
         # load new world to get size_x, size_z
         self.load_new_world()
@@ -86,7 +87,8 @@ class balloon3d(Env):
                 self.success_n += success
                 self.success_hist.append(success)
                 self.success_hist = self.success_hist[-100::] #only keep the last N
-                self.success_rate = np.mean(self.success_hist)
+                if len(self.success_hist) == 100:
+                    self.success_rate = np.mean(self.success_hist)
                 self.epi_n += 1
 
         # set placeholder for info
@@ -189,10 +191,17 @@ class balloon3d(Env):
             if self.train_or_test == 'test':
                 np.random.seed(self.seed)
                 self.seed +=1
-            self.world_name = np.random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
 
-            hour = int(self.world_name[-5:-3])
-            self.takeoff_time = hour*60*60 + np.random.randint(0,60)
+            if not yaml_p['real_time']:
+                self.world_name = np.random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
+
+                hour = int(self.world_name[-5:-3])
+                self.takeoff_time = hour*60*60 + np.random.randint(0,3600)
+            else:
+                self.world_name = os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor')[0]
+                now = datetime.datetime.today()
+                self.takeoff_time = now.hour*60*60 + now.minute*60
+
 
             #find what's the largest time in the dataset
             max_hour = os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor')

@@ -557,6 +557,10 @@ def write_overview():
     action = np.array(df['action'].dropna())
     action_std = np.std(action)
 
+    # mediam of last battery level
+    lbl = np.array(df['last_battery_level'].dropna())
+    lbl_median = np.median(lbl)
+
     # to pass in pandas	df
     dic_copy = yaml_p.copy()
     for i in dic_copy:
@@ -571,6 +575,7 @@ def write_overview():
     df_reward.insert(len(df_reward.columns),'rew_epi_max', maximum, True)
     df_reward.insert(len(df_reward.columns),'rew_epi_mean', mean, True)
     df_reward.insert(len(df_reward.columns),'action_std', action_std, True)
+    df_reward.insert(len(df_reward.columns),'last_battery_level_median', lbl_median, True)
     df_reward.insert(len(df_reward.columns),'success_rate', success_rate, True)
 
     dirpath = Path('overview.csv')

@@ -69,6 +69,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'environment: python3' + '\n'
     text = text + '3d: True' + '\n'
     text = text + 'data_path: ' + data_path + '\n'
+    text = text + 'real_time: False' + '\n'
     text = text + 'time_dependency: True' + '\n'
     text = text + 'T: 15000' + '\n'
     text = text + 'start_train: "center"' + '\n'
