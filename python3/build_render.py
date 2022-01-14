@@ -26,7 +26,7 @@ class render():
         self.size_y = (size_y - 1)*self.render_ratio
         self.size_z = size_z - 1
 
-    def make_render(self, character, action, reward_step, reward_epi, radius_xy, radius_z, train_or_test, roll_out, load_screen):
+    def make_render(self, character, action, reward_step, reward_epi, radius_xy, radius_z, train_or_test, roll_out, tss, load_screen):
         # general setup
         pygame.init()
         clock = pygame.time.Clock()
@@ -61,6 +61,10 @@ class render():
 
         # text
         myfont = pygame.font.SysFont('Arial', 10, bold=False)
+        hour = int(tss/60/60)
+        minute = int(tss/60 - hour*60)
+        second = int(tss - hour*60*60 - minute*60)
+        t_tss = myfont.render('UTC time: ' + str(hour) + ':' + str(minute) + ':' + str(second), False, pygame.Color('LightGray'))
 
         t_reward_step = myfont.render('reward_step: ' + '{:.3f}'.format(reward_step), False, pygame.Color('LightGray'))
         t_reward_epi = myfont.render('reward_epi: ' + '{:.3f}'.format(reward_epi), False, pygame.Color('LightGray'))
@@ -77,18 +81,19 @@ class render():
 
         start_text = 2*self.size_z*res
         space_text = 15
-        screen.blit(t_reward_step,(space_text,start_text+1*space_text))
-        screen.blit(t_reward_epi,(space_text,start_text+2*space_text))
-        screen.blit(t_diameter,(space_text,start_text+3*space_text))
-        screen.blit(t_battery_level,(space_text,start_text+4*space_text))
-        screen.blit(t_time,(space_text,start_text+5*space_text))
+        screen.blit(t_tss,(space_text,start_text+1*space_text))
+        screen.blit(t_reward_step,(space_text,start_text+3*space_text))
+        screen.blit(t_reward_epi,(space_text,start_text+4*space_text))
+        screen.blit(t_diameter,(space_text,start_text+5*space_text))
+        screen.blit(t_battery_level,(space_text,start_text+6*space_text))
+        screen.blit(t_time,(space_text,start_text+7*space_text))
         if yaml_p['mode'] != 'game':
-            screen.blit(t_residual,(space_text,start_text+7*space_text))
-            screen.blit(t_velocity,(space_text,start_text+8*space_text))
-            screen.blit(t_rel_pos,(space_text,start_text+9*space_text))
-            screen.blit(t_measurement,(space_text,start_text+10*space_text))
-            screen.blit(t_world_compressed,(space_text,start_text+11*space_text))
-            screen.blit(t_esterr,(space_text,start_text+13*space_text))
+            screen.blit(t_residual,(space_text,start_text+9*space_text))
+            screen.blit(t_velocity,(space_text,start_text+10*space_text))
+            screen.blit(t_rel_pos,(space_text,start_text+11*space_text))
+            screen.blit(t_measurement,(space_text,start_text+12*space_text))
+            screen.blit(t_world_compressed,(space_text,start_text+13*space_text))
+            screen.blit(t_esterr,(space_text,start_text+15*space_text))
 
         if load_screen:
             t_load_screen = myfont.render('PRESS NUMBER KEY TO START GAME', False, pygame.Color('White'))

@@ -40,6 +40,8 @@ class balloon3d(Env):
         self.epi_n = epi_n
         self.step_n = step_n
         self.seed = 0
+        self.success_hist = []
+        self.success_rate = 0
 
         # load new world to get size_x, size_z
         self.load_new_world()
@@ -75,13 +77,16 @@ class balloon3d(Env):
         # move character
         in_bounds = self.character.update(action, self.world)
         self.reward_step, done, success = self.cost(self.character.start, self.character.position, self.character.target, self.character.action, self.character.U, self.character.min_proj_dist, in_bounds)
-        self.success_n += success
         self.reward_epi += self.reward_step
         self.reward_list.append(self.reward_step)
 
         if (not skip) & (self.writer is not None):
             self.step_n += 1
             if done:
+                self.success_n += success
+                self.success_hist.append(success)
+                self.success_hist = self.success_hist[-100::] #only keep the last N
+                self.success_rate = np.mean(self.success_hist)
                 self.epi_n += 1
 
         # set placeholder for info
@@ -129,7 +134,7 @@ class balloon3d(Env):
         return reward_step, done, success
 
     def render(self, mode=False, action=None, load_screen=False): #mode = False is needed so I can distinguish between when I want to render and when I don't
-        self.render_machine.make_render(self.character, action, self.reward_step, self.reward_epi, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out, load_screen)
+        self.render_machine.make_render(self.character, action, self.reward_step, self.reward_epi, self.radius_xy, self.radius_z, self.train_or_test, self.path_roll_out, self.tss, load_screen)
 
     def reset(self, target=None):
         # load new world
@@ -170,7 +175,7 @@ class balloon3d(Env):
 
         else:
             # avoid impossible szenarios
-            if (self.size_z - self.start[2]) < self.size_z*yaml_p['min_space']: #a bit cheeting because the ceiling isn't in that calculation. But like this I can initialize character after the recursion.
+            if self.start[2] > (1 - yaml_p['min_space'])*self.size_z: #a bit cheeting because the ceiling isn't in that calculation. But like this I can initialize character after the recursion.
                 print('Not enough space to fly in ' + self.world_name + '. Loading new wind_map.')
                 self.reset(target=target)
             self.character = character(self.size_x, self.size_y, self.size_z, self.start, self.target, self.radius_xy, self.radius_z, self.T, self.world, self.train_or_test, self.seed)
@@ -213,10 +218,10 @@ class balloon3d(Env):
         self.size_z = len(self.world[-1,:,:][0][0])
 
     def interpolate_world(self,t):
-        tss = self.takeoff_time + yaml_p['T'] - t #time since start
+        self.tss = self.takeoff_time + yaml_p['T'] - t #time since start
 
-        h = int(tss/60/60)
-        p = (tss - h*60*60)/60/60
+        h = int(self.tss/60/60)
+        p = (self.tss - h*60*60)/60/60
         if yaml_p['time_dependency']:
             self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
             self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+1).zfill(2) + '.pt')

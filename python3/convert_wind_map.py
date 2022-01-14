@@ -167,7 +167,7 @@ def build_set(num, n_h, train_or_test):
                 world = tensor_rot[:,idx_x:idx_x+size_x, idx_y:idx_y+size_y,:]
                 coord_center = coord[:,idx_x + int(size_x/2), idx_y + int(size_y/2)] #only save the center coordinate (lat,lon)
 
-                if np.max(world[0][center_x:center_x+flat,center_y:center_y+flat,0]) >= yaml_p['min_space']*size_z: #only generate maps with enough space
+                if np.max(world[0][center_x:center_x+flat,center_y:center_y+flat,0]) < (1 - yaml_p['min_space'])*size_z: #only generate maps with enough space
                     # naming convention
                     digits = 4
                     name_lat = str(int(np.round(coord_center[0],digits)*10**digits)).zfill(digits+2)
@@ -291,7 +291,7 @@ def visualize_real_data(dimension):
 
 #visualize_real_data('z')
 #visualize_real_data('time')
-convert_map()
+#convert_map()
 
-#build_set(5000, 24, 'train')
-#build_set(500, 24, 'test')
+build_set(5000, 24, 'train')
+build_set(500, 24, 'test')

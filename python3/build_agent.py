@@ -619,7 +619,9 @@ class Agent:
             self.writer.add_scalar('target_z', self.env.target[2], self.step_n)
             self.writer.add_scalar('reward_epi', self.env.reward_epi, self.step_n)
             self.writer.add_scalar('success_n', self.env.success_n, self.step_n)
+            self.writer.add_scalar('success_rate', self.env.success_rate, self.step_n) #over the past 100 episodes
             self.writer.add_scalar('buffer_len', len(self.agent.replay_buffer.memory), self.step_n)
+            self.writer.add_scalar('takeoff_time', self.env.takeoff_time, self.step_n)
             self.writer.add_scalar('scheduler_policy', self.scheduler_policy.get_last_lr()[0], self.step_n)
             self.writer.add_scalar('scheduler_qfunc', self.scheduler_qfunc.get_last_lr()[0], self.step_n)
             if (len(self.agent.q_func1_loss_record) > 0):
