@@ -364,7 +364,12 @@ class Agent:
             # Plot alpha shape
             ax.add_patch(PolygonPatch(alpha_shape, fc='blue', ec='blue'))
             ax.set_title(str(np.round(alpha_shape.area/(self.env.size_x*self.env.size_y)*100,2)) + '% reachable')
+            ax.set_xlim(0,yaml_p['size_x'])
+            ax.set_ylim(0,yaml_p['size_y'])
+            takeoff_hour = int(self.env.takeoff_time/60/60)
+            plt.suptitle('take off time between ' + str(takeoff_hour).zfill(2) + ':00 and ' + str(takeoff_hour + 1).zfill(2) + ':00')
             ax.set_aspect('equal')
+            plt.tight_layout()
             plt.savefig(self.path_rs_png)
 
             # Save pickled version for later edits
@@ -706,9 +711,9 @@ class Agent:
 
     def tuning(self):
         t = np.round(yaml_p['T'] - self.env.character.t,1) #because in simulation there is a slight rounding rest because of the discritization
-        if t < 1000:
+        if t < 2000:
             action = 0.3
-        elif t < 2000:
+        elif t < 4000:
             action = 0.005
         else:
             action = -1

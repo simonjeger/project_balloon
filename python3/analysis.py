@@ -534,6 +534,35 @@ def wind_est():
     plt.savefig('debug_windest.png')
     plt.close()
 
+def reachability_study():
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/reachability_study/'
+    df = pd.read_csv(path + 'percentage.csv', header=None)
+    df = df.sort_values(by=0)
+    hours = []
+    for h in df.iloc[:,0]:
+        hours.append(h[-2::])
+    plt.plot(hours, df.iloc[:,1]*100)
+    plt.xlabel('hour')
+    plt.ylabel('percentage of reachability')
+    plt.savefig(path + 'graph.png')
+    plt.close()
+
+    # Build GIF
+    with imageio.get_writer(path + 'timelaps.gif', mode='I', fps=3) as writer:
+        name_list = os.listdir(path)
+
+        # find png
+        name_list_png = []
+        for name in name_list:
+            if ('.png' in name) & (not 'graph' in name):
+                name_list_png.append(name)
+        name_list_png.sort()
+
+        n = 0
+        for name in name_list_png:
+            image = imageio.imread(path + '/' + name)
+            writer.append_data(image)
+            n += 1
 
 def write_overview():
     # read in logger file as pandas

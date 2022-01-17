@@ -51,9 +51,9 @@ res_lat = np.ceil(res_lat*1e6)/1e6 #I have to round up, otherwise the array belo
 res_lon = np.ceil(res_lon*1e6)/1e6
 
 N_time = int(np.ceil(yaml_p['T']/60/60)) + 1
-start_date = datetime.datetime.today()
-#end_date = datetime.datetime.today() + datetime.timedelta(hours=N_time)
-end_date = datetime.datetime(start_date.year, start_date.month, start_date.day) + datetime.timedelta(hours=23,minutes=59,seconds=59)
+now = datetime.datetime.today()
+start_date = datetime.datetime(now.year, now.month, now.day)
+end_date = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(hours=23,minutes=59,seconds=59)
 res_time = datetime.timedelta(hours=1)
 
 height = np.arange(2,yaml_p['size_z']*yaml_p['unit_z']+2,yaml_p['unit_z']) #data is only available starting at 2 meters
@@ -78,9 +78,6 @@ for h in height:
     #except Exception as e:
     #    print("Failed, the exception is {}".format(e))
     #    time.sleep(1.5)
-
-print('Current Query User Limit Status:')
-print(api.query_user_limits(username, password))
 
 world = np.zeros(shape=(1+4,yaml_p['size_x'],yaml_p['size_y'],yaml_p['size_z']))
 
@@ -110,7 +107,7 @@ for t in range(len(elevation_h[0,0,:])):
                 if alt < yaml_p['size_z']:
                     world[1,i,j,alt] = wind_speed_u_ht[i,j]
                     world[2,i,j,alt] = wind_speed_v_ht[i,j]
-        print('Generated ' + str(int((t*yaml_p['size_z'] + k)/(yaml_p['size_z']*len(elevation_h[0,0,:]))*100)) + '% of the meteomatics tensors')
+    print('Generated ' + str(int((t)/(len(elevation_h[0,0,:]))*100)) + '% of the meteomatics tensors')
 
     # in every timestamp I generate a tensor
     digits = 4
@@ -120,3 +117,6 @@ for t in range(len(elevation_h[0,0,:])):
     name_lon = name_lon[0:2] + '.' + name_lon[2::]
     name = name_lat + '_' + name_lon + '_' + str(0) + '_' + str(start_date.hour + t).zfill(2) + '.pt'
     torch.save(world, '../' + yaml_p['data_path'] + train_or_test + '/tensor/' + name)
+
+print('Current Query User Limit Status:')
+print(api.query_user_limits(username, password))

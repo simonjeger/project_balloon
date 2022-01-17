@@ -132,7 +132,7 @@ measurement_info = True
 
 prop_mag_min = 0
 
-process_nr = 9780
+process_nr = 9840
 global_buffer_N = 50
 global_buffer_nr = process_nr
 h = 0
@@ -140,7 +140,7 @@ h = 0
 radius_xy = 10
 
 for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
-    for delta_t in [180]:
+    for delta_t in [300,500]: #180
         for burnin in ['advanced']:
             for HER in [False]:
                 for lr in [0.003]:

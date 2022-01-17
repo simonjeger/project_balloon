@@ -1,4 +1,4 @@
-from analysis import plot_reward, plot_path, plot_2d_path, plot_3d_path, make_2d_gif, tuning, dist_hist, wind_est, write_overview, disp_overview, clear
+from analysis import plot_reward, plot_path, plot_2d_path, plot_3d_path, make_2d_gif, tuning, dist_hist, wind_est, reachability_study, write_overview, disp_overview, clear
 
 import numpy as np
 import gym
@@ -8,7 +8,7 @@ from pathlib import Path
 import shutil
 
 # analyse
-tuning()
+#tuning()
 #tuning('logger_test_tuning_vicon')
 #plot_2d_path()
 #plot_path()
@@ -19,3 +19,4 @@ tuning()
 #write_overview()
 #disp_overview()
 #wind_est()
+reachability_study()
