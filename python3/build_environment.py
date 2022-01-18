@@ -52,7 +52,6 @@ class balloon3d(Env):
 
         # set maximal duration of flight
         self.T = yaml_p['T']
-
         self.render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
         self.reset()
 
@@ -186,6 +185,7 @@ class balloon3d(Env):
         return self.character.state
 
     def load_new_world(self):
+        counter = 0
         while True:
             # choose random world_map
             if self.train_or_test == 'test':
@@ -210,6 +210,10 @@ class balloon3d(Env):
 
             if self.takeoff_time + yaml_p['T'] < max_hour*60*60:
                 break
+
+            counter += 1
+            if counter > 1000:
+                print("ERROR: Can't find a World that satisfies all the criteria")
 
         # remove suffix and timestamp
         self.world_name = self.world_name[:-6]

@@ -362,7 +362,7 @@ class Agent:
                 pickle.dump(alpha_shape, fid)
 
             # Plot alpha shape
-            ax.add_patch(PolygonPatch(alpha_shape, fc='blue', ec='blue'))
+            ax.add_patch(PolygonPatch(alpha_shape, fc='grey', ec='grey'))
             ax.set_title(str(np.round(alpha_shape.area/(self.env.size_x*self.env.size_y)*100,2)) + '% reachable')
             ax.set_xlim(0,yaml_p['size_x'])
             ax.set_ylim(0,yaml_p['size_y'])
@@ -383,13 +383,13 @@ class Agent:
 
         # Place target within shape
         target = [-10,-10,-10]
-        while alpha_shape.contains(Point(target[0],target[1])) == False:
+        while not alpha_shape.contains(Point(target[0],target[1])):
             if self.train_or_test == 'test':
                 np.random.seed(self.seed)
                 self.seed += 1
-            target = [np.random.uniform(0,self.env.size_x), np.random.uniform(0,self.env.size_z), np.random.uniform(0,self.env.character.ceiling)]
-            obs = self.env.reset(target=target)
-            return obs
+            target = [np.random.uniform(0,self.env.size_x), np.random.uniform(0,self.env.size_y), np.random.uniform(0,self.env.character.ceiling)]
+        obs = self.env.reset(target=target)
+        return obs
 
     def set_reachable_target(self):
         self.random_roll_out()

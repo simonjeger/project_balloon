@@ -30,8 +30,8 @@ password = '4dCzy38UQsWlK'
 step_x = yaml_p['size_x']/2*yaml_p['unit_xy']
 step_y = yaml_p['size_y']/2*yaml_p['unit_xy']
 
-center_lat = 47.008705
-center_lon = 7.174884
+center_lat = 47.003721
+center_lon = 7.161621
 
 start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
 end_lat, end_lon = step(center_lat, center_lon, step_x, step_y)
@@ -62,6 +62,9 @@ height = np.arange(2,yaml_p['size_z']*yaml_p['unit_z']+2,yaml_p['unit_z']) #data
 elevation = []
 wind_speed_u = []
 wind_speed_v = []
+
+print('Current Query User Limit Status:')
+print(api.query_user_limits(username, password))
 
 # Input here the date and the time
 for h in height:

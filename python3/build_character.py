@@ -63,8 +63,8 @@ class character():
             self.delay = 1 #s
             self.consumption_up = 70 #W
             self.consumption_down = 70 #W
-            self.rest_consumption = 1.5 #W
-            self.battery_capacity = 266400 #Ws
+            self.rest_consumption = 5 #1.5 #W
+            self.battery_capacity =  3374400*0.8 #Ws only use 80%
             self.c_w = 0.795
 
         elif yaml_p['balloon'] == 'indoor_balloon':
@@ -377,6 +377,11 @@ class character():
         self.U = data['U_integrated'] - self.U_integrated_prev #gives me the U that was generated in this episode
         self.U_integrated_prev = data['U_integrated']
         not_done = data['not_done']
+
+        # update battery_level
+        self.battery_level -= (self.rest_consumption*data['delta_t'] + self.U*self.consumption_up*delta['delta_t'])/self.battery_capacity #is not quite correct because this doesn't take different consumptions_up and down in consideration
+        if self.battery_level < 0: #check if battery is empty
+            not_done = False
 
         # update EKF
         self.set_measurement(data['measurement'][0],data['measurement'][1])
