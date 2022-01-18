@@ -70,10 +70,17 @@ while True:
             info += 'action: ' + str(action['action'])
             info += 'action_overwrite: ' + str(action['action_overwrite'])
 
-            com.send_sms(info)
+            try:
+                com.send_sms(info)
+            except:
+                print('Could not send')
 
             action_overwrite = False
-            message, timestamp = com.receive_sms()
+            try:
+                message, timestamp = com.receive_sms()
+            except:
+                print('Could not receive')
+
             if timestamp > timestamp_start:
                 try:
                     action_overwrite = float(message)

@@ -19,7 +19,7 @@ class raspi_com():
 			self.send_sms('Communication Initialized')
 		except :
 			if self.ser != None:
-				ser.close()
+				self.ser.close()
 			GPIO.cleanup()
 
 	def send_at(self,command,back,timeout):

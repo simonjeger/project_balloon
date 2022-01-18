@@ -272,11 +272,9 @@ class Agent:
                 if yaml_p['render']:
                     self.env.render(mode=True)
 
-                # stop the vicon system
                 data = {
                 'action': -1,
-                'overwrite_action': -1,
-                'overwrite_action': False,
+                'action_overwrite': self.env.character.action_overwrite,
                 'target': [-10,-10,-10],
                 'c': self.env.character.c,
                 'ceiling': self.env.character.ceiling,
@@ -603,6 +601,7 @@ class Agent:
             self.writer.add_scalar('min_dist', self.env.character.min_dist, self.step_n)
             self.writer.add_scalar('min_proj_dist', self.env.character.min_proj_dist, self.step_n)
             self.writer.add_scalar('action', action, self.step_n)
+            self.writer.add_scalar('action_overwrite', self.env.character.action_overwrite, self.step_n)
             self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
 
             if yaml_p['world_est'] == True:

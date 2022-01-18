@@ -92,6 +92,7 @@ class character():
 
         self.battery_level = 1
         self.action = 0.01
+        self.action_overwrite = False
         self.action_hist = [self.action]
         self.diameter = 0
 
@@ -336,11 +337,11 @@ class character():
         path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
         if os.path.isfile(path + 'action.txt'):
             data = self.receive('action.txt') #so overwrite action can be done
-            action_overwrite = data['action_overwrite']
+            self.action_overwrite = data['action_overwrite']
 
         data = {
         'action': self.action,
-        'action_overwrite': action_overwrite,
+        'action_overwrite': self.action_overwrite,
         'target': self.target.tolist(),
         'c': self.c,
         'ceiling': self.ceiling,
