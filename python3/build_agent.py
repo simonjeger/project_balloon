@@ -248,8 +248,6 @@ class Agent:
             # do the actual step
             obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
 
-            print('character: ' + str(not_done))
-
             # logger
             if self.writer is not None:
                 if done:

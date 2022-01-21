@@ -170,8 +170,6 @@ class character():
         else:
             not_done = self.live_particle()
 
-        print('character: ' + str(not_done))
-
         # update state
         self.set_state()
 

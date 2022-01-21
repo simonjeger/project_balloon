@@ -95,8 +95,7 @@ gps = raspi_gps(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).z
 alt = raspi_alt()
 
 lat_start,lon_start = get_center()
-#lat,lon,height = gps.get_gps_position(max_cycles=60)
-lat,lon,height = 46.932712, 7.120577, 400
+lat,lon,height = gps.get_gps_position(max_cycles=60)
 position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
 
 #set the altimeter
@@ -219,8 +218,6 @@ while True:
                         print('RBP: run was cancalled deliberately')
                     not_done = False
 
-                print('character: ' + str(not_done))
-                
                 # control input u for flight case and landing
                 u_raw = llc.bangbang(action, rel_pos_est)
                 if not_done == False:
