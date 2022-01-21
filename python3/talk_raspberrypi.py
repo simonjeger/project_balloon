@@ -44,6 +44,7 @@ def send(data):
 com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 interval = 60 #s
 action_overwrite = False
+#kill = False
 
 global_start = time.time()
 timestamp_start = datetime.datetime.today().astimezone(pytz.timezone("Europe/Zurich"))
@@ -73,6 +74,8 @@ while True:
             info += 'u: ' + str(data['u']) + ', '
             info += 'action: ' + str(action['action']) + ', '
             info += 'action_overwrite: ' + str(action['action_overwrite'])
+            #info += 'action_overwrite: ' + str(action['action_overwrite']) + ', '
+            #info += 'kill: ' + str(action['kill'])
 
             try:
                 com.send_sms(info)
@@ -81,6 +84,8 @@ while True:
             try:
                 message, timestamp = com.receive_last_sms()
                 if timestamp > timestamp_start:
+                    #if message == 'kill':
+                    #    kill = True
                     try:
                         action_overwrite = float(message)
                         print('Overwriting action to: ' + str(action_overwrite))
@@ -90,7 +95,9 @@ while True:
                     print('No new message, the latest one is from ' + str(timestamp))
             except:
                 print('Could not receive')
+
             action['action_overwrite'] = action_overwrite
+            #action['kill'] = kill
             send(action)
 
             wait = interval - (time.time() - t_start)

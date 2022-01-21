@@ -170,6 +170,8 @@ class character():
         else:
             not_done = self.live_particle()
 
+        print('character: ' + str(not_done))
+
         # update state
         self.set_state()
 
@@ -380,7 +382,7 @@ class character():
         not_done = data['not_done']
 
         # update battery_level
-        self.battery_level -= (self.rest_consumption*data['delta_t'] + self.U*self.consumption_up*delta['delta_t'])/self.battery_capacity #is not quite correct because this doesn't take different consumptions_up and down in consideration
+        self.battery_level -= (self.rest_consumption*data['delta_t'] + self.U*self.consumption_up*data['delta_t'])/self.battery_capacity #is not quite correct because this doesn't take different consumptions_up and down in consideration
         if self.battery_level < 0: #check if battery is empty
             not_done = False
 
