@@ -6,6 +6,7 @@ import json
 import torch
 import scipy.interpolate
 import sys
+import shutil
 
 from build_ll_controller import ll_controler
 from utils.ekf import ekf
@@ -84,6 +85,12 @@ def get_center():
     center = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
     return center[0], center[1]
 
+# clear all previous communication files
+path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication'
+if os.path.exists(path):
+    shutil.rmtree(path)
+    os.makedirs(path)
+
 # interpolation for terrain
 world = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
 x = np.linspace(0,len(world[0,:,0,0]),len(world[0,:,0,0]))
@@ -107,8 +114,6 @@ est_x = ekf(position_meas[0])
 est_y = ekf(position_meas[1])
 est_z = ekf(position_meas[2])
 
-velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
-
 offset = yaml_p['offset']
 scale = yaml_p['scale']
 
@@ -126,6 +131,12 @@ min_proj_dist = np.inf
 # only placeholder, nescessary for estimation functions
 c = 1
 delta_t = 2
+delta_f_up = 2.5
+delta_f_down = 2.5
+mass_total = 1.2
+
+position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total)
+velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
 global_start = time.time()
 esc = raspi_esc() #only arm when ready
@@ -140,7 +151,10 @@ while True:
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(1)
-        print('RBP: waiting for the algorithm to publish')
+        print('RBP: waiting for the algorithm to publish at ' + str(time.time() - global_start) + ' s after starting')
+
+        position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total)
+        velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
         data = {
         'U_integrated': U_integrated,

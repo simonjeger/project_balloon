@@ -188,8 +188,9 @@ def plot_3d_path():
     for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
 
         df_loc = df[df['epi_n'].isin([j])]
-        end = np.argmin(df_loc['min_proj_dist'])
-        df_loc_cut = df_loc.iloc[0:end+1]
+        #end = np.argmin(df_loc['min_proj_dist'])
+        end = -2 #plot the whole trajectory
+        df_loc_cut = df_loc.iloc[1:end+1]
         draw = True
         if len(df_loc) < 10:
             draw = False
@@ -199,6 +200,8 @@ def plot_3d_path():
             draw = False
         if d > 9:
             draw = False
+
+        draw = True #remove if only certain things should be plotted
 
         if draw:
             c = np.argmin(np.abs(spectrum + df_loc['min_dist'].iloc[-1]))

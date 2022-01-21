@@ -44,7 +44,11 @@ class character():
         self.start = np.array(start).astype(float)
         self.target = np.array(target).astype(float)
 
-        self.position = copy.copy(self.start)
+        if yaml_p['environment'] == 'python3':
+            self.position = copy.copy(self.start)
+        else:
+            data = self.receive('data.txt')
+            self.position = np.array(data['position'])
         self.velocity = np.array([0,0,0])
 
         self.ll_controler = ll_controler()
