@@ -91,7 +91,7 @@ y = np.linspace(0,len(world[0,0,:,0]),len(world[0,0,:,0]))
 f_terrain = scipy.interpolate.interp2d(x,y,world[0,:,:,0].T)
 
 # initialize devices
-gps = raspi_gps()
+gps = raspi_gps(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 alt = raspi_alt()
 
 lat_start,lon_start = get_center()

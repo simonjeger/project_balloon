@@ -2,12 +2,14 @@ import RPi.GPIO as GPIO
 
 import serial
 import time
+from filelock import FileLock
 
 class raspi_gps:
-	def __init__(self):
+	def __init__(self,path):
 		self.ser = serial.Serial('/dev/ttyUSB2',115200)
 		self.ser.flushInput()
 
+		self.path = path
 		self.power_key = 6
 		rec_buff = ''
 		rec_buff2 = ''
@@ -22,23 +24,24 @@ class raspi_gps:
 			GPIO.cleanup()
 
 	def send_at(self,command,back,timeout):
-		rec_buff = ''
-		self.ser.write((command+'\r\n').encode())
-		time.sleep(timeout)
-		if self.ser.inWaiting():
-			time.sleep(0.01 )
-			rec_buff = self.ser.read(self.ser.inWaiting())
-		if rec_buff != '':
-			if back not in rec_buff.decode():
-				#print(command + ' ERROR')
-				#print(command + ' back:\t' + rec_buff.decode())
-				return 0, rec_buff
+		with FileLock(self.path + 'waveshare.lock'):
+			rec_buff = ''
+			self.ser.write((command+'\r\n').encode())
+			time.sleep(timeout)
+			if self.ser.inWaiting():
+				time.sleep(0.01 )
+				rec_buff = self.ser.read(self.ser.inWaiting())
+			if rec_buff != '':
+				if back not in rec_buff.decode():
+					#print(command + ' ERROR')
+					#print(command + ' back:\t' + rec_buff.decode())
+					return 0, rec_buff
+				else:
+					#print(rec_buff.decode())
+					return 1, rec_buff
 			else:
-				#print(rec_buff.decode())
-				return 1, rec_buff
-		else:
-			print('GPS: not ready')
-			return 0, rec_buff
+				print('GPS: not ready')
+				return 0, rec_buff
 
 	def get_gps_position(self,max_cycles=1):
 		answer = 0

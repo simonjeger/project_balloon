@@ -3,6 +3,7 @@ import time
 import os
 import time
 import datetime
+import pytz
 import json
 import sys
 
@@ -40,11 +41,14 @@ def send(data):
         f.write(json.dumps(data))
     return data
 
-com = raspi_com(yaml_p['phone_number'])
+com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 interval = 60 #s
+action_overwrite = False
 
 global_start = time.time()
-timestamp_start = datetime.datetime.today()
+timestamp_start = datetime.datetime.today().astimezone(pytz.timezone("Europe/Zurich"))
+
+message, timestamp = com.receive_last_sms()
 
 while True:
     t_start = time.time()
@@ -67,28 +71,25 @@ while True:
             info += 'gps_height: ' + str(data['gps_height']) + ', '
             info += 'rel_pos_est: ' + str(data['rel_pos_est']) + ', '
             info += 'u: ' + str(data['u']) + ', '
-            info += 'action: ' + str(action['action'])
+            info += 'action: ' + str(action['action']) + ', '
             info += 'action_overwrite: ' + str(action['action_overwrite'])
 
             try:
                 com.send_sms(info)
             except:
                 print('Could not send')
-
-            action_overwrite = False
             try:
-                message, timestamp = com.receive_sms()
+                message, timestamp = com.receive_last_sms()
+                if timestamp > timestamp_start:
+                    try:
+                        action_overwrite = float(message)
+                        print('Overwriting action to: ' + str(action_overwrite))
+                    except:
+                        print('Could not turn into float: ' + message)
+                else:
+                    print('No new message, the latest one is from ' + str(timestamp))
             except:
                 print('Could not receive')
-
-            if timestamp > timestamp_start:
-                try:
-                    action_overwrite = float(message)
-                    print('Overwriting action to: ' + str(action_overwrite))
-                except:
-                    print('Could not turn into float: ' + message)
-            else:
-                print('No new message, the latest one is from ' + str(timestamp))
             action['action_overwrite'] = action_overwrite
             send(action)
 
