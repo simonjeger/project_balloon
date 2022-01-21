@@ -30,8 +30,8 @@ password = '4dCzy38UQsWlK'
 step_x = yaml_p['size_x']/2*yaml_p['unit_xy']
 step_y = yaml_p['size_y']/2*yaml_p['unit_xy']
 
-center_lat = 47.003721
-center_lon = 7.161621
+center_lat = yaml_p['center_latlon'][0]
+center_lon = yaml_p['center_latlon'][1]
 
 start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
 end_lat, end_lon = step(center_lat, center_lon, step_x, step_y)
@@ -67,20 +67,35 @@ print('Current Query User Limit Status:')
 print(api.query_user_limits(username, password))
 
 # Input here the date and the time
-for h in height:
-    #try:
-    parameter_grid = ['elevation:m', 'wind_speed_u_' + str(int(h)) + 'm:ms', 'wind_speed_v_' + str(int(h)) + 'm:ms']
+h = 0
+while h < len(height):
+    parameter_grid = []
+    while True:
+        if h == 0:
+            parameter_grid.append('elevation:m')
+        parameter_grid.append('wind_speed_u_' + str(int(height[h])) + 'm:ms')
+        parameter_grid.append('wind_speed_v_' + str(int(height[h])) + 'm:ms')
+        h += 1
+        if (len(parameter_grid) >= 9) | (h >= len(height) - 1):
+            break
+
     request = api.query_grid_timeseries(start_date, end_date, res_time, parameter_grid, start_lat, start_lon, end_lat, end_lon, res_lat, res_lon, username, password)
-
-    elevation.append(request['elevation:m']) #even tho we just need it the first time, it's easier to keep it in the loop and only use the first entry
-    wind_speed_u.append(request['wind_speed_u_' + str(int(h)) + 'm:ms'])
-    wind_speed_v.append(request['wind_speed_v_' + str(int(h)) + 'm:ms'])
-
-    print('Downloaded ' + str(np.round(h/height[-1]*100,1)) + '% of meteomatics data')
     time.sleep(1.5)
-    #except Exception as e:
-    #    print("Failed, the exception is {}".format(e))
-    #    time.sleep(1.5)
+
+    for p in range(len(height)):
+        try:
+            elevation.append(request['elevation:m'])
+        except:
+            pass
+        try:
+            wind_speed_u.append(request['wind_speed_u_' + str(int(height[p])) + 'm:ms'])
+        except:
+            pass
+        try:
+            wind_speed_v.append(request['wind_speed_v_' + str(int(height[p])) + 'm:ms'])
+        except:
+            pass
+    print('Downloaded ' + str(np.round(h/len(height)*100,1)) + '% of meteomatics data')
 
 world = np.zeros(shape=(1+4,yaml_p['size_x'],yaml_p['size_y'],yaml_p['size_z']))
 

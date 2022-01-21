@@ -22,8 +22,8 @@ def step(lat, lon, step_x, step_y):
     lon = lon + (step_x/R) * (180/np.pi) / np.cos(lat*np.pi/180)
     return lat, lon
 
-center_lat = 47.008705
-center_lon = 7.174884
+center_lat = yaml_p['center_latlon'][0]
+center_lon = yaml_p['center_latlon'][1]
 
 print("Write 0 for position to latlon, 1 for latlon to position")
 mode = input()
@@ -41,7 +41,7 @@ if float(mode) == 0:
         print('Latitude, longitude: ' + str(res[0]) + ' ' + str(res[1]))
 
 elif float(mode) == 1:
-    print(ERROR this is not done yet)
+    print('ERROR this is not done yet')
     print('Write a latitude')
     lat = input()
     print('Write a longitude')

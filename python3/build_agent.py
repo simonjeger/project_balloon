@@ -57,7 +57,7 @@ class Agent:
         if train_or_test == 'train': #only testing is affected by denser logging to avoid messing up the learning
             yaml_p['delta_t_logger'] = yaml_p['delta_t']
 
-        self.clip = 0.01
+        self.clip = 0.05
 
         acts = env.action_space
         obs = env.observation_space

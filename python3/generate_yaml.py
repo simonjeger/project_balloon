@@ -108,6 +108,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
 
     text = text + '\n' + '# build data set' + '\n'
     text = text + 'h: ' + str(h) + '\n'
+    text = text + 'center_latlon: [47.045798, 7.243654]' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
     text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
