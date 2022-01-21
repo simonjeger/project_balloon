@@ -74,7 +74,9 @@ class raspi_com():
 				minute = int(rec_string[-9][-9:-7])
 				second = int(rec_string[-9][-6:-4])
 
-				timestamp = datetime.datetime(year,month,day,hour,minute,second).astimezone(pytz.timezone("UTC"))
+				timestamp = datetime.datetime(year,month,day,hour,minute,second)
+				timezone = pytz.timezone("Europe/Zurich")
+				timestamp = timezone.localize(timestamp)
 				return result, timestamp
 		else:
 			print('COM: receiving error%d'%answer)
