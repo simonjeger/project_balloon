@@ -44,7 +44,7 @@ def send(data):
 com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 interval = 60 #s
 action_overwrite = False
-#kill = False
+message_fail = 0
 
 global_start = time.time()
 timestamp_start = datetime.datetime.today().astimezone(pytz.timezone("Europe/Zurich"))
@@ -67,25 +67,25 @@ while True:
             action = receive('action.txt')
             data = receive('data.txt')
             info = ''
-            info += 'gps_lat: ' + str(data['gps_lat']) + ', '
-            info += 'gps_lon: ' + str(data['gps_lon']) + ', '
-            info += 'gps_height: ' + str(data['gps_height']) + ', '
-            info += 'rel_pos_est: ' + str(data['rel_pos_est']) + ', '
-            info += 'u: ' + str(data['u']) + ', '
-            info += 'action: ' + str(action['action']) + ', '
+            info += 'gps_lat: ' + str(np.round(data['gps_lat'],6)) + ', '
+            info += 'gps_lon: ' + str(np.round(data['gps_lon'],6)) + ', '
+            info += 'gps_height: ' + str(np.round(data['gps_height'],1)) + ', '
+            info += 'rel_pos_est: ' + str(np.round(data['rel_pos_est'],3)) + ', '
+            info += 'u: ' + str(np.round(data['u'],3)) + ', '
+            info += 'action: ' + str(np.round(action['action'],3)) + ', '
             info += 'action_overwrite: ' + str(action['action_overwrite'])
+
             #info += 'action_overwrite: ' + str(action['action_overwrite']) + ', '
-            #info += 'kill: ' + str(action['kill'])
 
             try:
                 com.send_sms(info)
+                message_fail = 0
             except:
+                message_fail += 1
                 print('Could not send')
             try:
                 message, timestamp = com.receive_last_sms()
                 if timestamp > timestamp_start:
-                    #if message == 'kill':
-                    #    kill = True
                     try:
                         action_overwrite = float(message)
                         print('Overwriting action to: ' + str(action_overwrite))
@@ -96,8 +96,11 @@ while True:
             except:
                 print('Could not receive')
 
+            if message_fail >= 5:
+                action_overwrite = -1
+                print('Set action_overwrite = -1 because of message_fail')
+
             action['action_overwrite'] = action_overwrite
-            #action['kill'] = kill
             send(action)
 
             wait = interval - (time.time() - t_start)

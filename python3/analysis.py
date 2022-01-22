@@ -13,6 +13,7 @@ import torch
 from sklearn.linear_model import LinearRegression
 from scipy.stats import beta
 from scipy.interpolate import interpn
+import json
 
 from utils.load_tf import tflog2pandas, many_logs2pandas
 
@@ -208,10 +209,10 @@ def plot_3d_path():
 
             # plot path in 3d
             ax.plot3D(df_loc_cut['position_x'], df_loc_cut['position_y'], df_loc_cut['position_z'], color=colors[c])
-            if yaml_p['3d']:
-                ax.scatter3D(df_loc['target_x'], df_loc['target_y'], df_loc['target_z'], color='grey')
-            else:
-                ax.plot3D(np.linspace(0,yaml_p['size_x'], 10), [df_loc['target_y'].iloc[-1]]*10, [df_loc['target_z'].iloc[-1]]*10, color='grey')
+            #if yaml_p['3d']:
+            #    ax.scatter3D(df_loc['target_x'], df_loc['target_y'], df_loc['target_z'], color='grey')
+            #else:
+            #    ax.plot3D(np.linspace(0,yaml_p['size_x'], 10), [df_loc['target_y'].iloc[-1]]*10, [df_loc['target_z'].iloc[-1]]*10, color='grey')
 
             # mark the border of the box
             ax.set_xlim3d(0, yaml_p['size_x'] - 1)
@@ -258,7 +259,7 @@ def plot_2d_path():
             draw = False
 
         if draw:
-            dydx = np.linspace(0,1,int(yaml_p['T']/yaml_p['delta_t']))  # first derivative
+            dydx = np.linspace(0,1,int(yaml_p['T']/yaml_p['delta_t_logger']))  # first derivative
 
             #dense lines
             points = np.array([df_loc_cut['position_y'], df_loc_cut['position_z']]).T.reshape(-1, 1, 2)
@@ -277,7 +278,7 @@ def plot_2d_path():
             line_transp = ax.add_collection(lc_transp)
             """
 
-            ax.scatter(df_loc_cut['position_y'].iloc[-1], df_loc_cut['position_z'].iloc[-1], c=end, vmin=0, vmax=int(yaml_p['T']/yaml_p['delta_t']), cmap='viridis')
+            ax.scatter(df_loc_cut['position_y'].iloc[-1], df_loc_cut['position_z'].iloc[-1], c=end, vmin=0, vmax=int(yaml_p['T']/yaml_p['delta_t_logger']), cmap='viridis')
             ax.scatter(df_loc['target_y'],df_loc['target_z'], color='red', zorder=1000) #zorder so the target is always above everything else
 
             ax.set_xlim(0,yaml_p['size_y'] - 1)

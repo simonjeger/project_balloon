@@ -56,8 +56,8 @@ def update_est(position,u,c,delta_t,delta_f_up,delta_f_down,mass_total):
     return position_est
 
 def dist_xy(lat_1, lon_1, lat_2, lon_2):
-    d_x = dist(lat_1,lon_1,lat_2,lon_1)
-    d_y = dist(lat_1,lon_1,lat_1,lon_2)
+    d_x = np.sign(lon_2 - lon_1)*dist(lat_1,lon_1,lat_1,lon_2)
+    d_y = np.sign(lat_2 - lat_1)*dist(lat_1,lon_1,lat_2,lon_1)
     return np.array([d_x, d_y])
 
 def dist(lat_1, lon_1, lat_2, lon_2):
@@ -78,7 +78,7 @@ def gps_to_position(lat,lon,height, lat_start,lon_start):
     # lat_start and lon_start where measured in the middle of the map
     offset_x = (yaml_p['size_x']-1)/2
     offset_y = (yaml_p['size_y']-1)/2
-    p_x, p_y = dist_xy(lat,lon,lat_start,lon_start)/yaml_p['unit_xy'] + np.array([offset_x, offset_y])
+    p_x, p_y = dist_xy(lat_start,lon_start,lat,lon)/yaml_p['unit_xy'] + np.array([offset_x, offset_y])
     return [p_x, p_y, height/yaml_p['unit_z']]
 
 def get_center():
@@ -98,11 +98,17 @@ y = np.linspace(0,len(world[0,0,:,0]),len(world[0,0,:,0]))
 f_terrain = scipy.interpolate.interp2d(x,y,world[0,:,:,0].T)
 
 # initialize devices
-gps = raspi_gps(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 alt = raspi_alt()
-
 lat_start,lon_start = get_center()
-lat,lon,height = gps.get_gps_position(max_cycles=60)
+while True: #search until found
+    try:
+        gps = raspi_gps(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
+        lat,lon,height = gps.get_gps_position(max_cycles=60)
+        break
+    except:
+        print('RBP: failed to find GPS fixture, will try again')
+        gps.power_off()
+
 position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
 
 #set the altimeter
@@ -151,7 +157,7 @@ while True:
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(1)
-        print('RBP: waiting for the algorithm to publish at ' + str(time.time() - global_start) + ' s after starting')
+        print('RBP: waiting for the algorithm to publish at ' + str(int(time.time() - global_start)) + ' s after starting')
 
         position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total)
         velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
@@ -263,7 +269,7 @@ while True:
             t_stop = time.time()
             delta_t = t_stop - t_start
 
-            path_est.append(np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']]).tolist())
+            path_est.append(position_est)
 
             U_integrated += abs(u*delta_t)
 

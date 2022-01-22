@@ -86,20 +86,22 @@ class raspi_gps:
 		return res
 
 	def power_on(self):
-		GPIO.setmode(GPIO.BCM)
-		GPIO.setwarnings(False)
-		GPIO.setup(self.power_key,GPIO.OUT)
-		time.sleep(0.1)
-		GPIO.output(self.power_key,GPIO.HIGH)
-		time.sleep(2)
-		GPIO.output(self.power_key,GPIO.LOW)
-		time.sleep(20)
-		self.ser.flushInput()
-		print('GPS: powered on')
+		with FileLock(self.path + 'waveshare.lock'):
+			GPIO.setmode(GPIO.BCM)
+			GPIO.setwarnings(False)
+			GPIO.setup(self.power_key,GPIO.OUT)
+			time.sleep(0.1)
+			GPIO.output(self.power_key,GPIO.HIGH)
+			time.sleep(2)
+			GPIO.output(self.power_key,GPIO.LOW)
+			time.sleep(20)
+			self.ser.flushInput()
+			print('GPS: powered on')
 
 	def power_off(self):
-		GPIO.output(self.power_key,GPIO.HIGH)
-		time.sleep(3)
-		GPIO.output(self.power_key,GPIO.LOW)
-		time.sleep(18)
-		print('GPS: powered off')
+		with FileLock(self.path + 'waveshare.lock'):
+			GPIO.output(self.power_key,GPIO.HIGH)
+			time.sleep(3)
+			GPIO.output(self.power_key,GPIO.LOW)
+			time.sleep(18)
+			print('GPS: powered off')
