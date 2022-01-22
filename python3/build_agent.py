@@ -21,6 +21,12 @@ import time
 from filelock import FileLock
 import json
 
+import logging
+logging.basicConfig(filename="logger/raspberry_gps.log", format='%(asctime)s %(message)s', filemode='w')
+logging.getLogger().addHandler(logging.StreamHandler())
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
+
 import yaml
 import argparse
 
@@ -203,7 +209,7 @@ class Agent:
         while True:
             # only take a decision when it's the time to do so, otherwise just log
             if (self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count + 1:
-                print('ERROR: delta_t_logger is too small, calculations are not made fast enough')
+                logger.error('AGT: delta_t_logger is too small, calculations are not made fast enough')
             if (self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count:
                 decision_count += 1
                 if yaml_p['mode'] == 'reinforcement_learning':
@@ -236,7 +242,7 @@ class Agent:
                     action_RL = action #this is only so it works with HER
 
                 else:
-                    print('ERROR: Please choose one of the available modes.')
+                    logger.error('AGT: Please choose one of the available modes.')
 
             if yaml_p['render']:
                 self.env.render(mode=True, action=action)
@@ -316,7 +322,7 @@ class Agent:
                 alpha_shape = pickle.load(fid)
         else:
             if yaml_p['environment'] != 'python3':
-                print('WARNING: Reachability Study only makes sense in python3 environment')
+                logger.warning('AGT: Reachability Study only makes sense in python3 environment')
             fig, ax = plt.subplots()
             ax.scatter(0,0,color='white')
             ax.scatter(self.env.size_x,self.env.size_y,color='white')
@@ -345,7 +351,7 @@ class Agent:
                     x_global.append(x_j)
                     y_global.append(y_j)
                 ax.plot(x,y,color='black', linewidth=0.5)
-                print('reachability_study: ' + str(np.round(i/yaml_p['reachability_study']*100,0)) + ' %')
+                logger.info('AGT: reachability_study: ' + str(np.round(i/yaml_p['reachability_study']*100,0)) + ' %')
 
             points = list(zip(x_global,y_global))
 
@@ -354,7 +360,7 @@ class Agent:
 
             logging.disable() #to suppress: WARNING:root:Singular matrix. Likely caused by all points lying in an N-1 space.
             alpha_shape = alphashape.alphashape(points, alpha)
-            print('alpha_shape calculated')
+            logger.info('AGT: alpha_shape calculated')
 
             # save alpha_shape for next time
             with open(self.path_rs_as,'wb') as fid:
@@ -540,14 +546,14 @@ class Agent:
         self.agent.save(path + 'weights_agent')
         self.update_buffer(path)
 
-        print('weights and buffer saved at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
+        logger.info('AGT: weights and buffer saved at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
     def load(self, path):
         self.agent.load(path + 'weights_agent')
         if self.train_or_test == 'train':
             self.update_buffer(path)
 
-        print('weights and buffer loaded at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
+        logger.info('AGT: weights and buffer loaded at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
     def update_buffer(self,path):
         self.save_buffer(path)

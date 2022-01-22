@@ -15,6 +15,12 @@ from utils.raspberrypi_esc import raspi_esc
 from utils.raspberrypi_gps import raspi_gps
 from utils.raspberrypi_alt import raspi_alt
 
+import logging
+logging.basicConfig(filename="logger/raspberry_gps.log", format='%(asctime)s %(message)s', filemode='w')
+logging.getLogger().addHandler(logging.StreamHandler())
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
+
 import yaml
 import argparse
 
@@ -44,7 +50,7 @@ def receive():
             except:
                 corrupt = True
     if corrupt:
-        print('RBP: data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
+        logger.warning('RBP: data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
     return data
 
 def update_est(position,u,c,delta_t,delta_f_up,delta_f_down,mass_total):
@@ -106,7 +112,7 @@ while True: #search until found
         lat,lon,height = gps.get_gps_position(max_cycles=60)
         break
     except:
-        print('RBP: failed to find GPS fixture, will try again')
+        logger.error('RBP: failed to find GPS fixture, will try again')
         gps.power_off()
 
 position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
@@ -146,7 +152,7 @@ velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
 global_start = time.time()
 esc = raspi_esc() #only arm when ready
-print('RBP: ready')
+logger.info('RBP: ready')
 
 while True:
     t_start = time.time()
@@ -157,7 +163,7 @@ while True:
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(1)
-        print('RBP: waiting for the algorithm to publish at ' + str(int(time.time() - global_start)) + ' s after starting')
+        logger.info('RBP: waiting for the algorithm to publish at ' + str(int(time.time() - global_start)) + ' s after starting')
 
         position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total)
         velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
@@ -203,12 +209,12 @@ while True:
                 lat,lon,height = gps.get_gps_position()
             except:
                 time.sleep(2) #that's usually about as long as it takes for a measurement to get in
-                print("RBP: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + ' s after start.')
+                logger.warning("RBP: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + ' s after start.')
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
             try:
                 position_meas[2] = alt.get_altitude()/yaml_p['unit_z']
             except:
-                print("RBP: Couldn't get ALT measurement at " + str(int(t_start - global_start)) + ' s after start.')
+                logger.warning("RBP: Couldn't get ALT measurement at " + str(int(t_start - global_start)) + ' s after start.')
             position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
             velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
             terrain = f_terrain(position_est[0], position_est[1])[0]
@@ -223,19 +229,19 @@ while True:
                 # check if done or not
                 if (position_est[0] < 0) | (position_est[0] > yaml_p['size_x'] - 1):
                     if not_done:
-                        print('RBP: X out of bounds')
+                        logger.info('RBP: X out of bounds')
                     not_done = False
                 if (position_est[1] < 0) | (position_est[1] > yaml_p['size_y'] - 1):
                     if not_done:
-                        print('RBP: Y out of bounds')
+                        logger.info('RBP: Y out of bounds')
                     not_done = False
                 if t_start - global_start > yaml_p['T'] + 60: #check if flight time is over and give a minute of buffer because usually the raspi get's started earlier
                     if not_done:
-                        print('RBP: Out of time')
+                        logger.info('RBP: Out of time')
                     not_done = False
                 if action < 0:
                     if not_done:
-                        print('RBP: run was cancalled deliberately')
+                        logger.info('RBP: run was cancalled deliberately')
                     not_done = False
 
                 # control input u for flight case and landing
@@ -243,13 +249,13 @@ while True:
                 if not_done == False:
                     cutoff_height = 0.05
                     d_m = np.max([int((position_est[2] - ((ceiling - terrain)*cutoff_height + terrain))*yaml_p['unit_z']),0])
-                    print('RBP: landing with ' + str(d_m) + ' m to go until motor cut-off')
+                    logger.info('RBP: landing with ' + str(d_m) + ' m to go until motor cut-off')
                     if rel_pos_est > cutoff_height:
                         u_raw = -1
                     else:
                         u_raw = 0
                         landed = True
-                        print('RBP: landed')
+                        logger.info('RBP: landed')
                 u = offset + u_raw*scale
                 if not landed:
                     esc.control(u)
@@ -258,13 +264,13 @@ while True:
                     esc.stop()
 
             if yaml_p['mode'] == 'tuning':
-                print('--- tuning ---')
-                print('altitude: ' + str(alt.get_altitude()) + ' m')
-                print('position_est: ' + str(position_est))
-                print('rel_pos_est: ' + str(rel_pos_est))
-                print('terrain: ' + str(terrain) + ' m')
-                print('t: ' + str(int(t_start - global_start)) + ' s')
-                print('u: ' + str(u))
+                logger.debug('--- tuning ---')
+                logger.debug('altitude: ' + str(alt.get_altitude()) + ' m')
+                logger.debug('position_est: ' + str(position_est))
+                logger.debug('rel_pos_est: ' + str(rel_pos_est))
+                logger.debug('terrain: ' + str(terrain) + ' m')
+                logger.debug('t: ' + str(int(t_start - global_start)) + ' s')
+                logger.debug('u: ' + str(u))
 
             t_stop = time.time()
             delta_t = t_stop - t_start
@@ -303,13 +309,13 @@ while True:
             send(data)
 
         except KeyboardInterrupt:
-            print("RBP: Maual kill")
+            logger.info("RBP: Maual kill")
             esc.stop()
             gps.power_off()
             sys.exit()
 
         except:
-            print("RBP: Something fatal broke down at " + str(int(t_start - global_start)) + ' s after start')
+            logger.error("RBP: Something fatal broke down at " + str(int(t_start - global_start)) + ' s after start')
             esc.stop()
             gps.power_off()
             sys.exit()

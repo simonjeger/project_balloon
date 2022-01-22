@@ -5,6 +5,11 @@ os.system ("sudo pigpiod") #Launching GPIO library
 time.sleep(1) # If this delay is removed you will get an error
 import pigpio
 
+import logging
+logging.basicConfig(filename="logger/raspberry_esc.log", format='%(asctime)s %(message)s', filemode='w')
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
+
 class raspi_esc:
     def __init__(self):
         self.ESC0=13  #Connect the ESC in this GPIO pin
@@ -39,7 +44,7 @@ class raspi_esc:
     def arm(self): #This is the arming procedure of an ESC
         self.control(0)
         time.sleep(2)
-        print("ESC: armed")
+        logger.info('ESC: armed')
 
     def control(self,u):
         u = self.transform(u)
@@ -51,7 +56,7 @@ class raspi_esc:
         self.pi.set_servo_pulsewidth(self.ESC0, 0)
         self.pi.set_servo_pulsewidth(self.ESC1, 0)
         self.pi.stop()
-        print("ESC: motor stopped")
+        logger.info('ESC: motor stopped')
 
     def transform(self,u):
         s = np.sign(u)

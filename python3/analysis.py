@@ -209,10 +209,10 @@ def plot_3d_path():
 
             # plot path in 3d
             ax.plot3D(df_loc_cut['position_x'], df_loc_cut['position_y'], df_loc_cut['position_z'], color=colors[c])
-            #if yaml_p['3d']:
-            #    ax.scatter3D(df_loc['target_x'], df_loc['target_y'], df_loc['target_z'], color='grey')
-            #else:
-            #    ax.plot3D(np.linspace(0,yaml_p['size_x'], 10), [df_loc['target_y'].iloc[-1]]*10, [df_loc['target_z'].iloc[-1]]*10, color='grey')
+            if yaml_p['3d']:
+                ax.scatter3D(df_loc['target_x'], df_loc['target_y'], df_loc['target_z'], color='grey')
+            else:
+                ax.plot3D(np.linspace(0,yaml_p['size_x'], 10), [df_loc['target_y'].iloc[-1]]*10, [df_loc['target_z'].iloc[-1]]*10, color='grey')
 
             # mark the border of the box
             ax.set_xlim3d(0, yaml_p['size_x'] - 1)

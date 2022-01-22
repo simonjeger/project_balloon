@@ -4,6 +4,11 @@ import adafruit_bmp3xx
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
+import logging
+logging.basicConfig(filename="logger/raspberry_alt.log", format='%(asctime)s %(message)s', filemode='w')
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
+
 import yaml
 import argparse
 
@@ -32,13 +37,12 @@ class raspi_alt:
 
         range = (QNH_max-QNH_min)*0.1
         if (QNH < QNH_min + range) | (QNH > QNH_max - range):
-            print('ALT: Choose larger QNH-range')
-        print('ALT: QNH set at ' + str(np.round(QNH,1)) + ' hPa')
+            logger.warning('ATL: Choose larger QNH-range')
+        logger.information('ATL: QNH set at ' + str(np.round(QNH,1)) + ' hPa')
 
     def error(self,QNH,terrain):
         self.bmp.sea_level_pressure = QNH
         return abs(terrain*yaml_p['unit_z'] - self.bmp.altitude)
 
     def get_altitude(self):
-        #print('alt: ' + str(self.bmp.altitude))
         return self.bmp.altitude

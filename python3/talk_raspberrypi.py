@@ -9,6 +9,12 @@ import sys
 
 from utils.raspberrypi_com import raspi_com
 
+import logging
+logging.basicConfig(filename="logger/raspberry_gps.log", format='%(asctime)s %(message)s', filemode='w')
+logging.getLogger().addHandler(logging.StreamHandler())
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
+
 import yaml
 import argparse
 
@@ -32,7 +38,7 @@ def receive(file_name):
             except:
                 corrupt = True
     if corrupt:
-        print('RBP: data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
+        logger.warning('RBP: data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
     return data
 
 def send(data):
@@ -57,11 +63,11 @@ while True:
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(5)
-        print('Waiting for the algorithm to publish')
+        logger.info('Waiting for the algorithm to publish')
 
     elif not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/data.txt'):
         time.sleep(5)
-        print('Waiting for the low level controller to publish')
+        logger.info('Waiting for the low level controller to publish')
 
     else:
         try:
@@ -84,25 +90,27 @@ while True:
                 message_fail = 0
             except:
                 message_fail += 1
-                print('Could not send')
+                logger.error('Could not send')
             try:
                 message, timestamp = com.receive_last_sms()
                 if timestamp > timestamp_start:
                     if message == 'stop':
                         stop_logger = True
-                    try:
-                        action_overwrite = float(message)
-                        print('Overwriting action to: ' + str(action_overwrite))
-                    except:
-                        print('Could not turn into float: ' + message)
+                        logger.info('Stopping logger')
+                    else:
+                        try:
+                            action_overwrite = float(message)
+                            logger.info('Overwriting action to: ' + str(action_overwrite))
+                        except:
+                            logger.error('Could not turn into float: ' + message)
                 else:
-                    print('No new message, the latest one is from ' + str(timestamp))
+                    logger.info('No new message, the latest one is from ' + str(timestamp))
             except:
-                print('Could not receive')
+                logger.error('Could not receive')
 
             if message_fail >= 5:
                 action_overwrite = -1
-                print('Set action_overwrite = -1 because of message_fail')
+                logger.error('Set action_overwrite = -1 because of message_fail')
 
             action['action_overwrite'] = action_overwrite
             action['stop_logger'] = stop_logger
@@ -113,11 +121,11 @@ while True:
                 time.sleep(wait)
 
         except KeyboardInterrupt:
-            print("Maual kill")
+            logger.info("Maual kill")
             com.power_off()
             sys.exit()
 
         except:
-            print("Something fatal broke down at " + str(int(t_start - global_start)) + ' s after start')
+            logger.error("Something fatal broke down at " + str(int(t_start - global_start)) + ' s after start')
             com.power_off()
             sys.exit()

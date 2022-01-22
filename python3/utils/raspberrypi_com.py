@@ -7,6 +7,11 @@ import datetime
 import pytz
 from filelock import FileLock
 
+import logging
+logging.basicConfig(filename="logger/raspberry_com.log", format='%(asctime)s %(message)s', filemode='w')
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
+
 class raspi_com():
 	def __init__(self,phone_number,path):
 		self.ser = serial.Serial("/dev/ttyUSB2",115200)
@@ -34,8 +39,8 @@ class raspi_com():
 				time.sleep(0.01)
 				self.rec_buff = self.ser.read(self.ser.inWaiting())
 			if back not in self.rec_buff.decode(errors='ignore'):
-				print('COM: ' + command + ' ERROR')
-				print('COM: ' + command + ' back:\t' + self.rec_buff.decode())
+				logger.error('COM: ' + command + ' ERROR')
+				logger.error('COM: ' + command + ' back:\t' + self.rec_buff.decode())
 				return 0
 			else:
 				return 1
@@ -48,11 +53,11 @@ class raspi_com():
 			self.ser.write(b'\x1A')
 			answer = self.send_at('','OK',2) #used to be 20
 			if 1 == answer:
-				print("COM: sent SMS successfully")
+				logger.info("COM: Sent SMS successfully")
 			else:
-				print('COM: sending error')
+				logger.error('COM: Sending error')
 		else:
-			print('COM: sending error%d'%answer)
+			logger.error('COM: Sending error%d'%answer)
 
 	def receive_sms(self,ID):
 		self.rec_buff = ''
@@ -79,7 +84,7 @@ class raspi_com():
 				timestamp = timezone.localize(timestamp)
 				return result, timestamp
 		else:
-			print('COM: receiving error%d'%answer)
+			logger.error('COM: Receiving error%d'%answer)
 			return False
 		return True
 
@@ -103,8 +108,7 @@ class raspi_com():
 
 				return last_ID
 		else:
-			print('COM: error in list_sms')
-
+			logger.error('COM: Error in list_sms')
 
 	def power_on(self):
 		with FileLock(self.path + 'waveshare.lock'):
@@ -117,7 +121,7 @@ class raspi_com():
 			GPIO.output(self.power_key,GPIO.LOW)
 			time.sleep(20)
 			self.ser.flushInput()
-			print('COM: powered on')
+			logger.info('COM: powered on')
 
 	def power_off(self):
 		with FileLock(self.path + 'waveshare.lock'):
@@ -125,4 +129,4 @@ class raspi_com():
 			time.sleep(3)
 			GPIO.output(self.power_key,GPIO.LOW)
 			time.sleep(18)
-			print('COM: powered off')
+			logger.info('COM: powered off')

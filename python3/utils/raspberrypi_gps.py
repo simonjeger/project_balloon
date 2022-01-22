@@ -4,6 +4,11 @@ import serial
 import time
 from filelock import FileLock
 
+import logging
+logging.basicConfig(filename="logger/raspberry_gps.log", format='%(asctime)s %(message)s', filemode='w')
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
+
 class raspi_gps:
 	def __init__(self,path):
 		self.ser = serial.Serial('/dev/ttyUSB2',115200)
@@ -33,19 +38,15 @@ class raspi_gps:
 				rec_buff = self.ser.read(self.ser.inWaiting())
 			if rec_buff != '':
 				if back not in rec_buff.decode():
-					#print(command + ' ERROR')
-					#print(command + ' back:\t' + rec_buff.decode())
 					return 0, rec_buff
 				else:
-					#print(rec_buff.decode())
 					return 1, rec_buff
 			else:
-				print('GPS: not ready')
+				logger.error('GPS: not ready')
 				return 0, rec_buff
 
 	def get_gps_position(self,max_cycles=1):
 		answer = 0
-		#print('Start GPS session...')
 		rec_buff = ''
 		self.send_at('AT+CGPS=1,1','OK',1)
 		for c in range(max_cycles):
@@ -53,7 +54,7 @@ class raspi_gps:
 			if 1 == answer:
 				answer = 0
 				if ',,,,,,' in str(result):
-					print('GPS: not ready (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
+					logger.error('GPS: not ready (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
 					time.sleep(1)
 				else:
 					result_array = str(result)[30::].split(",")
@@ -75,7 +76,7 @@ class raspi_gps:
 						lon *= -1
 					return lat,lon,height
 			else:
-				print('error %d'%answer + ' (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
+				logger.error('GPS: error %d'%answer + ' (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
 				rec_buff = ''
 				self.send_at('AT+CGPS=0','OK',1)
 
@@ -96,7 +97,7 @@ class raspi_gps:
 			GPIO.output(self.power_key,GPIO.LOW)
 			time.sleep(20)
 			self.ser.flushInput()
-			print('GPS: powered on')
+			logger.info('GPS: powered on')
 
 	def power_off(self):
 		with FileLock(self.path + 'waveshare.lock'):
@@ -104,4 +105,4 @@ class raspi_gps:
 			time.sleep(3)
 			GPIO.output(self.power_key,GPIO.LOW)
 			time.sleep(18)
-			print('GPS: powered off')
+			logger.info('GPS: powered off')
