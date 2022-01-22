@@ -43,7 +43,8 @@ with ag.agent.eval_mode():
                 'ceiling': ag.env.character.ceiling,
                 'delta_f_up': ag.env.character.delta_f_up,
                 'delta_f_down': ag.env.character.delta_f_down,
-                'mass_total': ag.env.character.mass_total
+                'mass_total': ag.env.character.mass_total,
+                'stop_logger': ag.env.character.stop_logger
                 }
             ag.env.character.send(data)
 

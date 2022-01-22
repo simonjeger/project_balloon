@@ -88,7 +88,7 @@ while True:
             try:
                 message, timestamp = com.receive_last_sms()
                 if timestamp > timestamp_start:
-                    if message = 'stop':
+                    if message == 'stop':
                         stop_logger = True
                     try:
                         action_overwrite = float(message)
