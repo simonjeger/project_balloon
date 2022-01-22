@@ -22,7 +22,7 @@ from filelock import FileLock
 import json
 
 import logging
-logging.basicConfig(filename="logger/raspberry_gps.log", format='%(asctime)s %(message)s', filemode='w')
+logging.basicConfig(filename="logger/build_agent.log", format='%(asctime)s %(message)s', filemode='w')
 logging.getLogger().addHandler(logging.StreamHandler())
 logger=logging.getLogger()
 logger.setLevel(logging.INFO)

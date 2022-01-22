@@ -10,7 +10,7 @@ import sys
 from utils.raspberrypi_com import raspi_com
 
 import logging
-logging.basicConfig(filename="logger/raspberry_gps.log", format='%(asctime)s %(message)s', filemode='w')
+logging.basicConfig(filename="logger/talk_raspberrypi.log", format='%(asctime)s %(message)s', filemode='w')
 logging.getLogger().addHandler(logging.StreamHandler())
 logger=logging.getLogger()
 logger.setLevel(logging.INFO)

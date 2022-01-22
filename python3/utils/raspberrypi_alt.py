@@ -38,7 +38,7 @@ class raspi_alt:
         range = (QNH_max-QNH_min)*0.1
         if (QNH < QNH_min + range) | (QNH > QNH_max - range):
             logger.warning('ATL: Choose larger QNH-range')
-        logger.information('ATL: QNH set at ' + str(np.round(QNH,1)) + ' hPa')
+        logger.info('ATL: QNH set at ' + str(np.round(QNH,1)) + ' hPa')
 
     def error(self,QNH,terrain):
         self.bmp.sea_level_pressure = QNH
