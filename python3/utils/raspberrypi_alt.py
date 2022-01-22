@@ -5,9 +5,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 
 import logging
-logging.basicConfig(filename="logger/raspberry_alt.log", format='%(asctime)s %(message)s', filemode='w')
 logger=logging.getLogger()
-logger.setLevel(logging.INFO)
 
 import yaml
 import argparse

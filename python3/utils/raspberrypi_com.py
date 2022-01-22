@@ -8,9 +8,7 @@ import pytz
 from filelock import FileLock
 
 import logging
-logging.basicConfig(filename="logger/raspberry_com.log", format='%(asctime)s %(message)s', filemode='w')
 logger=logging.getLogger()
-logger.setLevel(logging.INFO)
 
 class raspi_com():
 	def __init__(self,phone_number,path):

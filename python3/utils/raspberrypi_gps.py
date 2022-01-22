@@ -5,9 +5,7 @@ import time
 from filelock import FileLock
 
 import logging
-logging.basicConfig(filename="logger/raspberry_gps.log", format='%(asctime)s %(message)s', filemode='w')
 logger=logging.getLogger()
-logger.setLevel(logging.INFO)
 
 class raspi_gps:
 	def __init__(self,path):

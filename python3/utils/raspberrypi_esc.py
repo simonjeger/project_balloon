@@ -6,9 +6,7 @@ time.sleep(1) # If this delay is removed you will get an error
 import pigpio
 
 import logging
-logging.basicConfig(filename="logger/raspberry_esc.log", format='%(asctime)s %(message)s', filemode='w')
 logger=logging.getLogger()
-logger.setLevel(logging.INFO)
 
 class raspi_esc:
     def __init__(self):
