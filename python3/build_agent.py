@@ -208,8 +208,8 @@ class Agent:
         decision_count = 0
         while True:
             # only take a decision when it's the time to do so, otherwise just log
-            if (self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count + 1:
-                logger.error('AGT: delta_t_logger is too small, calculations are not made fast enough')
+            if ((self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count + 1) & (not done):
+                logger.error('AGT: delta_t is too small, calculations are not made fast enough')
             if (self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count:
                 decision_count += 1
                 if yaml_p['mode'] == 'reinforcement_learning':
