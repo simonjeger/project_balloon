@@ -97,6 +97,7 @@ class character():
         self.battery_level = 1
         self.action = 0.01
         self.action_overwrite = False
+        self.stop_logger = False
         self.action_hist = [self.action]
         self.diameter = 0
 
@@ -342,6 +343,7 @@ class character():
         if os.path.isfile(path + 'action.txt'):
             data = self.receive('action.txt') #so overwrite action can be done
             self.action_overwrite = data['action_overwrite']
+            self.stop_logger = data['stop_logger']
 
         data = {
         'action': self.action,
@@ -351,7 +353,8 @@ class character():
         'ceiling': self.ceiling,
         'delta_f_up': self.delta_f_up,
         'delta_f_down': self.delta_f_down,
-        'mass_total': self.mass_total
+        'mass_total': self.mass_total,
+        'stop_logger': self.stop_logger
         }
         self.send(data) #write action to file
 

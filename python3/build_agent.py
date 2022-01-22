@@ -268,7 +268,7 @@ class Agent:
             self.HER_target.append(copy.copy(self.env.character.target))
             self.HER_residual.append(copy.copy(self.env.character.residual))
 
-            if done:
+            if (done & (yaml_p['environment'] != 'gps')) | self.env.character.stop_logger:
                 if yaml_p['render']:
                     self.env.render(mode=True)
 

@@ -18,7 +18,7 @@ class raspi_com():
 		self.rec_buff = ''
 
 		try:
-			self.power_on()
+			#self.power_on() #when I run this, it will already be powered on by control_raspberry
 			self.send_sms('Communication initialized')
 		except :
 			if self.ser != None:

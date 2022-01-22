@@ -44,6 +44,7 @@ def send(data):
 com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 interval = 60 #s
 action_overwrite = False
+stop_logger = False
 message_fail = 0
 
 global_start = time.time()
@@ -73,7 +74,8 @@ while True:
             info += 'rel_pos_est: ' + str(np.round(data['rel_pos_est'],3)) + ', '
             info += 'u: ' + str(np.round(data['u'],3)) + ', '
             info += 'action: ' + str(np.round(action['action'],3)) + ', '
-            info += 'action_overwrite: ' + str(action['action_overwrite'])
+            info += 'action_overwrite: ' + str(action['action_overwrite']) + ', '
+            info += 'stop_logger: ' + str(action['stop_logger']) + ', '
 
             #info += 'action_overwrite: ' + str(action['action_overwrite']) + ', '
 
@@ -86,6 +88,8 @@ while True:
             try:
                 message, timestamp = com.receive_last_sms()
                 if timestamp > timestamp_start:
+                    if message = 'stop':
+                        stop_logger = True
                     try:
                         action_overwrite = float(message)
                         print('Overwriting action to: ' + str(action_overwrite))
@@ -101,6 +105,7 @@ while True:
                 print('Set action_overwrite = -1 because of message_fail')
 
             action['action_overwrite'] = action_overwrite
+            action['stop_logger'] = stop_logger
             send(action)
 
             wait = interval - (time.time() - t_start)
