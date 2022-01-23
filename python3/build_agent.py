@@ -206,6 +206,7 @@ class Agent:
         self.HER_residual = []
 
         decision_count = 0
+        done = False
         while True:
             # only take a decision when it's the time to do so, otherwise just log
             if ((self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count + 1) & (not done):
