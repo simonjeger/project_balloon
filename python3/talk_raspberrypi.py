@@ -56,8 +56,6 @@ message_fail = 0
 global_start = time.time()
 timestamp_start = datetime.datetime.today().astimezone(pytz.timezone("Europe/Zurich"))
 
-message, timestamp = com.receive_last_sms()
-
 while True:
     t_start = time.time()
 
@@ -104,7 +102,7 @@ while True:
                         except:
                             logger.error('Could not turn into float: ' + message)
                 else:
-                    logger.info('No new message, the latest one is from ' + str(timestamp))
+                    logger.info('No new message, the latest one is from ' + str(timestamp) + ' and reads: ' + message)
             except:
                 logger.error('Could not receive')
 

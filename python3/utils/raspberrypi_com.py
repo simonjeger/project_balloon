@@ -15,13 +15,15 @@ class raspi_com():
 		self.ser = serial.Serial("/dev/ttyUSB2",115200)
 		self.ser.flushInput()
 
-		self.phone_number = phone_number #********** change it to the phone number you want to text
+		self.phone_number = phone_number
+		self.simcard = '0791747954' #sim card in balloon
 		self.path = path
 		self.power_key = 6
 		self.rec_buff = ''
 
 		try:
 			#self.power_on() #when I run this, it will already be powered on by control_raspberry
+			self.delete_sms()
 			self.send_sms('Communication initialized')
 		except :
 			if self.ser != None:
@@ -43,9 +45,11 @@ class raspi_com():
 			else:
 				return 1
 
-	def send_sms(self,text_message):
+	def send_sms(self,text_message,phone_number=None):
+		if phone_number is None:
+			phone_number = self.phone_number
 		self.send_at("AT+CMGF=1","OK",1)
-		answer = self.send_at("AT+CMGS=\""+self.phone_number+"\"",">",2)
+		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",2)
 		if 1 == answer:
 			self.ser.write(text_message.encode())
 			self.ser.write(b'\x1A')
@@ -88,7 +92,10 @@ class raspi_com():
 
 	def receive_last_sms(self):
 		last_ID = self.list_sms()
-		return self.receive_sms(last_ID)
+		if last_ID is not None:
+			return self.receive_sms(last_ID)
+		else:
+			return 'empty inbox', datetime.datetime(2000,1,1,0,0)
 
 
 	def list_sms(self):
@@ -96,7 +103,6 @@ class raspi_com():
 		self.send_at('AT+CMGF=1','OK',1)
 		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
 		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1)
-
 		if 1 == answer:
 			answer = 0
 			if 'OK'.encode('utf-8') in self.rec_buff:
@@ -107,6 +113,15 @@ class raspi_com():
 				return last_ID
 		else:
 			logger.error('COM: Error in list_sms')
+			return None
+
+	def delete_sms(self):
+		self.rec_buff = ''
+		self.send_at('AT+CMGF=1','OK',1)
+		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
+		answer = self.send_at('AT+CMGD=1,4', 'OK', 1)
+		self.send_sms('inbox empty', phone_number=self.simcard) #I can't read out an empty list
+		logger.info('COM: inbox emptied')
 
 	def power_on(self):
 		with FileLock(self.path + 'waveshare.lock'):
