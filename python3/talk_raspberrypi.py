@@ -55,46 +55,45 @@ message_fail = 0
 
 global_start = time.time()
 timestamp_start = datetime.datetime.today().astimezone(pytz.timezone("Europe/Zurich"))
+bool_data = False
+bool_action = False
+bool_start = False
 
 while True:
     t_start = time.time()
 
+    if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/data.txt'):
+        time.sleep(5)
+        logger.info('Waiting for the low level controller to publish')
+    else:
+        if bool_data == False:
+            com.send_sms('Low level controller ready.')
+        time.sleep(5)
+        bool_data = True
+
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
         time.sleep(5)
         logger.info('Waiting for the algorithm to publish')
-
-    elif not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/data.txt'):
-        time.sleep(5)
-        logger.info('Waiting for the low level controller to publish')
-
     else:
+        if bool_action == False:
+            com.send_sms('Algorithm ready.')
+        time.sleep(5)
+        bool_action = True
+
+    if (bool_data & bool_action):
         try:
             action = receive('action.txt')
             data = receive('data.txt')
-            info = ''
-            info += 'gps_lat: ' + str(np.round(data['gps_lat'],6)) + ', '
-            info += 'gps_lon: ' + str(np.round(data['gps_lon'],6)) + ', '
-            info += 'gps_height: ' + str(np.round(data['gps_height'],1)) + ', '
-            info += 'rel_pos_est: ' + str(np.round(data['rel_pos_est'],3)) + ', '
-            info += 'u: ' + str(np.round(data['u'],3)) + ', '
-            info += 'action: ' + str(np.round(action['action'],3)) + ', '
-            info += 'action_overwrite: ' + str(action['action_overwrite']) + ', '
-            info += 'stop_logger: ' + str(action['stop_logger']) + ', '
 
-            #info += 'action_overwrite: ' + str(action['action_overwrite']) + ', '
-
-            try:
-                com.send_sms(info)
-                message_fail = 0
-            except:
-                message_fail += 1
-                logger.error('Could not send')
             try:
                 message, timestamp = com.receive_last_sms()
                 if timestamp > timestamp_start:
                     if message == 'stop':
                         stop_logger = True
                         logger.info('Stopping logger')
+                    elif message == 'start':
+                        bool_start = True
+                        logger.info('Starting algorithm')
                     else:
                         try:
                             action_overwrite = float(message)
@@ -106,6 +105,23 @@ while True:
             except:
                 logger.error('Could not receive')
 
+            info = ''
+            info += 'gps_lat: ' + str(np.round(data['gps_lat'],6)) + ', '
+            info += 'gps_lon: ' + str(np.round(data['gps_lon'],6)) + ', '
+            info += 'gps_height: ' + str(np.round(data['gps_height'],1)) + ', '
+            info += 'rel_pos_est: ' + str(np.round(data['rel_pos_est'],3)) + ', '
+            info += 'u: ' + str(np.round(data['u'],3)) + ', '
+            info += 'action: ' + str(np.round(action['action'],3)) + ', '
+            info += 'action_ow: ' + str(action['action_overwrite']) + ', '
+            info += 'stop_logger: ' + str(action['stop_logger'])
+
+            try:
+                com.send_sms(info)
+                message_fail = 0
+            except:
+                message_fail += 1
+                logger.error('Could not send')
+
             if message_fail >= 5:
                 action_overwrite = -1
                 logger.error('Set action_overwrite = -1 because of message_fail')
@@ -113,6 +129,11 @@ while True:
             action['action_overwrite'] = action_overwrite
             action['stop_logger'] = stop_logger
             send(action)
+
+            # send starting signal to algorithm if ready
+            if bool_start:
+                with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/start.txt', 'w') as f:
+                    f.write('start')
 
             wait = interval - (time.time() - t_start)
             if wait > 0:

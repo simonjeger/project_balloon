@@ -7,6 +7,7 @@ import gym
 import matplotlib.pyplot as plt
 import torch
 import time
+import os
 
 import yaml
 import argparse
@@ -49,12 +50,21 @@ with ag.agent.eval_mode():
             ag.env.character.send(data)
 
             # wait for human to give the go
-            start = 'no'
-            while start != 'yes':
-                print('write "yes" if you want to start the episode')
-                start = input()
+            if yaml_p['environment'] == 'vicon':
+                start = 'no'
+                while start != 'yes':
+                    print('write "yes" if you want to start the episode')
+                    start = input()
+            elif yaml_p['environment'] == 'gps':
+                start_path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/start.txt'
+                while not os.path.isfile(start_path):
+                    time.sleep(1)
+                    print('waiting for start SMS')
+            print('epoch started')
 
         log = ag.run_epoch()
+        if os.path.exists(start_path):
+            os.remove(start_path)
         print('epoch: ' + str(int(i)) + ' reward: ' + str(log))
 
 time.sleep(100) #make sure the writing of tensorboard files is done
