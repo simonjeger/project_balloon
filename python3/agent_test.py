@@ -63,8 +63,9 @@ with ag.agent.eval_mode():
             print('epoch started')
 
         log = ag.run_epoch()
-        if os.path.exists(start_path):
-            os.remove(start_path)
+        if yaml_p['environment'] == 'gps':
+            if os.path.exists(start_path):
+                os.remove(start_path)
         print('epoch: ' + str(int(i)) + ' reward: ' + str(log))
 
 time.sleep(100) #make sure the writing of tensorboard files is done
