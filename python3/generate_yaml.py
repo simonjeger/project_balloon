@@ -126,8 +126,8 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
 balloon = '"outdoor_balloon"'
 delta_t_physics = 2
 time_train = 20*60*60
-step = -0.00003
-action = -0.00005
+step = -0.00001
+action = -0.0005
 min_proj_dist = 1
 measurement_info = True
 
