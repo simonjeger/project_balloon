@@ -23,7 +23,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Delay start so files don't get overwritten during start up
 if yaml_p['environment'] == 'gps':
+    print('initial waiting')
     time.sleep(200)
+    print('done waiting')
 
 # always clear out previous tests
 clear('test')

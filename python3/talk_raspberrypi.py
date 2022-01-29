@@ -49,7 +49,9 @@ def send(data):
 
 # Delay start so files don't get overwritten during start up
 if yaml_p['environment'] == 'gps':
+    logger.info('initial waiting')
     time.sleep(160)
+    logger.info('done waiting')
 
 com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 interval = 60 #s

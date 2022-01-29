@@ -93,7 +93,9 @@ def get_center():
 
 # Delay start so files don't get overwritten during start up
 if yaml_p['environment'] == 'gps':
+    logger.info('initial waiting')
     time.sleep(120)
+    logger.info('done waiting')
 
 # clear all previous communication files
 path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication'
