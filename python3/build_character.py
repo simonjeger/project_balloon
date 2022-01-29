@@ -129,7 +129,6 @@ class character():
         self.seed = seed
         self.set_ceiling()
         self.world_squished = squish(self.world, self.ceiling)
-        #self.total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
 
         if yaml_p['environment'] == 'python3':
             self.set_noise()

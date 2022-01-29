@@ -91,6 +91,10 @@ def get_center():
     center = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
     return center[0], center[1]
 
+# Delay start so files don't get overwritten during start up
+if yaml_p['environment'] == 'gps':
+    time.sleep(120)
+
 # clear all previous communication files
 path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication'
 if os.path.exists(path):

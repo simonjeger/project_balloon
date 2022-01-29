@@ -21,6 +21,10 @@ with open(args.yaml_file, 'rt') as fh:
 
 from torch.utils.tensorboard import SummaryWriter
 
+# Delay start so files don't get overwritten during start up
+if yaml_p['environment'] == 'gps':
+    time.sleep(200)
+
 # always clear out previous tests
 clear('test')
 
