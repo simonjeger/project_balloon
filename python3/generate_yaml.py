@@ -133,8 +133,8 @@ measurement_info = True
 
 prop_mag_min = 0
 
-process_nr = 10060
-global_buffer_N = 100
+process_nr = 10170
+global_buffer_N = 50
 global_buffer_nr = process_nr
 h = 0
 

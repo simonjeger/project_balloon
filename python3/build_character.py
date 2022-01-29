@@ -129,6 +129,7 @@ class character():
         self.seed = seed
         self.set_ceiling()
         self.world_squished = squish(self.world, self.ceiling)
+        #self.total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
 
         if yaml_p['environment'] == 'python3':
             self.set_noise()
@@ -210,8 +211,8 @@ class character():
         if not yaml_p['measurement_info']:
             self.measurement *= 0
 
-        total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
-        boundaries = np.array([self.normalize_pos(self.position_est[0]-self.start[0]), self.normalize_pos(self.position_est[1]-self.start[1]), self.rel_pos_est, total_z])
+        self.total_z = (self.ceiling-(self.position_est[2]-self.height_above_ground(est=True)))/self.size_z
+        boundaries = np.array([self.normalize_pos(self.position_est[0]-self.start[0]), self.normalize_pos(self.position_est[1]-self.start[1]), self.rel_pos_est, self.total_z])
 
         tar_x = int(np.clip(self.target[0],0,self.size_x - 1))
         tar_y = int(np.clip(self.target[1],0,self.size_y - 1))

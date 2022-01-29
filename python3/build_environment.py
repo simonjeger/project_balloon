@@ -76,7 +76,7 @@ class balloon3d(Env):
 
         # move character
         in_bounds = self.character.update(action, self.world)
-        self.reward_step, done, success = self.cost(self.character.start, self.character.position, self.character.rel_pos_est, self.character.target, self.character.action, self.character.U, self.character.min_proj_dist, in_bounds)
+        self.reward_step, done, success = self.cost(self.character.start, self.character.position, self.character.rel_pos_est, self.character.total_z, self.character.target, self.character.action, self.character.U, self.character.min_proj_dist, in_bounds)
         self.reward_epi += self.reward_step
         self.reward_list.append(self.reward_step)
 
@@ -96,7 +96,8 @@ class balloon3d(Env):
         # return step information
         return self.character.state, self.reward_step, done, info
 
-    def cost(self, start, position, rel_pos, target, action, U, min_proj_dist, in_bounds):
+    def cost(self, start, position, rel_pos, total_z, target, action, U, min_proj_dist, in_bounds):
+        saturation = self.character.term_velocity[0]*yaml_p['delta_t']/yaml_p['size_z']/total_z
         init_proj_min = np.sqrt(((target[0] - start[0])*self.render_ratio/self.radius_xy)**2 + ((target[1] - start[1])*self.render_ratio/self.radius_xy)**2 + ((target[2] - start[2])/self.radius_z)**2)
         residual = target - position
 
@@ -117,7 +118,7 @@ class balloon3d(Env):
                 done = True
             else:
                 res = np.sqrt((residual[0]*self.render_ratio/self.radius_xy)**2 + (residual[1]*self.render_ratio/self.radius_xy)**2 + (residual[2]/self.radius_z)**2)
-                reward_step = yaml_p['step']*yaml_p['delta_t'] + abs(rel_pos - action)*yaml_p['delta_t']*yaml_p['action'] + (init_proj_min - res)/init_proj_min*yaml_p['gradient'] + proj_action_bonus*yaml_p['proj_action']
+                reward_step = yaml_p['step']*yaml_p['delta_t'] + np.clip(abs(rel_pos - action),0,saturation)/saturation*yaml_p['delta_t']*yaml_p['action'] + (init_proj_min - res)/init_proj_min*yaml_p['gradient'] + proj_action_bonus*yaml_p['proj_action']
                 success = 0
                 done = False
 

@@ -198,6 +198,7 @@ class Agent:
         self.HER_obs = [obs]
         self.HER_pos = [self.env.character.start]
         self.HER_rel_pos = [self.env.character.rel_pos_est]
+        self.HER_total_z = [self.env.character.total_z]
         self.HER_action = []
         self.HER_proj_action = []
         self.HER_U = []
@@ -271,6 +272,7 @@ class Agent:
             self.HER_obs.append(obs)
             self.HER_pos.append(copy.copy(self.env.character.position))
             self.HER_rel_pos.append(copy.copy(self.env.character.rel_pos_est))
+            self.HER_total_z.append(copy.copy(self.env.character.total_z))
             self.HER_action.append(action_RL)
             self.HER_proj_action.append(self.env.character.proj_action(self.env.character.position, self.env.character.target))
             self.HER_U.append(copy.copy(self.env.character.U))
@@ -498,6 +500,7 @@ class Agent:
         for i in range(len(self.HER_obs)):
             position = self.HER_pos[i]
             rel_pos = self.HER_rel_pos[i]
+            total_z = self.HER_total_z[i]
 
             pos_z_squished = self.HER_obs[i][8]
             residual = target - position
@@ -517,7 +520,7 @@ class Agent:
                     in_bounds = False
                 if (self.HER_pos[i][2] < 0) | (self.HER_pos[i][2] > self.env.size_z - 1): #not totally complete, because terrain and ceiling
                     in_bounds = False
-                reward, done, success = self.env.cost(self.env.character.start, position, rel_pos, target, self.HER_action[i-1][0], self.HER_U[i-1], min_proj_dist, in_bounds) #is slightly off on the part with the proj_action because the world is time depentent
+                reward, done, success = self.env.cost(self.env.character.start, position, rel_pos, total_z, target, self.HER_action[i-1][0], self.HER_U[i-1], min_proj_dist, in_bounds) #is slightly off on the part with the proj_action because the world is time depentent
                 self.HER_reward.append(reward)
                 self.HER_done.append(done)
 
