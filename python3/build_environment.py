@@ -203,7 +203,6 @@ class balloon3d(Env):
                 now = datetime.datetime.today()
                 self.takeoff_time = now.hour*60*60 + now.minute*60
 
-
             #find what's the largest time in the dataset
             max_hour = os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor')
             max_hour.sort()
@@ -217,7 +216,7 @@ class balloon3d(Env):
                 print("ERROR: Can't find a World that satisfies all the criteria")
 
         # remove suffix and timestamp
-        self.world_name = self.world_name[:-6]
+        self.world_name = self.world_name[:-5]
         center_lat = float(self.world_name[0:7])
         center_lon = float(self.world_name[8:15])
         center = [center_lat, center_lon]
@@ -237,12 +236,12 @@ class balloon3d(Env):
         h = int(self.tss/60/60)
         p = (self.tss - h*60*60)/60/60
         if yaml_p['time_dependency']:
-            self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
-            self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h+1).zfill(2) + '.pt')
+            self.world_0 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name  + str(h).zfill(2) + '.pt')
+            self.world_1 = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name  + str(h+1).zfill(2) + '.pt')
 
             self.world = p*(self.world_1 - self.world_0) + self.world_0
         else:
-            self.world = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + '_'  + str(h).zfill(2) + '.pt')
+            self.world = torch.load(yaml_p['data_path'] + self.train_or_test + '/tensor/' + self.world_name + str(h).zfill(2) + '.pt')
 
         torch.save(self.world, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')
 

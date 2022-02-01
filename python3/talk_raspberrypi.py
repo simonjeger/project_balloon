@@ -10,7 +10,8 @@ import sys
 from utils.raspberrypi_com import raspi_com
 
 import logging
-logging.basicConfig(filename="logger/talk_raspberrypi.log", format='%(asctime)s %(message)s', filemode='w')
+path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+logging.basicConfig(filename=path+'talk_raspberrypi.log', format='%(asctime)s %(message)s', filemode='w')
 logging.getLogger().addHandler(logging.StreamHandler())
 logger=logging.getLogger()
 logger.setLevel(logging.INFO)

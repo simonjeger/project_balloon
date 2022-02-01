@@ -22,11 +22,6 @@ from filelock import FileLock
 import json
 
 import logging
-logging.basicConfig(filename="logger/build_agent.log", format='%(asctime)s %(message)s', filemode='w')
-logging.getLogger().addHandler(logging.StreamHandler())
-logger=logging.getLogger()
-logger.setLevel(logging.INFO)
-
 import yaml
 import argparse
 
@@ -36,6 +31,12 @@ parser.add_argument('yaml_file')
 args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
+
+path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+logging.basicConfig(filename=path+'build_agent.log', format='%(asctime)s %(message)s', filemode='w')
+logging.getLogger().addHandler(logging.StreamHandler())
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
 
 class QFunction(torch.nn.Module):
 

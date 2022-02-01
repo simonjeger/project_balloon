@@ -443,6 +443,31 @@ def tuning(directory_compare=None):
     plt.savefig(path, dpi=1000)
     plt.close()
 
+def plot_action():
+    # read in logger file as pandas
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    fig, ax = plt.subplots(1, 1, sharex=True, sharey=True)
+
+    stop = 400
+    action = df['action'].iloc[0:stop]
+    rel_pos_est = df['rel_pos_est'].iloc[0:stop]
+    time = (yaml_p['T'] - df['t'].iloc[0:stop]) / 60 #makes more sense to plot this in minutes
+    ax.plot(time, action)
+    ax.plot(time, rel_pos_est)
+
+    ax.set_xlabel('minutes')
+    ax.set_ylabel('relative z position')
+
+    # Build folder structure if it doesn't exist yet
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/action.png'
+    plt.savefig(path, dpi=150)
+    plt.close()
+
 def dist_hist(abs_path_list=None):
     if abs_path_list is None:
         abs_path_list = [yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/']

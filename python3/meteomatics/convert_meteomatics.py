@@ -5,6 +5,7 @@ import time
 import torch
 import datetime
 from pathlib import Path
+import json
 
 import yaml
 import argparse
@@ -23,8 +24,10 @@ def step(lat, lon, step_x, step_y):
     return lat, lon
 
 # Credentials:
-username = 'jungfraubergbahnen_zimmer'
-password = '4dCzy38UQsWlK'
+with open('credentials.txt') as json_file:
+    credentials = json.load(json_file)
+username = credentials['username']
+password = credentials['password']
 
 # Input here the limiting coordinates of the extract you want to look at. You can also change the resolution.
 step_x = yaml_p['size_x']/2*yaml_p['unit_xy']
@@ -133,7 +136,8 @@ for t in range(len(elevation_h[0,0,:])):
     name_lon = str(int(np.round(center_lon,digits)*10**digits)).zfill(digits+2)
     name_lat = name_lat[0:2] + '.' + name_lat[2::]
     name_lon = name_lon[0:2] + '.' + name_lon[2::]
-    name = name_lat + '_' + name_lon + '_' + str(0) + '_' + str(start_date.hour + t).zfill(2) + '.pt'
+    name_time = str(start_date.year).zfill(4) + str(start_date.month).zfill(2) + str(start_date.day).zfill(2) + str(start_date.hour + t).zfill(2)
+    name = name_lat + '_' + name_lon + '_' + str(0) + '_' + name_time + '.pt'
     torch.save(world, '../' + yaml_p['data_path'] + train_or_test + '/tensor/' + name)
 
 print('Current Query User Limit Status:')

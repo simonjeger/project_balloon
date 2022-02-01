@@ -16,7 +16,8 @@ from utils.raspberrypi_gps import raspi_gps
 from utils.raspberrypi_alt import raspi_alt
 
 import logging
-logging.basicConfig(filename="logger/control_raspberrypi.log", format='%(asctime)s %(message)s', filemode='w')
+path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+logging.basicConfig(filename=path+'control_raspberrypi.log', format='%(asctime)s %(message)s', filemode='w')
 logging.getLogger().addHandler(logging.StreamHandler())
 logger=logging.getLogger()
 logger.setLevel(logging.INFO)

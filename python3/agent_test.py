@@ -28,7 +28,8 @@ if yaml_p['environment'] == 'gps':
     print('done waiting')
 
 # always clear out previous tests
-clear('test')
+if yaml_p['environment'] == 'python3':
+    clear('test')
 
 # initialize logger
 writer = SummaryWriter(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test')

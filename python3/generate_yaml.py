@@ -50,7 +50,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
 
     text = text + '\n' + '# build_agent' + '\n'
     text = text + 'mode: reinforcement_learning' + '\n'
-    text = text + 'alt_resample: 1000' + '\n'
+    text = text + 'alt_resample: 750' + '\n'
     text = text + 'burnin: ' + str(burnin) + '\n'
     text = text + 'HER: ' + str(HER) + '\n'
     text = text + 'width: ' + str(width_depth[0]) + '\n'
@@ -127,13 +127,13 @@ balloon = '"outdoor_balloon"'
 delta_t_physics = 4
 time_train = 20*60*60
 step = -0.00001
-action = -0.0003
+action = -0.00015
 min_proj_dist = 1
 measurement_info = True
 
-prop_mag_min = 0
+prop_mag_min = 0.2
 
-process_nr = 10170
+process_nr = 10320
 global_buffer_N = 50
 global_buffer_nr = process_nr
 h = 0
@@ -150,7 +150,7 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                             for window_size in [1]:
                                 for bottleneck in [8]:
                                     for velocity in [0]:
-                                        for prop_mag_max in [0]:
+                                        for prop_mag_max in [0.5]:
                                             for wind_info in [True]:
                                                 for world_est in [False]:
                                                     #for gradient in np.array([0.1, 1, 10])*abs(step + action):

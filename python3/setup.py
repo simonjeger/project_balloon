@@ -21,6 +21,7 @@ Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + 
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/map_test').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/render').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/communication').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/logger').mkdir(parents=True, exist_ok=True)
 
 shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5))
 
