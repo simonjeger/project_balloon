@@ -85,7 +85,7 @@ def build_set(num, train_or_test):
                     name_lat = name_lat[0:2] + '.' + name_lat[2::]
                     name_lon = name_lon[0:2] + '.' + name_lon[2::]
                     name = name_lat + '_' + name_lon + '_' + str(o) + '_' + name_time + '.pt'
-                    torch.save(world, '../' + yaml_p['data_path'] + train_or_test + '/tensor/' + name)
+                    torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/' + name)
 
                     print('generated ' + str(o*num + s + 1) + ' of ' + str(num*4) + ' maps at ' + str(h).zfill(2) + ':00')
                     s += 1
