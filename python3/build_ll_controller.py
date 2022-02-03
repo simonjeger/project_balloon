@@ -60,4 +60,5 @@ class ll_controler():
             u = -1
         else:
             u = 0
+
         return u

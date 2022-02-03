@@ -29,17 +29,28 @@ with open('credentials.txt') as json_file:
 username = credentials['username']
 password = credentials['password']
 
+big_file = True
+
 # Input here the limiting coordinates of the extract you want to look at. You can also change the resolution.
-step_x = yaml_p['size_x']/2*yaml_p['unit_xy']
-step_y = yaml_p['size_y']/2*yaml_p['unit_xy']
+if big_file:
+    size_x = 170
+    size_y = 80
+    size_z = 150
+else:
+    size_x = yaml_p['size_x']
+    size_y = yaml_p['size_y']
+    size_z = yaml_p['size_z']
+
+step_x = size_x/2*yaml_p['unit_xy']
+step_y = size_y/2*yaml_p['unit_xy']
 
 center_lat = yaml_p['center_latlon'][0]
 center_lon = yaml_p['center_latlon'][1]
 
 start_lat, start_lon = step(center_lat, center_lon, -step_x, -step_y)
 end_lat, end_lon = step(center_lat, center_lon, step_x, step_y)
-res_lat = abs(end_lat - start_lat)/yaml_p['size_y']
-res_lon = abs(end_lon - start_lon)/yaml_p['size_x']
+res_lat = abs(end_lat - start_lat)/size_y
+res_lon = abs(end_lon - start_lon)/size_x
 
 # their orgin is top left while mine was on the bottom left
 start_lat, end_lat = max(start_lat, end_lat), min(start_lat, end_lat)
@@ -55,11 +66,16 @@ res_lon = np.ceil(res_lon*1e6)/1e6
 
 N_time = int(np.ceil(yaml_p['T']/60/60)) + 1
 now = datetime.datetime.today()
-start_date = datetime.datetime(now.year, now.month, now.day)
-end_date = datetime.datetime(now.year, now.month, now.day) + datetime.timedelta(hours=23,minutes=59,seconds=59)
+if big_file:
+    start_date = datetime.datetime(2021, yaml_p['m'], 1)
+    end_date = start_date + datetime.timedelta(hours=23,minutes=59,seconds=59)
+else:
+    start_date = datetime.datetime(now.year, now.month, now.day)
+    end_date = start_date + datetime.timedelta(hours=23,minutes=59,seconds=59)
 res_time = datetime.timedelta(hours=1)
 
-height = np.arange(2,yaml_p['size_z']*yaml_p['unit_z']+2,yaml_p['unit_z']) #data is only available starting at 2 meters
+offset = 2
+height = np.arange(offset,size_z*yaml_p['unit_z']+offset,yaml_p['unit_z']) #data is only available starting at 2 meters
 
 # Make placeholder
 elevation = []
@@ -100,32 +116,39 @@ while h < len(height):
             pass
     print('Downloaded ' + str(np.round(h/len(height)*100,1)) + '% of meteomatics data')
 
-world = np.zeros(shape=(1+4,yaml_p['size_x'],yaml_p['size_y'],yaml_p['size_z']))
+world = np.zeros(shape=(1+4,size_x,size_y,size_z))
+coord = np.zeros(shape=(2,size_x,size_y))
 
 # generate directory
 train_or_test = 'test'
-Path('../' + yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
-Path('../' + yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
-Path('../' + yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
+#Path('../').mkdir(parents=True, exist_ok=True)
+#Path('../' + train_or_test).mkdir(parents=True, exist_ok=True)
+#Path('../' + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
+Path(yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
 
-elevation_h = elevation[0].to_numpy().reshape(yaml_p['size_y'],yaml_p['size_x'],-1)
+elevation_h = elevation[0].to_numpy().reshape(size_y,size_x,-1)
 elevation_ht = np.swapaxes(elevation_h[:,:,0],0,1) #the tensors are coord_y, coord_x, time
 world[0,:,:,0] = elevation_ht/yaml_p['unit_z']
 
 for t in range(len(elevation_h[0,0,:])):
-    for k in range(yaml_p['size_z']):
-        wind_speed_u_h = wind_speed_u[k].to_numpy().reshape(yaml_p['size_y'],yaml_p['size_x'],-1)
+    for k in range(size_z):
+        wind_speed_u_h = wind_speed_u[k].to_numpy().reshape(size_y,size_x,-1)
         wind_speed_u_ht = np.swapaxes(wind_speed_u_h[:,:,t],0,1) #the tensors are coord_y, coord_x, time
-        wind_speed_v_h = wind_speed_v[k].to_numpy().reshape(yaml_p['size_y'],yaml_p['size_x'],-1)
+        wind_speed_v_h = wind_speed_v[k].to_numpy().reshape(size_y,size_x,-1)
         wind_speed_v_ht = np.swapaxes(wind_speed_v_h[:,:,t],0,1) #the tensors are coord_y, coord_x, time
 
-        for i in range(yaml_p['size_x']):
-            for j in range(yaml_p['size_y']):
+        for i in range(size_x):
+            for j in range(size_y):
                 alt = int(world[0,i,j,0] + k)
                 if k == 0:
+                    coord[0,i,j] = start_lat + j*res_lat
+                    coord[1,i,j] = start_lon + i*res_lon
+
                     world[1,i,j,0:alt] = wind_speed_u_ht[i,j]
                     world[2,i,j,0:alt] = wind_speed_v_ht[i,j]
-                if alt < yaml_p['size_z']:
+                if alt < size_z:
                     world[1,i,j,alt] = wind_speed_u_ht[i,j]
                     world[2,i,j,alt] = wind_speed_v_ht[i,j]
     print('Generated ' + str(int((t)/(len(elevation_h[0,0,:]))*100)) + '% of the meteomatics tensors')
@@ -138,7 +161,12 @@ for t in range(len(elevation_h[0,0,:])):
     name_lon = name_lon[0:2] + '.' + name_lon[2::]
     name_time = str(start_date.year).zfill(4) + str(start_date.month).zfill(2) + str(start_date.day).zfill(2) + str(start_date.hour + t).zfill(2)
     name = name_lat + '_' + name_lon + '_' + str(0) + '_' + name_time + '.pt'
-    torch.save(world, '../' + yaml_p['data_path'] + train_or_test + '/tensor/' + name)
+
+    if big_file:
+        torch.save(world, '../' + yaml_p['process_path'] + 'data_cosmo/tensor/data_' + name)
+        torch.save(coord, '../' + yaml_p['process_path'] + 'data_cosmo/coord/data_' + name)
+    else:
+        torch.save(world, '../' + yaml_p['data_path'] + train_or_test + '/tensor/' + name)
 
 print('Current Query User Limit Status:')
 print(api.query_user_limits(username, password))

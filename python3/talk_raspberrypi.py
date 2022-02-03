@@ -58,7 +58,10 @@ com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str
 interval = 60 #s
 action_overwrite = False
 stop_logger = False
-message_fail = 0
+com_fail = 0
+thrust_fail = 0
+gps_hist = []
+gps_fail = 0
 
 global_start = time.time()
 timestamp_start = datetime.datetime.today().astimezone(pytz.timezone("Europe/Zurich"))
@@ -74,7 +77,7 @@ while True:
         logger.info('Waiting for the low level controller to publish')
     else:
         if bool_data == False:
-            com.send_sms('Low level controller ready.')
+            com.send_sms('Low level controller ready')
         time.sleep(5)
         bool_data = True
 
@@ -83,7 +86,7 @@ while True:
         logger.info('Waiting for the algorithm to publish')
     else:
         if bool_action == False:
-            com.send_sms('Algorithm ready.')
+            com.send_sms('Algorithm ready')
         time.sleep(5)
         bool_action = True
 
@@ -124,14 +127,38 @@ while True:
 
             try:
                 com.send_sms(info)
-                message_fail = 0
+                com_fail = 0
             except:
-                message_fail += 1
+                com_fail += 1
                 logger.error('Could not send')
 
-            if message_fail >= 5:
+            # com fail
+            if com_fail >= 5:
                 action_overwrite = -1
-                logger.error('Set action_overwrite = -1 because of message_fail')
+                com.send_sms('Communication failure, overwriting action')
+                logger.error('com_fail, set action_overwrite = -1')
+            # thrust fail
+            if (data['velocity'][2] < 0) & (data['u'] > 0):
+                thrust_fail += 1
+            else:
+                thrust_fail = 0
+
+            if thrust_fail >= 2:
+                #action_overwrite = -1
+                com.send_sms('Thrust failure, vertical velocity is ' + np.round(data['velocity'][2]*yaml_p['unit_z'],1) + ' m/s')
+                logger.error('thrust_fail')
+
+            # gps fail
+            gps_hist.append([data['gps_lat'], data['gps_lon']])
+            if (gps_hist[-1][0] - gps_hist[-2][0])**2 + (gps_hist[-1][1] - gps_hist[-2][1])**2 < 1e-8:
+                gps_fail += 1
+            else:
+                gps_fail = 0
+
+            if gps_fail >= 5:
+                #action_overwrite = -1
+                com.send_sms('GPS failure, vertical velocity is ' + np.round(data['velocity'][2]*yaml_p['unit_z'],1) + ' m/s')
+                logger.error('gps_fail')
 
             action['action_overwrite'] = action_overwrite
             action['stop_logger'] = stop_logger

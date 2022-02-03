@@ -193,13 +193,14 @@ class balloon3d(Env):
                 np.random.seed(self.seed)
                 self.seed +=1
 
+            list_of_worlds = os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor')
             if not yaml_p['real_time']:
-                self.world_name = np.random.choice(os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor'))
+                self.world_name = np.random.choice(list_of_worlds)
 
                 hour = int(self.world_name[-5:-3])
                 self.takeoff_time = hour*60*60 + np.random.randint(0,3600)
             else:
-                self.world_name = os.listdir(yaml_p['data_path'] + self.train_or_test + '/tensor')[0]
+                self.world_name = list_of_worlds[0]
                 now = datetime.datetime.today()
                 self.takeoff_time = now.hour*60*60 + now.minute*60
 

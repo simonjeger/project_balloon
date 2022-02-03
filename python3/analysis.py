@@ -14,6 +14,7 @@ from sklearn.linear_model import LinearRegression
 from scipy.stats import beta
 from scipy.interpolate import interpn
 import json
+import simplekml
 
 from utils.load_tf import tflog2pandas, many_logs2pandas
 
@@ -294,6 +295,43 @@ def plot_2d_path():
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/2dpath.png'
     plt.savefig(path, dpi=150)
     plt.close()
+
+def plot_kml():
+    # read in logger file as pandas
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    center_lat = yaml_p['center_latlon'][0]
+    center_lon = yaml_p['center_latlon'][1]
+
+    coords = []
+    for p in range(len(df['position_x'])):
+        pos_x = df['position_x'][p]
+        pos_y = df['position_y'][p]
+        pos_z = df['position_z'][p]
+
+        step_x = (pos_x-(yaml_p['size_x']-1)/2)*yaml_p['unit_xy']
+        step_y = (pos_y-(yaml_p['size_y']-1)/2)*yaml_p['unit_xy']
+
+        lat, lon = step(center_lat, center_lon, step_x, step_y)
+        alt = pos_z*yaml_p['unit_z']
+        coords.append([lon,lat,alt])
+
+    kml = simplekml.Kml()
+    lin = kml.newlinestring(name="balloon", description='flight duration: ' + str(int((yaml_p['T'] - df['t'].iloc[-1])/60)) + ' min', coords=coords, altitudemode="absolute", extrude=1)
+    lin.style.linestyle.color = 'ff0000ff'
+    lin.style.linestyle.width = 1
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/trajectory.kml'
+    kml.save(path)
+
+def step(lat, lon, step_x, step_y):
+    R = 6371*1000 #radius of earth in meters
+    lat = lat + (step_y/R) * (180/np.pi)
+    lon = lon + (step_x/R) * (180/np.pi) / np.cos(lat*np.pi/180)
+    return lat, lon
 
 def make_2d_gif():
     Path('temp').mkdir(parents=True, exist_ok=True)

@@ -4,7 +4,7 @@ import os
 path = 'yaml'
 os.makedirs(path, exist_ok=True)
 
-def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h):
+def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h, m):
     name = 'config_' + str(process_nr).zfill(5)
 
     # Write submit command
@@ -108,6 +108,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
 
     text = text + '\n' + '# build data set' + '\n'
     text = text + 'h: ' + str(h) + '\n'
+    text = text + 'm: ' + str(m) + '\n'
     text = text + 'center_latlon: [47.045798, 7.243654]' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
@@ -133,10 +134,11 @@ measurement_info = True
 
 prop_mag_min = 0.2
 
-process_nr = 10320
-global_buffer_N = 50
+process_nr = 10290
+global_buffer_N = 1
 global_buffer_nr = process_nr
 h = 0
+m = 0
 
 radius_xy = 10
 
@@ -161,7 +163,8 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                                                                     for minibatch_size in [1000]:
                                                                         for repeat in range(global_buffer_N):
                                                                             #for h in range(24):
+                                                                            for m in range(1,13):
                                                                             #global_buffer_nr = 0
-                                                                            write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h)
-                                                                            process_nr += 1
+                                                                                write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h, m)
+                                                                                process_nr += 1
                                                                         global_buffer_nr = process_nr

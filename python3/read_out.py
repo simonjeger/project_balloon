@@ -17,6 +17,7 @@ import shutil
 #dist_hist(['process09462/logger_test/', 'process09450/logger_test/', 'process99991/logger_test/'])
 plot_3d_path()
 plot_action()
+plot_kml()
 #write_overview()
 #disp_overview()
 #wind_est()

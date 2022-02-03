@@ -304,7 +304,7 @@ class Agent:
                 break
 
         if yaml_p['HER'] & (self.train_or_test == 'train'):
-            idx = self.idx_on_path(self.env.character.path, self.env.character.start)
+            idx = self.idx_on_path(self.env.character.path, self.env.character.start, self.env.character.u_hist)
             target = self.env.character.path[idx] #set target at last position that was reached, but still within bounds
             self.HER(target)
 
@@ -403,8 +403,10 @@ class Agent:
         return obs
 
     def set_reachable_target(self):
+        #while not self.env.character.u_neg:
+        #    self.env.reset()
         self.random_roll_out()
-        idx = self.idx_on_path(self.env.character.path, self.env.character.start)
+        idx = self.idx_on_path(self.env.character.path, self.env.character.start, self.env.character.u_hist)
 
         self.env.path_roll_out = self.env.character.path[0:idx]
         target = self.env.character.path[idx]
@@ -438,7 +440,7 @@ class Agent:
         # write down path for reachability study
         self.env.path_reachability.append([self.env.character.path])
 
-    def idx_on_path(self, path, start):
+    def idx_on_path(self, path, start, u_hist):
         # write down path and set target
         coord_x = []
         coord_y = []
@@ -446,7 +448,8 @@ class Agent:
             coord_x.append(path[i][0])
             coord_y.append(path[i][1])
 
-        for i in range(100): # if I can't find anything that's far enough from the start after n tries, just take one in the middle of the path
+        l = 0
+        while True: # if I can't find anything that's far enough from the start after n tries, just take one in the middle of the path
             if self.train_or_test == 'test':
                 np.random.seed(self.seed)
                 self.seed += 1
@@ -459,11 +462,15 @@ class Agent:
             not_to_close = np.sqrt((target[0] - start[0])**2 + (target[1] - start[1])**2) > yaml_p['radius_xy']*yaml_p['unit_z']/yaml_p['unit_xy']*4 #I want to be at least 4 radius away from the start
             not_out_of_bounds_x = (0 < target[0]) & (target[0] < self.env.size_x - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
             not_out_of_bounds_y = (0 < target[1]) & (target[1] < self.env.size_y - yaml_p['radius_xy']/yaml_p['unit_xy']*yaml_p['unit_z'])
+            not_to_easy = (np.argmin(u_hist) + 100 < idx) #Some constant offset
 
-            if not_to_close & not_out_of_bounds_x & not_out_of_bounds_y:
+            l += 1
+            if not_to_close & not_out_of_bounds_x & not_out_of_bounds_y & not_to_easy:
                 break
-            if i == 99: #if we reach that point, just take the point in the middle of the path
+            if l >= 999: #if we reach that point, just take the point in the middle of the path
                 idx = int(len(coord_x)/2)
+                print("idx_on_path Can't fullfill all requirements, setting index in middle of trajectory.")
+                break
 
         return idx
 

@@ -103,7 +103,9 @@ class character():
 
         self.world = world
         self.mean_mag_xy = np.mean(abs(self.world[-4:-2]))
-        self.mean_mag_z = np.mean(abs(self.world[-2]))
+        #self.mean_mag_z = np.mean(abs(self.world[-2]))
+        self.mean_mag_z = np.mean(self.mean_mag_xy*yaml_p['unit_z']/yaml_p['unit_xy']/4) #this is quite heuristic
+        self.mean_mag_z = np.clip(self.mean_mag_z, 0.2/yaml_p['unit_z'], 2/yaml_p['unit_z']) #in meters per second
 
         self.world_est = np.zeros_like(self.world)
         self.world_est[0] = self.world[0] #terrain is known
@@ -163,6 +165,7 @@ class character():
         self.position_est_old = self.position_est
 
         self.U_integrated_prev = 0 #only for live_particle
+        self.u_hist = [] #I don't want to easy scenarios in random roll out, so I only accept thos that had a negative u at some point
 
     def update(self, action, world):
         self.action = action
@@ -250,6 +253,7 @@ class character():
                 u = self.ll_controler.pid(action, self.rel_pos, self.p_z)
             elif yaml_p['balloon'] == 'outdoor_balloon':
                 u = self.ll_controler.bangbang(action, self.rel_pos)
+            self.u_hist.append(u)
 
             #update physics model
             self.adapt_volume(u)
