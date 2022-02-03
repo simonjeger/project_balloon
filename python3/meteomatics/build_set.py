@@ -11,8 +11,6 @@ import shutil
 import imageio
 import datetime
 
-from utils.extract_cosmo_data import extracter
-
 import yaml
 import argparse
 
@@ -32,9 +30,9 @@ def build_set(num, train_or_test):
     num = int(num/4) #because the dataset will be 4 times bigger through the mirroring process
 
     # read in first dataset for dimensions
-    list = os.listdir('data_cosmo/tensor/')
+    list = os.listdir(yaml_p['process_path'] + 'data_cosmo/tensor/')
 
-    tensor = torch.load('data_cosmo/tensor/' + list[0])
+    tensor = torch.load(yaml_p['process_path'] + 'data_cosmo/tensor/' + list[0])
     size_x = yaml_p['size_x']
     size_y = yaml_p['size_y']
     size_z = yaml_p['size_z']
@@ -48,8 +46,8 @@ def build_set(num, train_or_test):
     IDX_y = np.random.randint(0,global_size_y - size_y - 1,num*10) #just in case that some of them lie in the mountains
 
     for h in range(len(list)):
-        tensor = torch.load('../data_cosmo/tensor/' + list[h])
-        coord = torch.load('../data_cosmo/coord/' + list[h])
+        tensor = torch.load(yaml_p['process_path'] + 'data_cosmo/tensor/' + list[h])
+        coord = torch.load(yaml_p['process_path'] + 'data_cosmo/coord/' + list[h])
         name_time = list[h][-13:-3]
 
         for o in range(4):

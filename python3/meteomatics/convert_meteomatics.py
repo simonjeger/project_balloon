@@ -121,9 +121,6 @@ coord = np.zeros(shape=(2,size_x,size_y))
 
 # generate directory
 train_or_test = 'test'
-#Path('../').mkdir(parents=True, exist_ok=True)
-#Path('../' + train_or_test).mkdir(parents=True, exist_ok=True)
-#Path('../' + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)
@@ -163,12 +160,9 @@ for t in range(len(elevation_h[0,0,:])):
     name = name_lat + '_' + name_lon + '_' + str(0) + '_' + name_time + '.pt'
 
     if big_file:
-        #torch.save(world, '../' + yaml_p['process_path'] + 'data_cosmo/tensor/data_' + name)
-        #torch.save(coord, '../' + yaml_p['process_path'] + 'data_cosmo/coord/data_' + name)
         torch.save(world, yaml_p['process_path'] + 'data_cosmo/tensor/data_' + name)
         torch.save(coord, yaml_p['process_path'] + 'data_cosmo/coord/data_' + name)
     else:
-        #torch.save(world, '../' + yaml_p['data_path'] + train_or_test + '/tensor/' + name)
         torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/' + name)
 
 print('Current Query User Limit Status:')
