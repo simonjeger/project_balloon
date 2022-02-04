@@ -116,13 +116,14 @@ while True:
                 logger.error('Could not receive')
 
             info = ''
+            info += 'action: ' + str(np.round(action['action'],3)) + ', '
+            info += 'action_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
+            info += 'action_ow: ' + str(action['action_overwrite']) + ', '
             info += 'gps_lat: ' + str(np.round(data['gps_lat'],6)) + ', '
             info += 'gps_lon: ' + str(np.round(data['gps_lon'],6)) + ', '
-            info += 'gps_height: ' + str(np.round(data['gps_height'],1)) + ', '
+            info += 'gps_height: ' + str(np.round(data['gps_height'],1)) + 'm, '
             info += 'rel_pos_est: ' + str(np.round(data['rel_pos_est'],3)) + ', '
-            info += 'u: ' + str(np.round(data['u'],3)) + ', '
-            info += 'action: ' + str(np.round(action['action'],3)) + ', '
-            info += 'action_ow: ' + str(action['action_overwrite']) + ', '
+            info += 'u: ' + str(np.round(data['u'],1)) + ', '
             info += 'stop_logger: ' + str(action['stop_logger'])
 
             try:

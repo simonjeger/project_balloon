@@ -349,8 +349,12 @@ class character():
             self.action_overwrite = data['action_overwrite']
             self.stop_logger = data['stop_logger']
 
+        #action above sea level is only relevant for hot air ballooning
+        action_asl = (self.terrain_est + (self.ceiling - self.terrain_est)*self.action)*yaml_p['unit_z']
+
         data = {
         'action': self.action,
+        'action_asl': action_asl,
         'action_overwrite': self.action_overwrite,
         'target': self.target.tolist(),
         'c': self.c,

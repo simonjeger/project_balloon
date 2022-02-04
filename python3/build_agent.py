@@ -286,6 +286,7 @@ class Agent:
 
                 data = {
                 'action': -1,
+                'action_asl': 0,
                 'action_overwrite': self.env.character.action_overwrite,
                 'target': [-10,-10,-10],
                 'c': self.env.character.c,
