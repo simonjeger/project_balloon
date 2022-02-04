@@ -134,8 +134,8 @@ measurement_info = True
 
 prop_mag_min = 0.2
 
-process_nr = 10290
-global_buffer_N = 1
+process_nr = 10390
+global_buffer_N = 70
 global_buffer_nr = process_nr
 h = 0
 m = 0
@@ -145,7 +145,7 @@ radius_xy = 10
 for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
     for delta_t in [180]:
         for burnin in ['advanced']:
-            for HER in [False]:
+            for HER in [True]:
                 for lr in [0.003]:
                     for width_depth in [[512,4]]:
                         for autoencoder in ['"HAE_avg"']:
@@ -163,8 +163,8 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                                                                     for minibatch_size in [1000]:
                                                                         for repeat in range(global_buffer_N):
                                                                             #for h in range(24):
-                                                                            for m in range(1,13):
+                                                                            #for m in range(1,13):
                                                                             #global_buffer_nr = 0
-                                                                                write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h, m)
-                                                                                process_nr += 1
+                                                                            write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h, m)
+                                                                            process_nr += 1
                                                                         global_buffer_nr = process_nr

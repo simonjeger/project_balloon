@@ -518,7 +518,7 @@ class Agent:
             if min_proj_dist > min_proj_dist_prop:
                 min_proj_dist = min_proj_dist_prop
 
-            self.HER_obs[i][0:3] = np.append(self.env.character.normalize_map(residual[0:2]), [tar_z_squished - pos_z_squished])
+            self.HER_obs[i][0:3] = np.append(self.env.character.normalize_world(residual[0:2]), [tar_z_squished - pos_z_squished])
 
             if i > 0:
                 in_bounds = True
