@@ -9,13 +9,6 @@ import sys
 
 from utils.raspberrypi_com import raspi_com
 
-import logging
-path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
-logging.basicConfig(filename=path+'talk_raspberrypi.log', format='%(asctime)s %(message)s', filemode='w')
-logging.getLogger().addHandler(logging.StreamHandler())
-logger=logging.getLogger()
-logger.setLevel(logging.INFO)
-
 import yaml
 import argparse
 
@@ -25,6 +18,13 @@ parser.add_argument('yaml_file')
 args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
+
+import logging
+path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+logging.basicConfig(filename=path+'talk_raspberrypi.log', format='%(asctime)s %(message)s', filemode='w')
+logging.getLogger().addHandler(logging.StreamHandler())
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def receive(file_name):
     successful = False

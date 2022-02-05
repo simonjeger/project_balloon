@@ -29,7 +29,7 @@ with open('credentials.txt') as json_file:
 username = credentials['username']
 password = credentials['password']
 
-big_file = True
+big_file = False
 
 # Input here the limiting coordinates of the extract you want to look at. You can also change the resolution.
 if big_file:

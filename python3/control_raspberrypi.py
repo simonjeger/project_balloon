@@ -15,13 +15,6 @@ from utils.raspberrypi_esc import raspi_esc
 from utils.raspberrypi_gps import raspi_gps
 from utils.raspberrypi_alt import raspi_alt
 
-import logging
-path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
-logging.basicConfig(filename=path+'control_raspberrypi.log', format='%(asctime)s %(message)s', filemode='w')
-logging.getLogger().addHandler(logging.StreamHandler())
-logger=logging.getLogger()
-logger.setLevel(logging.INFO)
-
 import yaml
 import argparse
 
@@ -31,6 +24,13 @@ parser.add_argument('yaml_file')
 args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
+
+import logging
+path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
+logging.basicConfig(filename=path+'control_raspberrypi.log', format='%(asctime)s %(message)s', filemode='w')
+logging.getLogger().addHandler(logging.StreamHandler())
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def send(data):
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/'
