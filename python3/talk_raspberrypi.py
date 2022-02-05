@@ -144,9 +144,9 @@ while True:
             else:
                 thrust_fail = 0
 
-            if thrust_fail >= 2:
+            if thrust_fail >= 3:
                 #action_overwrite = -1
-                com.send_sms('Thrust failure, vertical velocity is ' + np.round(data['velocity'][2]*yaml_p['unit_z'],1) + ' m/s')
+                com.send_sms('Thrust failure, vertical velocity is ' + str(np.round(data['velocity'][2]*yaml_p['unit_z'],1) + ' m/s'))
                 logger.error('thrust_fail')
 
             # gps fail
@@ -159,7 +159,7 @@ while True:
 
             if gps_fail >= 5:
                 #action_overwrite = -1
-                com.send_sms('GPS failure, vertical velocity is ' + np.round(data['velocity'][2]*yaml_p['unit_z'],1) + ' m/s')
+                com.send_sms('GPS failure, vertical velocity is ' + str(np.round(data['velocity'][2]*yaml_p['unit_z'],1)) + ' m/s')
                 logger.error('gps_fail')
 
             action['action_overwrite'] = action_overwrite
