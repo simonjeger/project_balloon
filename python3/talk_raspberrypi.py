@@ -151,10 +151,11 @@ while True:
 
             # gps fail
             gps_hist.append([data['gps_lat'], data['gps_lon']])
-            if (gps_hist[-1][0] - gps_hist[-2][0])**2 + (gps_hist[-1][1] - gps_hist[-2][1])**2 < 1e-8:
-                gps_fail += 1
-            else:
-                gps_fail = 0
+            if len(gps_hist) > 2:
+                if (gps_hist[-1][0] - gps_hist[-2][0])**2 + (gps_hist[-1][1] - gps_hist[-2][1])**2 < 1e-8:
+                    gps_fail += 1
+                else:
+                    gps_fail = 0
 
             if gps_fail >= 5:
                 #action_overwrite = -1
