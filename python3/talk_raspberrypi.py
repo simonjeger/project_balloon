@@ -127,7 +127,7 @@ while True:
             # com fail
             if com_fail >= 5:
                 action_overwrite = -1
-                info += ', error: com_fail')
+                info += ', com_error'
                 logger.error('com_fail, set action_overwrite = -1')
 
             # thrust fail
@@ -137,7 +137,7 @@ while True:
                 thrust_fail = 0
 
             if thrust_fail >= 3:
-                info += ', warning: thrust_fail')
+                info += ', thrust_warning'
                 logger.error('thrust_fail')
 
             # gps fail
@@ -149,7 +149,7 @@ while True:
                     gps_fail = 0
 
             if gps_fail >= 5:
-                info += ', warning: gps_fail')
+                info += ', gps_warning'
                 logger.error('gps_fail')
 
             try:
