@@ -160,7 +160,7 @@ class character():
         self.p_y = 0
         self.p_z = 0
 
-        self.real_time = copy.copy(time.time())
+        self.prev_time = time.time()
         self.position_old = self.position
         self.position_est_old = self.position_est
 
@@ -369,12 +369,12 @@ class character():
         self.send(data) #write action to file
 
         #timing of the when to receive the data from the hardware
-        delta_t = time.time() - self.real_time
+        delta_t = time.time() - self.prev_time
+        self.prev_time = time.time()
         if yaml_p['delta_t_logger'] - delta_t > 0:
             time.sleep(yaml_p['delta_t_logger'] - delta_t)
         else:
             print('ERROR: Choose higher delta_t_logger')
-        self.real_time = time.time()
         data = self.receive('data.txt')
 
         # update
@@ -390,14 +390,14 @@ class character():
         self.min_dist = data['min_dist']
 
         # update time
-        self.t -= data['delta_t']
+        self.t -= delta_t
 
         self.U = data['U_integrated'] - self.U_integrated_prev #gives me the U that was generated in this episode
         self.U_integrated_prev = data['U_integrated']
         not_done = data['not_done']
 
         # update battery_level
-        self.battery_level -= (self.rest_consumption*data['delta_t'] + self.U*self.consumption_up*data['delta_t'])/self.battery_capacity #is not quite correct because this doesn't take different consumptions_up and down in consideration
+        self.battery_level -= (self.rest_consumption*delta_t + self.U*self.consumption_up*delta_t)/self.battery_capacity #is not quite correct because this doesn't take different consumptions_up and down in consideration
         if self.battery_level < 0: #check if battery is empty
             not_done = False
 

@@ -19,6 +19,10 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
+# Delay start so files don't get overwritten during start up
+if yaml_p['environment'] == 'gps':
+    time.sleep(160)
+
 import logging
 path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
 logging.basicConfig(filename=path+'talk_raspberrypi.log', format='%(asctime)s %(message)s', filemode='w')
@@ -47,12 +51,6 @@ def send(data):
     with open(path + 'action.txt', 'w') as f:
         f.write(json.dumps(data))
     return data
-
-# Delay start so files don't get overwritten during start up
-if yaml_p['environment'] == 'gps':
-    logger.info('initial waiting')
-    time.sleep(160)
-    logger.info('done waiting')
 
 com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 interval = 60 #s
@@ -119,25 +117,19 @@ while True:
             info += 'action: ' + str(np.round(action['action'],3)) + ', '
             info += 'action_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
             info += 'action_ow: ' + str(action['action_overwrite']) + ', '
-            info += 'gps_lat: ' + str(np.round(data['gps_lat'],6)) + ', '
-            info += 'gps_lon: ' + str(np.round(data['gps_lon'],6)) + ', '
-            info += 'gps_height: ' + str(np.round(data['gps_height'],1)) + 'm, '
-            info += 'rel_pos_est: ' + str(np.round(data['rel_pos_est'],3)) + ', '
+            info += 'lat: ' + str(np.round(data['gps_lat'],6)) + ', '
+            info += 'lon: ' + str(np.round(data['gps_lon'],6)) + ', '
+            info += 'height: ' + str(np.round(data['gps_height'],1)) + 'm, '
+            info += 'rel_pos: ' + str(np.round(data['rel_pos_est'],3)) + ', '
             info += 'u: ' + str(np.round(data['u'],1)) + ', '
             info += 'stop_logger: ' + str(action['stop_logger'])
-
-            try:
-                com.send_sms(info)
-                com_fail = 0
-            except:
-                com_fail += 1
-                logger.error('Could not send')
 
             # com fail
             if com_fail >= 5:
                 action_overwrite = -1
-                com.send_sms('Communication failure, overwriting action')
+                info += ', error: com_fail')
                 logger.error('com_fail, set action_overwrite = -1')
+
             # thrust fail
             if (data['velocity'][2] < 0) & (data['u'] > 0):
                 thrust_fail += 1
@@ -145,8 +137,7 @@ while True:
                 thrust_fail = 0
 
             if thrust_fail >= 3:
-                #action_overwrite = -1
-                com.send_sms('Thrust failure, vertical velocity is ' + str(np.round(data['velocity'][2]*yaml_p['unit_z'],1)) + ' m/s')
+                info += ', warning: thrust_fail')
                 logger.error('thrust_fail')
 
             # gps fail
@@ -158,9 +149,15 @@ while True:
                     gps_fail = 0
 
             if gps_fail >= 5:
-                #action_overwrite = -1
-                com.send_sms('GPS failure, vertical velocity is ' + str(np.round(data['velocity'][2]*yaml_p['unit_z'],1)) + ' m/s')
+                info += ', warning: gps_fail')
                 logger.error('gps_fail')
+
+            try:
+                com.send_sms(info)
+                com_fail = 0
+            except:
+                com_fail += 1
+                logger.error('Could not send')
 
             action['action_overwrite'] = action_overwrite
             action['stop_logger'] = stop_logger

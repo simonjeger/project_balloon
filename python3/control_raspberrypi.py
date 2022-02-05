@@ -25,6 +25,10 @@ args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
 
+# Delay start so files don't get overwritten during start up
+if yaml_p['environment'] == 'gps':
+    time.sleep(120)
+
 import logging
 path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
 logging.basicConfig(filename=path+'control_raspberrypi.log', format='%(asctime)s %(message)s', filemode='w')
@@ -92,12 +96,6 @@ def get_center():
     center = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
     return center[0], center[1]
 
-# Delay start so files don't get overwritten during start up
-if yaml_p['environment'] == 'gps':
-    logger.info('initial waiting')
-    time.sleep(120)
-    logger.info('done waiting')
-
 # clear all previous communication files
 path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication'
 if os.path.exists(path):
@@ -149,7 +147,7 @@ min_proj_dist = np.inf
 
 # only placeholder, nescessary for estimation functions
 c = 1
-delta_t = 2
+delta_t = 4
 delta_f_up = 2.5
 delta_f_down = 2.5
 mass_total = 1.2

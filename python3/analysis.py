@@ -228,7 +228,7 @@ def plot_3d_path():
 
     # Build folder structure if it doesn't exist yet
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/3dpath.png'
-    plt.savefig(path, dpi=150)
+    plt.savefig(path, dpi=250)
     plt.show()
     plt.close()
 
@@ -491,7 +491,7 @@ def plot_action():
 
     fig, ax = plt.subplots(1, 1, sharex=True, sharey=True)
 
-    stop = 400
+    stop = 3000
     action = df['action'].iloc[0:stop]
     rel_pos_est = df['rel_pos_est'].iloc[0:stop]
     time = (yaml_p['T'] - df['t'].iloc[0:stop]) / 60 #makes more sense to plot this in minutes
