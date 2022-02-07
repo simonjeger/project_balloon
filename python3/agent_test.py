@@ -1,6 +1,7 @@
-from analysis import plot_reward, plot_path, plot_2d_path, plot_3d_path, dist_hist, tuning, write_overview, clear
+from analysis import *
 from build_environment import balloon3d
 from build_agent import Agent
+import shutil
 
 import numpy as np
 import gym
@@ -24,6 +25,12 @@ from torch.utils.tensorboard import SummaryWriter
 # Delay start so files don't get overwritten during start up
 if yaml_p['environment'] == 'gps':
     time.sleep(200)
+
+# Save current yaml file
+try:
+    shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5))
+except:
+    pass
 
 # always clear out previous tests
 if yaml_p['environment'] == 'python3':
@@ -78,8 +85,9 @@ time.sleep(100) #make sure the writing of tensorboard files is done
 if yaml_p['overview']:
     write_overview()
 
-plot_2d_path()
 dist_hist()
+plot_action()
+plot_kml()
 
 if yaml_p['mode'] == 'tuning':
     tuning()

@@ -1,4 +1,5 @@
-from analysis import plot_reward, plot_path, write_overview, clear
+from analysis import *
+import shutil
 
 import yaml
 import argparse
@@ -9,6 +10,12 @@ parser.add_argument('yaml_file')
 args = parser.parse_args()
 with open(args.yaml_file, 'rt') as fh:
     yaml_p = yaml.safe_load(fh)
+
+# Save current yaml file
+try:
+    shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5))
+except:
+    pass
 
 # clear out any previously created log files and data
 if not yaml_p['reuse_weights']:

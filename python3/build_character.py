@@ -114,10 +114,6 @@ class character():
         self.world_est_mask[-1] += 0.1 #so it detects the last entry of the array through argmin
         self.world_est_data = np.zeros((2,self.world_est_bn))
 
-        self.w_est_xy = yaml_p['unit_xy']
-        self.w_est_z = yaml_p['unit_z']*15
-        self.w_est_t = yaml_p['delta_t']*0.00001
-
         self.train_or_test = train_or_test
 
         self.position_est = copy.copy(self.position)

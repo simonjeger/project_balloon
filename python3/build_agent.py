@@ -137,7 +137,7 @@ class Agent:
                 if self.action_burnin is None:
                     self.action_burnin = np.random.uniform(self.clip,1-self.clip)
                 elif abs(self.env.character.velocity[2]*yaml_p['unit_z']) < 0.1: #x m/s, basically: did I reach the set altitude?
-                    if np.random.uniform(0,yaml_p['alt_resample']) < yaml_p['delta_t']: # if yes, chances are N/delta_t that I choose a new altitude
+                    if np.random.uniform(0,yaml_p['alt_resample']) < yaml_p['delta_t_logger']: # if yes, chances are N/delta_t that I choose a new altitude
                         self.action_burnin = np.random.uniform(self.clip,1-self.clip)
             elif type == 'basic':
                 self.action_burnin = np.random.uniform(self.clip,1-self.clip)

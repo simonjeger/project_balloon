@@ -46,6 +46,7 @@ class raspi_com():
 				return 1
 
 	def send_sms(self,text_message,phone_number=None):
+		text_message = text_message[0:160] #avoid sending too large messages which lead to an error
 		if phone_number is None:
 			phone_number = self.phone_number
 		self.send_at("AT+CMGF=1","OK",1)

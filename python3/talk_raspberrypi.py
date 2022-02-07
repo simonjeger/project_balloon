@@ -114,20 +114,20 @@ while True:
                 logger.error('Could not receive')
 
             info = ''
-            info += 'action: ' + str(np.round(action['action'],3)) + ', '
-            info += 'action_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
-            info += 'action_ow: ' + str(action['action_overwrite']) + ', '
+            info += 'act: ' + str(np.round(action['action'],3)) + ', '
+            info += 'act_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
+            info += 'act_ow: ' + str(action['action_overwrite']) + ', '
             info += 'lat: ' + str(np.round(data['gps_lat'],6)) + ', '
             info += 'lon: ' + str(np.round(data['gps_lon'],6)) + ', '
-            info += 'height: ' + str(np.round(data['gps_height'],1)) + 'm, '
+            info += 'hei: ' + str(np.round(data['gps_height'],1)) + 'm, '
             info += 'rel_pos: ' + str(np.round(data['rel_pos_est'],3)) + ', '
             info += 'u: ' + str(np.round(data['u'],1)) + ', '
-            info += 'stop_logger: ' + str(action['stop_logger'])
+            info += 'stop_log: ' + str(action['stop_logger'])
 
             # com fail
             if com_fail >= 5:
                 action_overwrite = -1
-                info += ', com_error'
+                info += ', com_err'
                 logger.error('com_fail, set action_overwrite = -1')
 
             # thrust fail
@@ -137,7 +137,7 @@ while True:
                 thrust_fail = 0
 
             if thrust_fail >= 3:
-                info += ', thrust_warning'
+                info += ', thrust_warn'
                 logger.error('thrust_fail')
 
             # gps fail
@@ -149,7 +149,7 @@ while True:
                     gps_fail = 0
 
             if gps_fail >= 5:
-                info += ', gps_warning'
+                info += ', gps_warn'
                 logger.error('gps_fail')
 
             try:

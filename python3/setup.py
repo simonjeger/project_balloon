@@ -23,8 +23,6 @@ Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + 
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/communication').mkdir(parents=True, exist_ok=True)
 Path(yaml_p['process_path'] + 'process' +  str(yaml_p['process_nr']).zfill(5) + '/logger').mkdir(parents=True, exist_ok=True)
 
-shutil.copy(args.yaml_file, yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5))
-
 size_x = yaml_p['size_x']
 size_y = yaml_p['size_y']
 size_z = yaml_p['size_z']
