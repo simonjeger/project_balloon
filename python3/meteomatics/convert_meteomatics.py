@@ -99,7 +99,7 @@ while h < len(height):
             break
 
     request = api.query_grid_timeseries(start_date, end_date, res_time, parameter_grid, start_lat, start_lon, end_lat, end_lon, res_lat, res_lon, username, password)
-    time.sleep(1.5)
+    #time.sleep(1.5) #only when using non-payed account
 
     for p in range(len(height)):
         try:

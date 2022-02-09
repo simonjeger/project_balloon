@@ -53,7 +53,8 @@ def send(data):
     return data
 
 com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
-interval = 60 #s
+interval_initial = 60 #s
+interval = interval_initial
 action_overwrite = False
 stop_logger = False
 com_fail = 0
@@ -66,6 +67,7 @@ timestamp_start = datetime.datetime.today().astimezone(pytz.timezone("Europe/Zur
 bool_data = False
 bool_action = False
 bool_start = False
+bool_onlyreceive = False
 
 while True:
     t_start = time.time()
@@ -102,6 +104,14 @@ while True:
                     elif message == 'start':
                         bool_start = True
                         logger.info('Starting algorithm')
+                    elif message == 'land':
+                        bool_onlyreceive = True
+                        interval = 0
+                        logger.info('Landing mode')
+                    elif message == 'fly':
+                        bool_onlyreceive = False
+                        interval = interval_initial
+                        logger.info('Flying mode')
                     else:
                         try:
                             action_overwrite = float(message)
@@ -152,12 +162,13 @@ while True:
                 info += ', gps_warn'
                 logger.error('gps_fail')
 
-            try:
-                com.send_sms(info)
-                com_fail = 0
-            except:
-                com_fail += 1
-                logger.error('Could not send')
+            if not bool_onlyreceive:
+                try:
+                    com.send_sms(info)
+                    com_fail = 0
+                except:
+                    com_fail += 1
+                    logger.error('Could not send')
 
             action['action_overwrite'] = action_overwrite
             action['stop_logger'] = stop_logger
