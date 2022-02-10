@@ -143,6 +143,7 @@ landed = False
 
 U_integrated = 0
 u = 0
+min_dist = np.inf
 min_proj_dist = np.inf
 
 # only placeholder, nescessary for estimation functions
@@ -286,12 +287,12 @@ while True:
 
             # find min_proj_dist
             render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
-            residual = target - np.divide(position_est,[yaml_p['unit_xy'], yaml_p['unit_xy'], yaml_p['unit_z']])
-            min_proj_dist_prop = np.sqrt((residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
-            min_dist_prop = np.sqrt((residual[1]*render_ratio)**2 + (residual[2])**2)*yaml_p['unit_z']
-            if min_proj_dist_prop < min_proj_dist:
-                min_proj_dist = min_proj_dist_prop
+            residual = target - position_est
+            min_dist_prop = np.sqrt((residual[0]*render_ratio/yaml_p['radius_xy'])**2 + (residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
+            min_proj_dist_prop = np.sqrt(residual[0]*yaml_p['unit_xy']**2 + residual[1]*yaml_p['unit_xy']**2 + residual[2]*yaml_p['unit_z']**2)
+            if min_prop < min_dist:
                 min_dist = min_dist_prop
+                min_proj_dist = min_proj_dist_prop
 
             data = {
             'U_integrated': U_integrated,

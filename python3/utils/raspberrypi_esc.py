@@ -46,9 +46,11 @@ class raspi_esc:
 
     def control(self,u):
         u = self.transform(u)
-        pwm = self.center_value + max((self.max_value - self.center_value)*u,0) + min((self.center_value - self.min_value)*u,0)
-        self.pi.set_servo_pulsewidth(self.ESC0, pwm)
-        self.pi.set_servo_pulsewidth(self.ESC1, pwm)
+        u0, u1 = self.different(u)
+        pwm0 = self.u_to_pwm(u0)
+        pwm1 = self.u_to_pwm(u1)
+        self.pi.set_servo_pulsewidth(self.ESC0, pwm0)
+        self.pi.set_servo_pulsewidth(self.ESC1, pwm1)
 
     def stop(self): #This will stop every action your Pi is performing for ESC
         self.pi.set_servo_pulsewidth(self.ESC0, 0)
@@ -56,9 +58,24 @@ class raspi_esc:
         self.pi.stop()
         logger.info('ESC: motor stopped')
 
+    def u_to_pwm(self,u):
+        pwm = self.center_value + max((self.max_value - self.center_value)*u,0) + min((self.center_value - self.min_value)*u,0)
+        return pwm
+
     def transform(self,u):
         s = np.sign(u)
         u = abs(u)
         # following values from calibrate_esc.py
         a,b,c,d,e,f,g = [-0.02151806, -0.28606846, 0.65830371, -0.03707646, 3.88293423, -0.02374704, 6.47285477]
         return s*abs(a + b*u**c + d*u**e + f*u**g)
+
+    def differential(self,u):
+        x = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        y = [0, 1.22, 1.23, 1.05, 0.845, 0.72, 0.63, 0.599, 0.51, 0.462, 0.42] #through measurement
+        if u > 0:
+            u0 = u
+            u1 = np.interp(u,x,y)
+        else:
+            u0 = np.interp(u,x,y)
+            u1 = u
+        return u0, u1

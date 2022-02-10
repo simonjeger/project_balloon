@@ -146,7 +146,7 @@ while True:
             else:
                 thrust_fail = 0
 
-            if thrust_fail >= 3:
+            if thrust_fail >= 5:
                 info += ', thrust_warn'
                 logger.error('thrust_fail')
 
