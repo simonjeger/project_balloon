@@ -49,7 +49,7 @@ class raspi_com():
 		text_message = text_message[0:160] #avoid sending too large messages which lead to an error
 		if phone_number is None:
 			phone_number = self.phone_number
-		self.send_at("AT+CMGF=1","OK",0.5)
+		self.send_at("AT+CMGF=1","OK",1)
 		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",1)
 		if 1 == answer:
 			self.ser.write(text_message.encode())
@@ -64,10 +64,10 @@ class raspi_com():
 
 	def receive_sms(self,ID):
 		self.rec_buff = ''
-		self.send_at('AT+CMGF=1','OK',0.5)
-		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 0.5)
-		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 0.5)
-		answer = self.send_at('AT+CMGR=' + str(ID),'+CMGR:',1)
+		self.send_at('AT+CMGF=1','OK',1)
+		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
+		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
+		answer = self.send_at('AT+CMGR=' + str(ID),'+CMGR:',2)
 		if 1 == answer:
 			answer = 0
 			if 'OK'.encode('utf-8') in self.rec_buff:
