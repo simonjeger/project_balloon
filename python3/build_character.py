@@ -370,7 +370,7 @@ class character():
         if yaml_p['delta_t_logger'] - delta_t > 0:
             time.sleep(yaml_p['delta_t_logger'] - delta_t)
         else:
-            print('ERROR: Choose higher delta_t_logger')
+            print('ERROR: Choose higher delta_t_logger (currently ' + str(np.round(delta_t,2)) + ' s)')
         data = self.receive('data.txt')
 
         # update

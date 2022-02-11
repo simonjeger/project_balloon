@@ -49,7 +49,6 @@ class raspi_esc:
         u0, u1 = self.differential(u)
         pwm0 = self.u_to_pwm(u0)
         pwm1 = self.u_to_pwm(u1)
-        print('pwm0: '+str(pwm0) + ', pwm1: '+str(pwm1))
         self.pi.set_servo_pulsewidth(self.ESC0, pwm0)
         self.pi.set_servo_pulsewidth(self.ESC1, pwm1)
 
@@ -72,7 +71,6 @@ class raspi_esc:
 
     def differential(self,u):
         x = [0, 0.08435280817820512, 0.12075014337053372, 0.15136981349206544, 0.1791342453291137, 0.2055580802330619, 0.23186369752739464, 0.25936242493906747, 0.2896950890781254, 0.3250520719718699, 0.36841002]
-        #y = [0, 1.22, 1.23, 1.102, 1.05, 0.97, 0.851, 0.76, 0.671, 0.6203, 0.5182] #through measurement
         y = [0, 1.22, 1.23, 1.102, 1.05, 0.98, 0.95, 0.76, 0.671, 0.6203, 0.5182] #through measurement
         if u > 0:
             u0 = u

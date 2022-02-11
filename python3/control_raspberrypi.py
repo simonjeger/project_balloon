@@ -292,7 +292,7 @@ while True:
             render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
             residual = np.subtract(target, position_est)
             min_dist_prop = np.sqrt((residual[0]*render_ratio/yaml_p['radius_xy'])**2 + (residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
-            min_proj_dist_prop = np.sqrt(residual[0]*yaml_p['unit_xy']**2 + residual[1]*yaml_p['unit_xy']**2 + residual[2]*yaml_p['unit_z']**2)
+            min_proj_dist_prop = np.sqrt((residual[0]*yaml_p['unit_xy'])**2 + (residual[1]*yaml_p['unit_xy'])**2 + (residual[2]*yaml_p['unit_z'])**2)
             if min_dist_prop < min_dist:
                 min_dist = min_dist_prop
                 min_proj_dist = min_proj_dist_prop
@@ -321,7 +321,7 @@ while True:
             if duration < yaml_p['delta_t_physics']:
                 time.sleep(yaml_p['delta_t_physics'] - duration)
             else:
-                print('ERROR: Choose higher delta_t_physics')
+                print('ERROR: Choose higher delta_t_physics (currently ' + str(np.round(duration,2)) + ' s)')
 
         except KeyboardInterrupt:
             logger.info("RBP: Maual kill")
