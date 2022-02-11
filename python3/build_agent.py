@@ -615,6 +615,8 @@ class Agent:
             self.writer.add_scalar('velocity_x', self.env.character.velocity[0], self.step_n)
             self.writer.add_scalar('velocity_y', self.env.character.velocity[1], self.step_n)
             self.writer.add_scalar('velocity_z', self.env.character.velocity[2], self.step_n)
+            self.writer.add_scalar('measurement_x', self.env.character.measurement[0], self.step_n)
+            self.writer.add_scalar('measurement_y', self.env.character.measurement[1], self.step_n)
             self.writer.add_scalar('rel_pos_est', self.env.character.rel_pos_est, self.step_n)
             self.writer.add_scalar('terrain', self.env.character.terrain, self.step_n)
             self.writer.add_scalar('ceiling', self.env.character.ceiling, self.step_n)

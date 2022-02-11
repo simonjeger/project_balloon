@@ -320,6 +320,8 @@ while True:
             duration = time.time() - t_start
             if duration < yaml_p['delta_t_physics']:
                 time.sleep(yaml_p['delta_t_physics'] - duration)
+            else:
+                print('ERROR: Choose higher delta_t_physics')
 
         except KeyboardInterrupt:
             logger.info("RBP: Maual kill")
