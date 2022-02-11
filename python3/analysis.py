@@ -571,10 +571,10 @@ def wind_est():
         name_list[i] = path_logger + name_list[i]
     df = many_logs2pandas(name_list)
 
-    from scipy.interpolate import LinearNDInterpolator
+    from scipy.interpolate import NearestNDInterpolator
     import seaborn as sns
     points = np.vstack([df['position_x'],df['position_y'],df['position_z']]).T
-    interp = LinearNDInterpolator(points, df['measurement_y'])
+    interp = NearestNDInterpolator(points, df['measurement_y']*yaml_p['unit_xy'])
 
     world_est = np.zeros((yaml_p['size_x'], yaml_p['size_y'], yaml_p['size_z']))
     for i in range(yaml_p['size_x']):
