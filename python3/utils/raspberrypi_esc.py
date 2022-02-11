@@ -46,9 +46,10 @@ class raspi_esc:
 
     def control(self,u):
         u = self.transform(u)
-        u0, u1 = self.different(u)
+        u0, u1 = self.differential(u)
         pwm0 = self.u_to_pwm(u0)
         pwm1 = self.u_to_pwm(u1)
+        print('pwm0: '+str(pwm0) + ', pwm1: '+str(pwm1))
         self.pi.set_servo_pulsewidth(self.ESC0, pwm0)
         self.pi.set_servo_pulsewidth(self.ESC1, pwm1)
 
@@ -70,12 +71,13 @@ class raspi_esc:
         return s*abs(a + b*u**c + d*u**e + f*u**g)
 
     def differential(self,u):
-        x = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        y = [0, 1.22, 1.23, 1.05, 0.845, 0.72, 0.63, 0.599, 0.51, 0.462, 0.42] #through measurement
+        x = [0, 0.08435280817820512, 0.12075014337053372, 0.15136981349206544, 0.1791342453291137, 0.2055580802330619, 0.23186369752739464, 0.25936242493906747, 0.2896950890781254, 0.3250520719718699, 0.36841002]
+        #y = [0, 1.22, 1.23, 1.102, 1.05, 0.97, 0.851, 0.76, 0.671, 0.6203, 0.5182] #through measurement
+        y = [0, 1.22, 1.23, 1.102, 1.05, 0.98, 0.95, 0.76, 0.671, 0.6203, 0.5182] #through measurement
         if u > 0:
             u0 = u
-            u1 = np.interp(u,x,y)
+            u1 = u*np.interp(u,x,y)
         else:
-            u0 = np.interp(u,x,y)
+            u0 = u*np.interp(u,x,y)
             u1 = u
-        return u0, u1
+        return u0,u1

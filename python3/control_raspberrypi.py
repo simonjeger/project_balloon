@@ -58,11 +58,11 @@ def receive():
         logger.warning('RBP: data corrupted, lag of ' + str(np.round(time.time() - t_start,3)) + '[s]')
     return data
 
-def update_est(position,u,c,delta_t,delta_f_up,delta_f_down,mass_total):
+def update_est(position, u, c, delta_t, delta_f_up, delta_f_down, mass_total, meas_GPS, meas_ALT):
     force_est = (max(0,u)*delta_f_up + min(0,u)*delta_f_down)/yaml_p['unit_z']/mass_total
-    est_x.one_cycle(0,position[0],c,delta_t)
-    est_y.one_cycle(0,position[1],c,delta_t)
-    est_z.one_cycle(force_est,position[2],c,delta_t)
+    est_x.one_cycle(0,position[0],c,delta_t, measurement=meas_GPS)
+    est_y.one_cycle(0,position[1],c,delta_t, measurement=meas_GPS)
+    est_z.one_cycle(force_est,position[2],c,delta_t, measurement=meas_ALT)
     position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
     return position_est
 
@@ -153,7 +153,7 @@ delta_f_up = 2.5
 delta_f_down = 2.5
 mass_total = 1.2
 
-position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total)
+position_est = update_est(position_meas, u, c, delta_t, delta_f_up, delta_f_down, mass_total, True, True)
 velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
 global_start = time.time()
@@ -163,7 +163,7 @@ logger.info('RBP: ready')
 while True:
     t_start = time.time()
 
-    # load center of map (depending on when the agent starts this needs to be rechecked)
+    # load center of mapxs
     center = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
     lat_start,lon_start = get_center()
 
@@ -171,7 +171,7 @@ while True:
         time.sleep(1)
         logger.info('RBP: waiting for the algorithm to publish at ' + str(int(time.time() - global_start)) + ' s after starting')
 
-        position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total)
+        position_est = update_est(position_meas, u, c, delta_t, delta_f_up, delta_f_down, mass_total, True, True)
         velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
 
         data = {
@@ -213,15 +213,18 @@ while True:
             #get GPS data and use it
             try:
                 lat,lon,height = gps.get_gps_position()
+                meas_GPS = True
             except:
-                time.sleep(2) #that's usually about as long as it takes for a measurement to get in
                 logger.warning("RBP: Couldn't get GPS measurement at " + str(int(t_start - global_start)) + ' s after start.')
+                meas_GPS = False
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
             try:
                 position_meas[2] = alt.get_altitude()/yaml_p['unit_z']
+                meas_ALT = False
             except:
                 logger.warning("RBP: Couldn't get ALT measurement at " + str(int(t_start - global_start)) + ' s after start.')
-            position_est = update_est(position_meas,u,c,delta_t,delta_f_up,delta_f_down,mass_total) #uses an old action for position estimation, because first estimation and then action
+                meas_ALT = True
+            position_est = update_est(position_meas, u, c, delta_t, delta_f_up, delta_f_down, mass_total, meas_GPS, meas_ALT) #uses an old action for position estimation, because first estimation and then action
             velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
             terrain = f_terrain(position_est[0], position_est[1])[0]
 
@@ -287,10 +290,10 @@ while True:
 
             # find min_proj_dist
             render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
-            residual = target - position_est
+            residual = np.subtract(target, position_est)
             min_dist_prop = np.sqrt((residual[0]*render_ratio/yaml_p['radius_xy'])**2 + (residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
             min_proj_dist_prop = np.sqrt(residual[0]*yaml_p['unit_xy']**2 + residual[1]*yaml_p['unit_xy']**2 + residual[2]*yaml_p['unit_z']**2)
-            if min_prop < min_dist:
+            if min_dist_prop < min_dist:
                 min_dist = min_dist_prop
                 min_proj_dist = min_proj_dist_prop
 
@@ -313,6 +316,10 @@ while True:
             'u': u}
 
             send(data)
+
+            duration = time.time() - t_start
+            if duration < yaml_p['delta_t_physics']:
+                time.sleep(yaml_p['delta_t_physics'] - duration)
 
         except KeyboardInterrupt:
             logger.info("RBP: Maual kill")

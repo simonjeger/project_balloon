@@ -91,10 +91,11 @@ class ekf():
         self.update_covariance()
         #print('correct: ' + str(self.xhat_0))
 
-    def one_cycle(self, u_0, z_0, c, delta_t):
+    def one_cycle(self, u_0, z_0, c, delta_t, measurement=True):
         self.delta_t = delta_t
         self.predict(u_0, c)
-        self.correct(z_0)
+        if measurement:
+            self.correct(z_0)
 
         self.hist_p.append(self.xhat_0[0])
         self.hist_v.append(self.xhat_0[1])

@@ -46,9 +46,9 @@ class raspi_gps:
 	def get_gps_position(self,max_cycles=1):
 		answer = 0
 		rec_buff = ''
-		self.send_at('AT+CGPS=1,1','OK',1)
+		self.send_at('AT+CGPS=1,1','OK',0.1)
 		for c in range(max_cycles):
-			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',1)
+			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',0.1)
 			if 1 == answer:
 				answer = 0
 				if ',,,,,,' in str(result):
@@ -76,7 +76,7 @@ class raspi_gps:
 			else:
 				logger.error('GPS: error %d'%answer + ' (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
 				rec_buff = ''
-				self.send_at('AT+CGPS=0','OK',1)
+				self.send_at('AT+CGPS=0','OK',0.1)
 
 	def convert_min_to_dec(self,lat_or_lon):
 		deg = str(lat_or_lon)[0:-9]
