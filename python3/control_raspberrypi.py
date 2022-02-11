@@ -321,7 +321,7 @@ while True:
             if duration < yaml_p['delta_t_physics']:
                 time.sleep(yaml_p['delta_t_physics'] - duration)
             else:
-                print('ERROR: Choose higher delta_t_physics (currently ' + str(np.round(duration,2)) + ' s)')
+                logger.error('Choose higher delta_t_physics (currently ' + str(np.round(duration,2)) + ' s)')
 
         except KeyboardInterrupt:
             logger.info("RBP: Maual kill")
