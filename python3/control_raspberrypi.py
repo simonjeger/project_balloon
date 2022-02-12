@@ -293,10 +293,13 @@ while True:
             render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
             residual = np.subtract(target, position_est)
             min_proj_dist_prop = np.sqrt((residual[0]*render_ratio/yaml_p['radius_xy'])**2 + (residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
-            min_dist_prop = np.sqrt((residual[0]*render_ratio)**2 + (residual[1]**render_ratio)**2 + (residual[2])**2)
+            min_dist_prop = np.sqrt((residual[0]*render_ratio)**2 + (residual[1]*render_ratio)**2 + (residual[2])**2)
             if min_dist_prop < min_dist:
                 min_dist = min_dist_prop
                 min_proj_dist = min_proj_dist_prop
+
+            print('min_proj_dist_prop: ' + str(min_proj_dist_prop))
+            print('min_dist_prop: ' + str(min_dist_prop))
 
             data = {
             'U_integrated': U_integrated,
