@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import RPi.GPIO as GPIO
 import serial
 import time
@@ -38,12 +36,16 @@ class raspi_com():
 			if self.ser.inWaiting():
 				time.sleep(0.01)
 				self.rec_buff = self.ser.read(self.ser.inWaiting())
-			if back not in self.rec_buff.decode(errors='ignore'):
-				logger.error('COM: ' + command + ' ERROR')
-				logger.error('COM: ' + command + ' back:\t' + self.rec_buff.decode())
-				return 0
+			if type(self.rec_buff) != str:
+				if back not in self.rec_buff.decode(errors='ignore'):
+					logger.error('COM: ' + command + ' ERROR')
+					logger.error('COM: ' + command + ' back:\t' + self.rec_buff.decode())
+					return 0
+				else:
+					return 1
 			else:
-				return 1
+				logger.error('COM: ' + command + ' string back:\t' + self.rec_buff)
+				return 0
 
 	def send_sms(self,text_message,phone_number=None):
 		text_message = text_message[0:160] #avoid sending too large messages which lead to an error
@@ -97,7 +99,6 @@ class raspi_com():
 			return self.receive_sms(last_ID)
 		else:
 			return 'empty inbox', datetime.datetime(2000,1,1,0,0)
-
 
 	def list_sms(self):
 		self.rec_buff = ''

@@ -30,8 +30,12 @@ class ekf():
 
         #v_rel = v - self.xhat_0[1]
         #a = self.u_0 - np.sign(v_rel)*self.c*v_rel**2
-        a = 0
-        v = self.xhat_0[1]
+        a = self.u_0
+        if type(self.u_0) != int:
+            v = self.xhat_0[1] + a*self.delta_t - np.sign(self.xhat_0[1])*self.xhat_0[1]**2*self.c #only for z dimension
+        else:
+            v = self.xhat_0[1] #for x,y dimension
+        v = np.clip(v,-0.03,0.03) #roughly 30 m/s
         p = self.xhat_0[0] + v*self.delta_t
         o = self.xhat_0[3]
         return np.array([p,v,a,o])

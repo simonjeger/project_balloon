@@ -214,7 +214,9 @@ class Agent:
             # only take a decision when it's the time to do so, otherwise just log
             if ((self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count + 1) & (not done):
                 logger.error('AGT: delta_t is too small, calculations are not made fast enough')
+            decision = False
             if (self.env.character.T - self.env.character.t) / yaml_p['delta_t'] >= decision_count:
+                decision = True
                 decision_count += 1
                 if yaml_p['mode'] == 'reinforcement_learning':
                     action_RL = self.agent.act(obs) #uses self.agent.model to decide next step
@@ -253,7 +255,7 @@ class Agent:
 
             # logger
             if self.writer is not None:
-                self.write_logger(action)
+                self.write_logger(action, decision=decision)
 
             # do the actual step
             obs, reward, done, _ = self.env.step(action) #I just need to pass a target that is not None for the logger to kick in
@@ -605,7 +607,7 @@ class Agent:
         self.old_buffer_size = len(self.agent.replay_buffer.memory)
         self.old_step_n = self.step_n
 
-    def write_logger(self, action, done=False):
+    def write_logger(self, action, decision=False, done=False):
         if not done:
             self.writer.add_scalar('step_n', self.step_n, self.step_n)
             self.writer.add_scalar('epi_n', self.epi_n, self.step_n)
@@ -621,6 +623,7 @@ class Agent:
             self.writer.add_scalar('terrain', self.env.character.terrain, self.step_n)
             self.writer.add_scalar('ceiling', self.env.character.ceiling, self.step_n)
             self.writer.add_scalar('t', self.env.character.t, self.step_n)
+            self.writer.add_scalar('decision', decision, self.step_n)
             self.writer.add_scalar('diameter', self.env.character.diameter, self.step_n)
             self.writer.add_scalar('battery_level', self.env.character.battery_level, self.step_n)
             self.writer.add_scalar('min_dist', self.env.character.min_dist, self.step_n)

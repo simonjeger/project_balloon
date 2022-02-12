@@ -168,8 +168,6 @@ class character():
         self.action_hist.append(action)
         self.world = world
         self.world_squished = squish(self.world, self.ceiling)
-        print(self.position)
-        print(self.target)
 
         if yaml_p['environment'] == 'python3':
             not_done = self.move_particle()

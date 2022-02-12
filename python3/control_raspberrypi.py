@@ -63,6 +63,7 @@ def update_est(position, u, c, delta_t, delta_f_up, delta_f_down, mass_total, me
     est_x.one_cycle(0,position[0],c,delta_t, measurement=meas_GPS)
     est_y.one_cycle(0,position[1],c,delta_t, measurement=meas_GPS)
     est_z.one_cycle(force_est,position[2],c,delta_t, measurement=meas_ALT)
+    est_z.plot()
     position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
     return position_est
 
@@ -220,10 +221,10 @@ while True:
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
             try:
                 position_meas[2] = alt.get_altitude()/yaml_p['unit_z']
-                meas_ALT = False
+                meas_ALT = True
             except:
                 logger.warning("RBP: Couldn't get ALT measurement at " + str(int(t_start - global_start)) + ' s after start.')
-                meas_ALT = True
+                meas_ALT = False
             position_est = update_est(position_meas, u, c, delta_t, delta_f_up, delta_f_down, mass_total, meas_GPS, meas_ALT) #uses an old action for position estimation, because first estimation and then action
             velocity_est = [est_x.xhat_0[1], est_y.xhat_0[1], est_z.xhat_0[1]]
             terrain = f_terrain(position_est[0], position_est[1])[0]
