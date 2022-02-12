@@ -292,8 +292,8 @@ while True:
             # find min_proj_dist
             render_ratio = yaml_p['unit_xy']/yaml_p['unit_z']
             residual = np.subtract(target, position_est)
-            min_dist_prop = np.sqrt((residual[0]*render_ratio/yaml_p['radius_xy'])**2 + (residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
-            min_proj_dist_prop = np.sqrt((residual[0]*yaml_p['unit_xy'])**2 + (residual[1]*yaml_p['unit_xy'])**2 + (residual[2]*yaml_p['unit_z'])**2)
+            min_proj_dist_prop = np.sqrt((residual[0]*render_ratio/yaml_p['radius_xy'])**2 + (residual[1]*render_ratio/yaml_p['radius_xy'])**2 + (residual[2]/yaml_p['radius_z'])**2) #only 2d case!
+            min_dist_prop = np.sqrt((residual[0]*render_ratio)**2 + (residual[1]**render_ratio)**2 + (residual[2])**2)
             if min_dist_prop < min_dist:
                 min_dist = min_dist_prop
                 min_proj_dist = min_proj_dist_prop
