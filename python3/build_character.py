@@ -174,11 +174,11 @@ class character():
         else:
             not_done = self.live_particle()
 
-        """
+        #"""
         print(self.position)
         print(self.target)
         print('-----')
-        """
+        #"""
 
         # update state
         self.set_state()

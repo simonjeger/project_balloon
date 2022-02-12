@@ -298,9 +298,6 @@ while True:
                 min_dist = min_dist_prop
                 min_proj_dist = min_proj_dist_prop
 
-            print('min_proj_dist_prop: ' + str(min_proj_dist_prop))
-            print('min_dist_prop: ' + str(min_dist_prop))
-
             data = {
             'U_integrated': U_integrated,
             'position': position_est,
