@@ -266,11 +266,18 @@ while True:
                         u_raw = 0
                         landed = True
                         logger.info('RBP: landed')
+
+                # overwrite u manually
+                if not data['u_overwrite']:
+                    u_raw = u_raw
+                else:
+                    u_raw = data['u_overwrite']
+
                 u = offset + u_raw*scale
                 if not landed:
                     esc.control(u)
                 else:
-                    u = 0 #just for the print during tuning
+                    u = 0 #just for the print
                     esc.stop()
 
             if yaml_p['mode'] == 'tuning':

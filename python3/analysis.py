@@ -314,25 +314,29 @@ def plot_kml():
     center_lat = yaml_p['center_latlon'][0]
     center_lon = yaml_p['center_latlon'][1]
 
-    coords = []
-    for p in range(len(df['position_x'])):
-        pos_x = df['position_x'][p]
-        pos_y = df['position_y'][p]
-        pos_z = df['position_z'][p]
+    for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
 
-        step_x = (pos_x-(yaml_p['size_x']-1)/2)*yaml_p['unit_xy']
-        step_y = (pos_y-(yaml_p['size_y']-1)/2)*yaml_p['unit_xy']
+        df_loc = df[df['epi_n'].isin([j])]
 
-        lat, lon = step(center_lat, center_lon, step_x, step_y)
-        alt = pos_z*yaml_p['unit_z']
-        coords.append([lon,lat,alt])
+        coords = []
+        for p in range(len(df_loc['position_x'])):
+            pos_x = df_loc['position_x'].iloc[p]
+            pos_y = df_loc['position_y'].iloc[p]
+            pos_z = df_loc['position_z'].iloc[p]
 
-    kml = simplekml.Kml()
-    lin = kml.newlinestring(name="balloon", description='flight duration: ' + str(int((yaml_p['T'] - df['t'].iloc[-1])/60)) + ' min', coords=coords, altitudemode="absolute", extrude=1)
-    lin.style.linestyle.color = 'ff0000ff'
-    lin.style.linestyle.width = 1
-    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/trajectory.kml'
-    kml.save(path)
+            step_x = (pos_x-(yaml_p['size_x']-1)/2)*yaml_p['unit_xy']
+            step_y = (pos_y-(yaml_p['size_y']-1)/2)*yaml_p['unit_xy']
+
+            lat, lon = step(center_lat, center_lon, step_x, step_y)
+            alt = pos_z*yaml_p['unit_z']
+            coords.append([lon,lat,alt])
+
+        kml = simplekml.Kml()
+        lin = kml.newlinestring(name="balloon", description='flight duration: ' + str(int((yaml_p['T'] - df['t'].iloc[-1])/60)) + ' min', coords=coords, altitudemode="absolute", extrude=1)
+        lin.style.linestyle.color = 'ff0000ff'
+        lin.style.linestyle.width = 1
+        path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/trajectory_ ' + str(j) + '.kml'
+        kml.save(path)
 
 def step(lat, lon, step_x, step_y):
     R = 6371*1000 #radius of earth in meters

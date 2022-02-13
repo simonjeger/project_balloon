@@ -52,11 +52,11 @@ class raspi_com():
 		if phone_number is None:
 			phone_number = self.phone_number
 		self.send_at("AT+CMGF=1","OK",1)
-		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",1)
+		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",2)
 		if 1 == answer:
 			self.ser.write(text_message.encode())
 			self.ser.write(b'\x1A')
-			answer = self.send_at('','OK',1)
+			answer = self.send_at('','OK',2)
 			if 1 == answer:
 				logger.info("COM: Sent SMS successfully")
 			else:
@@ -104,7 +104,7 @@ class raspi_com():
 		self.rec_buff = ''
 		self.send_at('AT+CMGF=1','OK',1)
 		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
-		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1)
+		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 2)
 		if 1 == answer:
 			answer = 0
 			if 'OK'.encode('utf-8') in self.rec_buff:
@@ -121,7 +121,7 @@ class raspi_com():
 		self.rec_buff = ''
 		self.send_at('AT+CMGF=1','OK',1)
 		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
-		answer = self.send_at('AT+CMGD=1,4', 'OK', 1)
+		answer = self.send_at('AT+CMGD=1,4', 'OK', 2)
 		self.send_sms('inbox empty', phone_number=self.simcard) #I can't read out an empty list
 		logger.info('COM: inbox emptied')
 

@@ -97,6 +97,7 @@ class character():
         self.battery_level = 1
         self.action = 0.01
         self.action_overwrite = False
+        self.u_overwrite = False
         self.stop_logger = False
         self.action_hist = [self.action]
         self.diameter = 0
@@ -174,11 +175,12 @@ class character():
         else:
             not_done = self.live_particle()
 
-        #"""
+        print(np.sqrt((self.velocity[0]*yaml_p['unit_xy'])**2 + (self.velocity[1]*yaml_p['unit_xy'])**2))
+        """
         print(self.position)
         print(self.target)
         print('-----')
-        #"""
+        """
 
         # update state
         self.set_state()
@@ -349,6 +351,7 @@ class character():
         if os.path.isfile(path + 'action.txt'):
             data = self.receive('action.txt') #so overwrite action can be done
             self.action_overwrite = data['action_overwrite']
+            self.u_overwrite = data['u_overwrite']
             self.stop_logger = data['stop_logger']
 
         #action above sea level is only relevant for hot air ballooning
@@ -358,6 +361,7 @@ class character():
         'action': self.action,
         'action_asl': action_asl,
         'action_overwrite': self.action_overwrite,
+        'u_overwrite': self.u_overwrite,
         'target': self.target.tolist(),
         'c': self.c,
         'ceiling': self.ceiling,
@@ -456,8 +460,10 @@ class character():
         return f_net #N
 
     def height_above_ground(self, est=False):
-        self.terrain_est = self.f_terrain(self.position_est[0], self.position_est[1])[0]
-        self.terrain = self.f_terrain(self.position_est[0], self.position[1])[0] #is used by the logger
+        #self.terrain_est = self.f_terrain(self.position_est[0], self.position_est[1])[0]
+        self.terrain = self.f_terrain(self.start[0], self.start[1])[0]
+        #self.terrain = self.f_terrain(self.position_est[0], self.position[1])[0] #is used by the logger
+        self.terrain_est = self.f_terrain(self.start[0], self.start[1])[0]
         if est:
             return self.position_est[2] - self.terrain_est
         else:

@@ -52,6 +52,7 @@ with ag.agent.eval_mode():
                 'action': 0,
                 'action_asl': 0,
                 'action_overwrite': False,
+                'u_overwrite': False,
                 'target': [-10,-10,-10],
                 'c': ag.env.character.c,
                 'ceiling': ag.env.character.ceiling,

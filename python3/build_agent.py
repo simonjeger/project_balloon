@@ -247,6 +247,13 @@ class Agent:
                     action = self.tuning()
                     action_RL = action #this is only so it works with HER
 
+                elif yaml_p['mode'] == 'open_loop':
+                    #action_list = [0, 0.373, 0.351, 0.312, 0.351, 0.427, 0.433, 0.433, 0.458, 0.479, 0.497, 0.506, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.15, 0.15, 0.15, 0.15, 0.15, 0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.12, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.121, 0.081, 0.041, 0.02, 0.007, 0]
+                    action_list = [1, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.121, 0.081, 0.041, 0.02, 0.007, -1]
+                    _ = self.agent.act(obs) #this is only so it works in training mode
+                    action = action_list[decision_count]
+                    action_RL = action #this is only so it works with HER
+
                 else:
                     logger.error('AGT: Please choose one of the available modes.')
 
@@ -290,6 +297,7 @@ class Agent:
                 'action': -1,
                 'action_asl': 0,
                 'action_overwrite': self.env.character.action_overwrite,
+                'u_overwrite': self.env.character.u_overwrite,
                 'target': [-10,-10,-10],
                 'c': self.env.character.c,
                 'ceiling': self.env.character.ceiling,
@@ -630,6 +638,7 @@ class Agent:
             self.writer.add_scalar('min_proj_dist', self.env.character.min_proj_dist, self.step_n)
             self.writer.add_scalar('action', action, self.step_n)
             self.writer.add_scalar('action_overwrite', self.env.character.action_overwrite, self.step_n)
+            self.writer.add_scalar('u_overwrite', self.env.character.u_overwrite, self.step_n)
             self.writer.add_scalar('reward_step', self.env.reward_step, self.step_n)
 
             if yaml_p['world_est'] == True:

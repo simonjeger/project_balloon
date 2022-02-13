@@ -56,6 +56,7 @@ com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str
 interval_initial = 60 #s
 interval = interval_initial
 action_overwrite = False
+u_overwrite = False
 stop_logger = False
 com_fail = 0
 thrust_fail = 0
@@ -104,14 +105,24 @@ while True:
                     elif message == 'start':
                         bool_start = True
                         logger.info('Starting algorithm')
-                    elif message == 'land':
+                    elif message == 'tune':
                         bool_onlyreceive = True
                         interval = 0
-                        logger.info('Landing mode')
+                        logger.info('Tuning mode')
                     elif message == 'fly':
                         bool_onlyreceive = False
                         interval = interval_initial
                         logger.info('Flying mode')
+                    elif message == 'u=false':
+                        try:
+                            u_overwrite = False
+                            logger.info('Setting u_overwrite to False')
+                    elif message[0:2] == 'u=':
+                        try:
+                            u_overwrite = float(message)
+                            logger.info('Overwriting u to: ' + str(u_overwrite))
+                        except:
+                            logger.error('Could not turn into float: ' + message)
                     else:
                         try:
                             action_overwrite = float(message)
@@ -127,6 +138,7 @@ while True:
             info += 'act: ' + str(np.round(action['action'],3)) + ', '
             info += 'act_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
             info += 'act_ow: ' + str(action['action_overwrite']) + ', '
+            info += 'u_ow: ' + str(action['u_overwrite']) + ', '
             info += 'lat: ' + str(np.round(data['gps_lat'],6)) + ', '
             info += 'lon: ' + str(np.round(data['gps_lon'],6)) + ', '
             info += 'hei: ' + str(np.round(data['gps_height'],1)) + 'm, '
@@ -171,6 +183,7 @@ while True:
                     logger.error('Could not send')
 
             action['action_overwrite'] = action_overwrite
+            action['u_overwrite'] = u_overwrite
             action['stop_logger'] = stop_logger
             send(action)
 

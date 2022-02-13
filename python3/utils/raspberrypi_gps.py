@@ -15,8 +15,6 @@ class raspi_gps:
 		self.path = path
 		self.power_key = 6
 		rec_buff = ''
-		rec_buff2 = ''
-		time_count = 0
 
 		try:
 			self.power_on()
