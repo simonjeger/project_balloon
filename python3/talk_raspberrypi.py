@@ -69,6 +69,7 @@ bool_data = False
 bool_action = False
 bool_start = False
 bool_onlyreceive = False
+offset = yaml_p['offset']
 
 while True:
     t_start = time.time()
@@ -105,22 +106,30 @@ while True:
                     elif message == 'start':
                         bool_start = True
                         logger.info('Starting algorithm')
-                    elif message == 'tune':
+                    elif (message == 'tune') & (bool_onlyreceive == False):
                         bool_onlyreceive = True
                         interval = 0
+                        com.send_sms('Tuning mode')
                         logger.info('Tuning mode')
-                    elif message == 'fly':
+                    elif (message == 'fly') & (bool_onlyreceive == True):
                         bool_onlyreceive = False
                         interval = interval_initial
+                        com.send_sms('Flying mode')
                         logger.info('Flying mode')
                     elif message == 'u=false':
-                        try:
-                            u_overwrite = False
-                            logger.info('Setting u_overwrite to False')
+                        u_overwrite = False
+                        logger.info('Setting u_overwrite to False')
                     elif message[0:2] == 'u=':
                         try:
-                            u_overwrite = float(message)
+                            u_overwrite = float(message[2::])
                             logger.info('Overwriting u to: ' + str(u_overwrite))
+                        except:
+                            logger.error('Could not turn into float: ' + message)
+                    elif message[0:7] == 'offset=':
+                        try:
+                            offset = float(message[7::])
+                            com.send_sms('Setting offset to: ' + str(offset))
+                            logger.info('Setting offset to: ' + str(offset))
                         except:
                             logger.error('Could not turn into float: ' + message)
                     else:
@@ -185,6 +194,8 @@ while True:
             action['action_overwrite'] = action_overwrite
             action['u_overwrite'] = u_overwrite
             action['stop_logger'] = stop_logger
+            if offset:
+                action['offset'] = offset
             send(action)
 
             # send starting signal to algorithm if ready

@@ -210,6 +210,7 @@ while True:
             delta_f_up = data['delta_f_up']
             delta_f_down = data['delta_f_down']
             mass_total = data['mass_total']
+            offset = data['offset']
 
             #get GPS data and use it
             try:
@@ -268,13 +269,11 @@ while True:
                         logger.info('RBP: landed')
 
                 # overwrite u manually
-                if not data['u_overwrite']:
-                    u_raw = u_raw
-                else:
-                    u_raw = data['u_overwrite']
-
                 u = offset + u_raw*scale
-                if not landed:
+
+                if type(data['u_overwrite']) != bool:
+                    u = data['u_overwrite']
+                if (not landed) | (type(data['u_overwrite']) != bool):
                     esc.control(u)
                 else:
                     u = 0 #just for the print

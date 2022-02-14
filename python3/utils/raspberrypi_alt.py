@@ -25,7 +25,7 @@ class raspi_alt:
     def set_QNH(self,terrain):
         QNH_min = 930
         QNH_max = 1070
-        x = np.arange(QNH_min,QNH_max,0.03) #range of realistic QNH values at a resolution of 0.1
+        x = np.arange(QNH_min,QNH_max,0.05) #range of realistic QNH values at a resolution of 0.5
         y = []
         for x_i in x:
             y.append(self.error(x_i,terrain))

@@ -99,6 +99,7 @@ class character():
         self.action_overwrite = False
         self.u_overwrite = False
         self.stop_logger = False
+        self.offset = yaml_p['offset']
         self.action_hist = [self.action]
         self.diameter = 0
 
@@ -353,6 +354,7 @@ class character():
             self.action_overwrite = data['action_overwrite']
             self.u_overwrite = data['u_overwrite']
             self.stop_logger = data['stop_logger']
+            self.offset = data['offset']
 
         #action above sea level is only relevant for hot air ballooning
         action_asl = (self.terrain_est + (self.ceiling - self.terrain_est)*self.action)*yaml_p['unit_z']
@@ -368,7 +370,8 @@ class character():
         'delta_f_up': self.delta_f_up,
         'delta_f_down': self.delta_f_down,
         'mass_total': self.mass_total,
-        'stop_logger': self.stop_logger
+        'stop_logger': self.stop_logger,
+        'offset': self.offset,
         }
         self.send(data) #write action to file
 

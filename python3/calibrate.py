@@ -7,12 +7,13 @@ esc = raspi_esc()
 u = 0
 
 while True:
-    u = input('Enter input')
     try:
+        u = input('Enter input \n')
         u = float(u)
         esc.control(u)
         print('u = ' + str(u))
     except KeyboardInterrupt:
+        print('Manual kill')
         break
     except:
         print("Couldn't convert to float")

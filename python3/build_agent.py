@@ -304,7 +304,8 @@ class Agent:
                 'delta_f_up': self.env.character.delta_f_up,
                 'delta_f_down': self.env.character.delta_f_down,
                 'mass_total': self.env.character.mass_total,
-                'stop_logger': self.env.character.stop_logger
+                'stop_logger': self.env.character.stop_logger,
+                'offset': self.env.character.offset
                 }
                 self.env.character.send(data)
                 time.sleep(3) #so we are sure the system reads it
