@@ -115,7 +115,7 @@ lat_start,lon_start = get_center()
 while True: #search until found
     try:
         gps = raspi_gps(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
-        lat,lon,height = gps.get_gps_position(max_cycles=120)
+        lat,lon,height = gps.init_gps_position()
         break
     except:
         logger.error('RBP: failed to find GPS fixture, will try again')

@@ -100,10 +100,10 @@ while True:
             try:
                 message, timestamp = com.receive_last_sms()
                 if timestamp > timestamp_start:
-                    if message == 'stop':
+                    if (message == 'stop') & (stop_logger == False):
                         stop_logger = True
                         logger.info('Stopping logger')
-                    elif message == 'start':
+                    elif (message == 'start') & (bool_start == False):
                         bool_start = True
                         logger.info('Starting algorithm')
                     elif (message == 'tune') & (bool_onlyreceive == False):

@@ -176,7 +176,6 @@ class character():
         else:
             not_done = self.live_particle()
 
-        print(np.sqrt((self.velocity[0]*yaml_p['unit_xy'])**2 + (self.velocity[1]*yaml_p['unit_xy'])**2))
         """
         print(self.position)
         print(self.target)
