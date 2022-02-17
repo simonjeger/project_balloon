@@ -47,6 +47,8 @@ class raspi_esc:
     def control(self,u):
         u = self.transform(u)
         u0, u1 = self.differential(u)
+        u0 = np.clip(u0,-1,1)
+        u1 = np.clip(u1,-1,1)
         pwm0 = self.u_to_pwm(u0)
         pwm1 = self.u_to_pwm(u1)
         self.pi.set_servo_pulsewidth(self.ESC0, pwm0)

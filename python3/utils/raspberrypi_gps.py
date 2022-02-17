@@ -41,7 +41,7 @@ class raspi_gps:
 				logger.error('GPS: not ready')
 				return 0, rec_buff
 
-	def init_gps_position(self,max_cycles=120):
+	def init_gps_position(self,max_cycles=5):
 		answer = 0
 		rec_buff = ''
 		for c in range(max_cycles):

@@ -20,7 +20,9 @@ class raspi_com():
 		self.rec_buff = ''
 
 		try:
-			#self.power_on() #when I run this, it will already be powered on by control_raspberry
+			self.power_on() #when I run this, it will already be powered on by control_raspberry
+			self.send_at("AT+CMGF=1","OK",1)
+			self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
 			self.delete_sms()
 			self.send_sms('Communication initialized')
 		except :
@@ -51,12 +53,11 @@ class raspi_com():
 		text_message = text_message[0:160] #avoid sending too large messages which lead to an error
 		if phone_number is None:
 			phone_number = self.phone_number
-		self.send_at("AT+CMGF=1","OK",1)
-		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",2)
+		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",1)
 		if 1 == answer:
 			self.ser.write(text_message.encode())
 			self.ser.write(b'\x1A')
-			answer = self.send_at('','OK',2)
+			answer = self.send_at('','OK',1)
 			if 1 == answer:
 				logger.info("COM: Sent SMS successfully")
 			else:
@@ -67,9 +68,7 @@ class raspi_com():
 	def receive_sms(self,ID):
 		self.rec_buff = ''
 		self.send_at('AT+CMGF=1','OK',1)
-		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
-		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
-		answer = self.send_at('AT+CMGR=' + str(ID),'+CMGR:',2)
+		answer = self.send_at('AT+CMGR=' + str(ID),'+CMGR:',1)
 		if 1 == answer:
 			answer = 0
 			if 'OK'.encode('utf-8') in self.rec_buff:
@@ -94,17 +93,34 @@ class raspi_com():
 		return True
 
 	def receive_last_sms(self):
-		last_ID = self.list_sms()
-		if last_ID is not None:
-			return self.receive_sms(last_ID)
+		self.rec_buff = ''
+		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1)
+		if 1 == answer:
+			answer = 0
+			if 'OK'.encode('utf-8') in self.rec_buff:
+				answer = 1
+				rec_string = str(self.rec_buff).split("\\")
+				last_ID = int(rec_string[-9].split(',')[0][8::])
+
+				result = rec_string[-7][1::]
+				year = 2000 + int(rec_string[-9][-21:-19])
+				month = int(rec_string[-9][-18:-16])
+				day = int(rec_string[-9][-15:-13])
+				hour = int(rec_string[-9][-12:-10])
+				minute = int(rec_string[-9][-9:-7])
+				second = int(rec_string[-9][-6:-4])
+				timestamp = datetime.datetime(year,month,day,hour,minute,second)
+				timezone = pytz.timezone("Europe/Zurich")
+				timestamp = timezone.localize(timestamp)
+
+				return result, timestamp
 		else:
-			return 'empty inbox', datetime.datetime(2000,1,1,0,0)
+			logger.error('COM: Error in receive_last_sms')
+			return None
 
 	def list_sms(self):
 		self.rec_buff = ''
-		self.send_at('AT+CMGF=1','OK',1)
-		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
-		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 2)
+		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1)
 		if 1 == answer:
 			answer = 0
 			if 'OK'.encode('utf-8') in self.rec_buff:
@@ -119,10 +135,8 @@ class raspi_com():
 
 	def delete_sms(self):
 		self.rec_buff = ''
-		self.send_at('AT+CMGF=1','OK',1)
-		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
-		answer = self.send_at('AT+CMGD=1,4', 'OK', 2)
-		self.send_sms('inbox empty', phone_number=self.simcard) #I can't read out an empty list
+		answer = self.send_at('AT+CMGD=1,4', 'OK', 1.5)
+		self.send_sms('inbox emptied', phone_number=self.simcard) #I can't read out an empty list
 		logger.info('COM: inbox emptied')
 
 	def power_on(self):
