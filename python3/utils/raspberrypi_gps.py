@@ -44,46 +44,22 @@ class raspi_gps:
 	def init_gps_position(self,max_cycles=120):
 		answer = 0
 		rec_buff = ''
-		self.send_at('AT+CGPS=1,1','OK',1)
 		for c in range(max_cycles):
-			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',1)
-			if 1 == answer:
-				answer = 0
-				if ',,,,,,' in str(result):
-					logger.error('GPS: not ready (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
-					time.sleep(1)
-				else:
-					result_array = str(result)[30::].split(",")
-					lat = self.convert_min_to_dec(result_array[0])
-					lat_dir = result_array[1]
-					lon = self.convert_min_to_dec(result_array[2])
-					lon_dir = result_array[3]
-					year = int(result_array[4][0:2])
-					month = int(result_array[4][2:4])
-					day = int(result_array[4][4:6])
-					hour = int(result_array[5][0:2])
-					minute = int(result_array[5][2:4])
-					second = int(result_array[5][4:6])
-					height = float(result_array[6])
-
-					if lat_dir == 'S':
-						lat *= -1
-					if lon_dir == 'W':
-						lon *= -1
-					return lat,lon,height
-			else:
-				logger.error('GPS: error %d'%answer + ' (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
-				rec_buff = ''
-				self.send_at('AT+CGPS=0','OK',1)
+			self.send_at('AT+CGPS=0','OK',2)
+			self.send_at('AT+CGPS=1,1','OK',2)
+			logger.info('GPS: getting fixture (' + str(c) + ' out of ' + str(max_cycles) + ' tries)')
+			pos = self.get_gps_position()
+			if pos is not None:
+				return pos
 
 	def get_gps_position(self):
 		answer = 0
 		rec_buff = ''
-		answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',0.1)
+		answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',0.5)
 		if 1 == answer:
 			answer = 0
 			if ',,,,,,' in str(result):
-				logger.error('GPS: not ready (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
+				logger.error('GPS: empty ' + str(result))
 				time.sleep(1)
 			else:
 				result_array = str(result)[30::].split(",")
@@ -105,9 +81,10 @@ class raspi_gps:
 					lon *= -1
 				return lat,lon,height
 		else:
-			logger.error('GPS: error %d'%answer + ' (' + str(c+1) + ' out of ' + str(max_cycles) + ' tries)')
+			logger.error('GPS: error ' + str(result))
 			rec_buff = ''
-			self.send_at('AT+CGPS=0','OK',1)
+			self.send_at('AT+CGPS=0','OK',2)
+			self.send_at('AT+CGPS=1,1','OK',2)
 
 	def convert_min_to_dec(self,lat_or_lon):
 		deg = str(lat_or_lon)[0:-9]
