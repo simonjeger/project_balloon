@@ -409,9 +409,10 @@ class character():
 
         # update EKF
         self.set_measurement(data['measurement'][0],data['measurement'][1])
-
-        self.velocity = (self.position - self.position_old)/delta_t
-        self.velocity_est = (self.position_est - self.position_est_old)/delta_t
+        last_idx = int(yaml_p['delta_t'] / yaml_p['delta_t_logger'])
+        if last_idx + 1 < len(self.path):
+            self.velocity = (self.position - self.path[-last_idx-1])/yaml_p['delta_t_logger']
+            self.velocity_est = (self.position_est - self.path_est[-last_idx-1])/yaml_p['delta_t_logger']
 
         self.position_old = self.position
         self.position_est_old = self.position_est

@@ -269,7 +269,7 @@ class Agent:
 
             # logger
             if self.writer is not None:
-                if done:
+                if done | self.env.character.stop_logger:
                     self.write_logger(action, done=True)
 
             sum_r = sum_r + reward
