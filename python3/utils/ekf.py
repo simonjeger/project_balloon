@@ -10,11 +10,11 @@ class ekf():
         self.P_0 = np.ones((4))                                             #error covariance (dim_x, dim_x)
         self.W_0 = np.ones((4))                                             #noise covariance (dim_x, dim_x)
         self.Q_0 = np.eye((4))                                              #process noise (dim_x, dim_x)
-        self.Q_0[0,0] = 100
+        self.Q_0[0,0] = 1
         self.Q_0[1,1] = 1
-        self.Q_0[2,2] = 1                                                  #the acceleration is not actually zero
-        self.Q_0[3,3] = 1                                                  #the wind is not actually zero
-        self.R_0 = [100, 1000, 10000, 1000]                                       #measurement noise (dim_z, dim_z)
+        self.Q_0[2,2] = 1                                                   #the acceleration is not actually zero
+        self.Q_0[3,3] = 1                                                   #the wind is not actually zero
+        self.R_0 = [10, 100, 1, 100]                                        #measurement noise (dim_z, dim_z)
         self.H_0 = np.eye((4))                                              #measurement function (dim_x, dim_x)
 
         self.hist_p = []                        #for plotting

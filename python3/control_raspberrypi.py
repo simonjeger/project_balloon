@@ -6,7 +6,6 @@ import json
 import torch
 import scipy.interpolate
 import sys
-import shutil
 
 from build_ll_controller import ll_controler
 from utils.ekf import ekf
@@ -27,7 +26,7 @@ with open(args.yaml_file, 'rt') as fh:
 
 # Delay start so files don't get overwritten during start up
 if yaml_p['environment'] == 'gps':
-    time.sleep(120)
+    time.sleep(160)
 
 import logging
 path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
@@ -63,7 +62,7 @@ def update_est(position, u, c, delta_t, delta_f_up, delta_f_down, mass_total, me
     est_x.one_cycle(0,position[0],c,delta_t, measurement=meas_GPS)
     est_y.one_cycle(0,position[1],c,delta_t, measurement=meas_GPS)
     est_z.one_cycle(force_est,position[2],c,delta_t, measurement=meas_ALT)
-    est_z.plot()
+
     position_est = [est_x.xhat_0[0], est_y.xhat_0[0], est_z.xhat_0[0]]
     return position_est
 
@@ -96,12 +95,6 @@ def gps_to_position(lat,lon,height, lat_start,lon_start):
 def get_center():
     center = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/coord.pt')
     return center[0], center[1]
-
-# clear all previous communication files
-path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication'
-if os.path.exists(path):
-    shutil.rmtree(path)
-    os.makedirs(path)
 
 # interpolation for terrain
 world = torch.load(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/world.pt')

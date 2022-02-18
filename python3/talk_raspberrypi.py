@@ -6,6 +6,7 @@ import datetime
 import pytz
 import json
 import sys
+import shutil
 
 from utils.raspberrypi_com import raspi_com
 
@@ -21,7 +22,7 @@ with open(args.yaml_file, 'rt') as fh:
 
 # Delay start so files don't get overwritten during start up
 if yaml_p['environment'] == 'gps':
-    time.sleep(160)
+    time.sleep(120)
 
 import logging
 path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger/'
@@ -51,6 +52,12 @@ def send(data):
     with open(path + 'action.txt', 'w') as f:
         f.write(json.dumps(data))
     return data
+
+# clear all previous communication files
+path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication'
+if os.path.exists(path):
+    shutil.rmtree(path)
+    os.makedirs(path)
 
 com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
 interval_initial = 60 #s
@@ -97,8 +104,51 @@ while True:
             action = receive('action.txt')
             data = receive('data.txt')
 
+            info = ''
+            info += 'act: ' + str(np.round(action['action'],3)) + ', '
+            info += 'act_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
+            info += 'act_ow: ' + str(action['action_overwrite']) + ', '
+            info += 'u_ow: ' + str(action['u_overwrite']) + ', '
+            info += 'lat: ' + str(np.round(data['gps_lat'],6)) + ', '
+            info += 'lon: ' + str(np.round(data['gps_lon'],6)) + ', '
+            info += 'hei: ' + str(np.round(data['gps_height'],1)) + 'm, '
+            info += 'rel_pos: ' + str(np.round(data['rel_pos_est'],3)) + ', '
+            info += 'u: ' + str(np.round(data['u'],1)) + ', '
+            info += 'stop_log: ' + str(action['stop_logger'])
+
+            # com fail
+            if com_fail >= 5:
+                action_overwrite = -1
+                info += ', com_err'
+                logger.error('com_fail, set action_overwrite = -1')
+
+            # thrust fail
+            if (data['velocity'][2] < 0) & (data['u'] > 0):
+                thrust_fail += 1
+            else:
+                thrust_fail = 0
+
+            if thrust_fail >= 5:
+                info += ', thrust_warn'
+                logger.error('thrust_fail')
+
+            # gps fail
+            gps_hist.append([data['gps_lat'], data['gps_lon'], data['gps_height']])
+            if len(gps_hist) > 2:
+                if np.sqrt((gps_hist[-1][0] - gps_hist[-2][0])**2 + (gps_hist[-1][1] - gps_hist[-2][1])**2 + (gps_hist[-1][2] - gps_hist[-2][2])**2) < 1e-10:
+                    gps_fail += 1
+                else:
+                    gps_fail = 0
+
+            if gps_fail >= 5:
+                info += ', gps_warn'
+                logger.error('gps_fail')
+
+            #receive
             try:
-                message, timestamp = com.receive_last_sms()
+                debug_time = time.time()
+                message, timestamp = com.update(info)
+                com_fail = 0
                 if timestamp > timestamp_start:
                     if (message == 'stop') & (stop_logger == False):
                         stop_logger = True
@@ -141,55 +191,8 @@ while True:
                 else:
                     logger.info('No new message, the latest one is from ' + str(timestamp) + ' and reads: ' + message)
             except:
-                logger.error('Could not receive')
-
-            info = ''
-            info += 'act: ' + str(np.round(action['action'],3)) + ', '
-            info += 'act_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
-            info += 'act_ow: ' + str(action['action_overwrite']) + ', '
-            info += 'u_ow: ' + str(action['u_overwrite']) + ', '
-            info += 'lat: ' + str(np.round(data['gps_lat'],6)) + ', '
-            info += 'lon: ' + str(np.round(data['gps_lon'],6)) + ', '
-            info += 'hei: ' + str(np.round(data['gps_height'],1)) + 'm, '
-            info += 'rel_pos: ' + str(np.round(data['rel_pos_est'],3)) + ', '
-            info += 'u: ' + str(np.round(data['u'],1)) + ', '
-            info += 'stop_log: ' + str(action['stop_logger'])
-
-            # com fail
-            if com_fail >= 5:
-                action_overwrite = -1
-                info += ', com_err'
-                logger.error('com_fail, set action_overwrite = -1')
-
-            # thrust fail
-            if (data['velocity'][2] < 0) & (data['u'] > 0):
-                thrust_fail += 1
-            else:
-                thrust_fail = 0
-
-            if thrust_fail >= 5:
-                info += ', thrust_warn'
-                logger.error('thrust_fail')
-
-            # gps fail
-            gps_hist.append([data['gps_lat'], data['gps_lon']])
-            if len(gps_hist) > 2:
-                if (gps_hist[-1][0] - gps_hist[-2][0])**2 + (gps_hist[-1][1] - gps_hist[-2][1])**2 < 1e-8:
-                    gps_fail += 1
-                else:
-                    gps_fail = 0
-
-            if gps_fail >= 5:
-                info += ', gps_warn'
-                logger.error('gps_fail')
-
-            if not bool_onlyreceive:
-                try:
-                    com.send_sms(info)
-                    com_fail = 0
-                except:
-                    com_fail += 1
-                    logger.error('Could not send')
+                logger.error('Could not send and receive')
+                com_fail += 1
 
             action['action_overwrite'] = action_overwrite
             action['u_overwrite'] = u_overwrite

@@ -20,9 +20,7 @@ class raspi_com():
 		self.rec_buff = ''
 
 		try:
-			self.power_on() #when I run this, it will already be powered on by control_raspberry
-			self.send_at("AT+CMGF=1","OK",1)
-			self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
+			self.power_on()
 			self.delete_sms()
 			self.send_sms('Communication initialized')
 		except :
@@ -31,33 +29,56 @@ class raspi_com():
 			GPIO.cleanup()
 
 	def send_at(self,command,back,timeout):
-		with FileLock(self.path + 'waveshare.lock'):
-			self.rec_buff = ''
-			self.ser.write((command+'\r\n').encode())
-			time.sleep(timeout)
-			if self.ser.inWaiting():
-				time.sleep(0.01)
-				self.rec_buff = self.ser.read(self.ser.inWaiting())
-			if type(self.rec_buff) != str:
-				if back not in self.rec_buff.decode(errors='ignore'):
-					logger.error('COM: ' + command + ' ERROR')
-					logger.error('COM: ' + command + ' back:\t' + self.rec_buff.decode())
-					return 0
-				else:
-					return 1
-			else:
-				logger.error('COM: ' + command + ' string back:\t' + self.rec_buff)
+		self.rec_buff = ''
+		self.ser.write((command+'\r\n').encode())
+		time.sleep(timeout)
+		if self.ser.inWaiting():
+			time.sleep(0.01)
+			self.rec_buff = self.ser.read(self.ser.inWaiting())
+		if type(self.rec_buff) != str:
+			if back not in self.rec_buff.decode(errors='ignore'):
+				logger.error('COM: ' + command + ' ERROR')
+				logger.error('COM: ' + command + ' back:\t' + self.rec_buff.decode())
 				return 0
+			else:
+				return 1
+		else:
+			logger.error('COM: ' + command + ' string back:\t' + self.rec_buff)
+			return 0
+
+	def update(self, message):
+		with FileLock(self.path + 'waveshare.lock'):
+			self.send_sms_nfl(message)
+			return self.receive_last_sms()
 
 	def send_sms(self,text_message,phone_number=None):
+		with FileLock(self.path + 'waveshare.lock'):
+			text_message = text_message[0:160] #avoid sending too large messages which lead to an error
+			if phone_number is None:
+				phone_number = self.phone_number
+			self.send_at("AT+CMGF=1","OK",1)
+			answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",1.5)
+			if 1 == answer:
+				self.ser.write(text_message.encode())
+				self.ser.write(b'\x1A')
+				answer = self.send_at('','OK',1.5)
+				if 1 == answer:
+					logger.info("COM: Sent SMS successfully")
+				else:
+					logger.error('COM: Sending error')
+			else:
+				logger.error('COM: Sending error%d'%answer)
+
+	def send_sms_nfl(self,text_message,phone_number=None):
 		text_message = text_message[0:160] #avoid sending too large messages which lead to an error
 		if phone_number is None:
 			phone_number = self.phone_number
-		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",1)
+		self.send_at("AT+CMGF=1","OK",1)
+		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",1.5)
 		if 1 == answer:
 			self.ser.write(text_message.encode())
 			self.ser.write(b'\x1A')
-			answer = self.send_at('','OK',1)
+			answer = self.send_at('','OK',1.5)
 			if 1 == answer:
 				logger.info("COM: Sent SMS successfully")
 			else:
@@ -65,36 +86,11 @@ class raspi_com():
 		else:
 			logger.error('COM: Sending error%d'%answer)
 
-	def receive_sms(self,ID):
-		self.rec_buff = ''
-		self.send_at('AT+CMGF=1','OK',1)
-		answer = self.send_at('AT+CMGR=' + str(ID),'+CMGR:',1)
-		if 1 == answer:
-			answer = 0
-			if 'OK'.encode('utf-8') in self.rec_buff:
-				answer = 1
-				rec_string = str(self.rec_buff).split("\\")
-
-				result = rec_string[-7][1::]
-				year = 2000 + int(rec_string[-9][-21:-19])
-				month = int(rec_string[-9][-18:-16])
-				day = int(rec_string[-9][-15:-13])
-				hour = int(rec_string[-9][-12:-10])
-				minute = int(rec_string[-9][-9:-7])
-				second = int(rec_string[-9][-6:-4])
-
-				timestamp = datetime.datetime(year,month,day,hour,minute,second)
-				timezone = pytz.timezone("Europe/Zurich")
-				timestamp = timezone.localize(timestamp)
-				return result, timestamp
-		else:
-			logger.error('COM: Receiving error%d'%answer)
-			return False
-		return True
-
 	def receive_last_sms(self):
 		self.rec_buff = ''
-		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1)
+		#self.send_at("AT+CMGF=1","OK",1)
+		#self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
+		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1.5)
 		if 1 == answer:
 			answer = 0
 			if 'OK'.encode('utf-8') in self.rec_buff:
@@ -118,26 +114,57 @@ class raspi_com():
 			logger.error('COM: Error in receive_last_sms')
 			return None
 
-	def list_sms(self):
-		self.rec_buff = ''
-		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1)
-		if 1 == answer:
-			answer = 0
-			if 'OK'.encode('utf-8') in self.rec_buff:
-				answer = 1
-				rec_string = str(self.rec_buff).split("\\")
-				last_ID = int(rec_string[-9].split(',')[0][8::])
+	def receive_sms(self,ID):
+		with FileLock(self.path + 'waveshare.lock'):
+			self.rec_buff = ''
+			self.send_at('AT+CMGF=1','OK',1)
+			self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
+			answer = self.send_at('AT+CMGR=' + str(ID),'+CMGR:',1.5)
+			if 1 == answer:
+				answer = 0
+				if 'OK'.encode('utf-8') in self.rec_buff:
+					answer = 1
+					rec_string = str(self.rec_buff).split("\\")
 
-				return last_ID
-		else:
-			logger.error('COM: Error in list_sms')
-			return None
+					result = rec_string[-7][1::]
+					year = 2000 + int(rec_string[-9][-21:-19])
+					month = int(rec_string[-9][-18:-16])
+					day = int(rec_string[-9][-15:-13])
+					hour = int(rec_string[-9][-12:-10])
+					minute = int(rec_string[-9][-9:-7])
+					second = int(rec_string[-9][-6:-4])
+
+					timestamp = datetime.datetime(year,month,day,hour,minute,second)
+					timezone = pytz.timezone("Europe/Zurich")
+					timestamp = timezone.localize(timestamp)
+					return result, timestamp
+			else:
+				logger.error('COM: Receiving error%d'%answer)
+				return False
+			return True
+
+	def list_sms(self):
+		with FileLock(self.path + 'waveshare.lock'):
+			self.rec_buff = ''
+			answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1.5)
+			if 1 == answer:
+				answer = 0
+				if 'OK'.encode('utf-8') in self.rec_buff:
+					answer = 1
+					rec_string = str(self.rec_buff).split("\\")
+					last_ID = int(rec_string[-9].split(',')[0][8::])
+
+					return last_ID
+			else:
+				logger.error('COM: Error in list_sms')
+				return None
 
 	def delete_sms(self):
-		self.rec_buff = ''
-		answer = self.send_at('AT+CMGD=1,4', 'OK', 1.5)
-		self.send_sms('inbox emptied', phone_number=self.simcard) #I can't read out an empty list
-		logger.info('COM: inbox emptied')
+		with FileLock(self.path + 'waveshare.lock'):
+			self.rec_buff = ''
+			answer = self.send_at('AT+CMGD=1,4', 'OK', 1.5)
+			self.send_sms_nfl('inbox emptied', phone_number=self.simcard) #I can't read out an empty list
+			logger.info('COM: inbox emptied')
 
 	def power_on(self):
 		with FileLock(self.path + 'waveshare.lock'):

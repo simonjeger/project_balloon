@@ -243,8 +243,8 @@ class character():
         not_done = True
 
         for n in range(self.n):
-            lag_int = int(self.delay/yaml_p['delta_t'])
-            lag_rest = self.delay - lag_int*yaml_p['delta_t']
+            lag_int = int(self.delay/yaml_p['delta_t_logger'])
+            lag_rest = self.delay - lag_int*yaml_p['delta_t_logger']
             if lag_rest < n*yaml_p['delta_t_physics']:
                 lag_int -= 1
             lag_int = np.clip(lag_int + 2,0,len(self.action_hist)) #extensively tested, I know it looks complicated, but it works
@@ -339,8 +339,8 @@ class character():
             self.update_est(force_est,self.c, self.delta_tn)
             self.set_measurement(self.est_x.wind(),self.est_y.wind())
 
-        self.velocity = (self.position - self.path[-self.n])/yaml_p['delta_t']
-        self.velocity_est = (self.position_est - self.path_est[-self.n])/yaml_p['delta_t']
+        self.velocity = (self.position - self.path[-self.n-1])/yaml_p['delta_t_logger']
+        self.velocity_est = (self.position_est - self.path_est[-self.n-1])/yaml_p['delta_t_logger']
 
         return not_done
 
@@ -410,8 +410,8 @@ class character():
         # update EKF
         self.set_measurement(data['measurement'][0],data['measurement'][1])
 
-        self.velocity = (self.position - self.position_old)/yaml_p['delta_t']
-        self.velocity_est = (self.position_est - self.position_est_old)/yaml_p['delta_t']
+        self.velocity = (self.position - self.position_old)/delta_t
+        self.velocity_est = (self.position_est - self.position_est_old)/delta_t
 
         self.position_old = self.position
         self.position_est_old = self.position_est

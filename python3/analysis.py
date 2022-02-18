@@ -221,7 +221,7 @@ def plot_3d_path():
             closest_idx = np.argmin(min_dist)
 
             ax.scatter3D((df_loc_cut['position_x'].iloc[closest_idx]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[closest_idx]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx]*yaml_p['unit_z'], color='green')
-            ax.set_title('min_distance: ' + str(int(min_dist[closest_idx])) + ' m')
+            #ax.set_title('min_distance: ' + str(int(min_dist[closest_idx])) + ' m')
 
             # mark the border of the box
             #ax.set_xlim3d(0, yaml_p['size_x'] - 1)
