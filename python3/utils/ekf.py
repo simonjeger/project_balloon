@@ -14,7 +14,11 @@ class ekf():
         self.Q_0[1,1] = 1
         self.Q_0[2,2] = 1                                                   #the acceleration is not actually zero
         self.Q_0[3,3] = 1                                                   #the wind is not actually zero
-        self.R_0 = [10, 100, 1, 100]                                        #measurement noise (dim_z, dim_z)
+        self.R_0 = np.eye((4))                                              #measurement noise (dim_z, dim_z)
+        self.R_0[0,0] = 20
+        self.R_0[1,1] = 40
+        self.R_0[2,2] = 100
+        self.R_0[3,3] = 10
         self.H_0 = np.eye((4))                                              #measurement function (dim_x, dim_x)
 
         self.hist_p = []                        #for plotting
@@ -30,12 +34,8 @@ class ekf():
 
         #v_rel = v - self.xhat_0[1]
         #a = self.u_0 - np.sign(v_rel)*self.c*v_rel**2
-        a = self.u_0
-        if type(self.u_0) != int:
-            v = self.xhat_0[1] + a*self.delta_t - np.sign(self.xhat_0[1])*self.xhat_0[1]**2*self.c #only for z dimension
-        else:
-            v = self.xhat_0[1] #for x,y dimension
-        v = np.clip(v,-0.03,0.03) #roughly 30 m/s
+        a = 0 #because acceleration is so quick anyway
+        v = self.xhat_0[1] + a
         p = self.xhat_0[0] + v*self.delta_t
         o = self.xhat_0[3]
         return np.array([p,v,a,o])

@@ -411,8 +411,8 @@ class character():
         self.set_measurement(data['measurement'][0],data['measurement'][1])
         last_idx = int(yaml_p['delta_t'] / yaml_p['delta_t_logger'])
         if last_idx + 1 < len(self.path):
-            self.velocity = (self.position - self.path[-last_idx-1])/yaml_p['delta_t_logger']
-            self.velocity_est = (self.position_est - self.path_est[-last_idx-1])/yaml_p['delta_t_logger']
+            self.velocity = (self.position - self.path[-last_idx-1])/(last_idx*yaml_p['delta_t_logger'])
+            self.velocity_est = (self.position_est - self.path_est[-last_idx-1])/(last_idx*yaml_p['delta_t_logger'])
 
         self.position_old = self.position
         self.position_est_old = self.position_est
@@ -558,7 +558,7 @@ class character():
         self.prop_mag = np.random.uniform(yaml_p['prop_mag_min'], yaml_p['prop_mag_max'])
 
     def update_est(self,u,c,delta_t):
-        std = 0 #sensor noise
+        std = 0.01 #sensor noise
         if self.train_or_test == 'test':
             np.random.seed(self.seed)
             self.seed +=1
@@ -632,10 +632,15 @@ class character():
         coord_z = int(np.clip(self.position[2],0,self.size_z - 1))
 
         fig, ax = plt.subplots(2)
-        mag = 1
-        ax[1].imshow(self.world_est[1,:,coord_y,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-mag, vmax=mag)
+        if yaml_p['balloon'] == 'outdoor_balloon':
+            mag = 20
+        elif yaml_p['balloon'] == 'indoor_balloon':
+            mag = 1.5
+        else:
+            print('ERROR: Choose an existing balloon type')
+        ax[1].imshow(self.world_est[1,:,coord_y,:].T, origin='lower', cmap=cmap, alpha=1, vmin=-mag, vmax=mag)
         ax[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
-        ax[0].imshow(self.world_est[2,coord_x,:,:].T, origin='lower', cmap=cmap, alpha=0.7, vmin=-mag, vmax=mag)
+        ax[0].imshow(self.world_est[2,coord_x,:,:].T, origin='lower', cmap=cmap, alpha=1, vmin=-mag, vmax=mag)
         ax[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_xy'])
 
         plt.savefig('debug_imshow.png')

@@ -64,7 +64,7 @@ def visualize_world(tensor, position, ceiling):
             ax.imshow(dir_y.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=1, vmin=-limit, vmax=limit)
 
             cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
-            ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=0.7, vmin=-limit, vmax=limit)
+            ax.imshow(dir_x.T, origin='lower', extent=[0, local_size_x, 0, local_size_y], cmap=cmap, alpha=1, vmin=-limit, vmax=limit)
 
         # draw terrain & coordinate system
         c_terrain = (161/255,135/255,93/255) #because plt uses values between 0 and 1
