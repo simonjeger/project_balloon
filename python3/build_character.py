@@ -48,7 +48,7 @@ class character():
             self.position = copy.copy(self.start)
         else:
             data = self.receive('data.txt')
-            self.position = np.array(data['position'])
+            self.position = np.array(data['position_est'])
         self.velocity = np.array([0,0,0])
 
         self.ll_controler = ll_controler()
@@ -159,8 +159,6 @@ class character():
         self.p_z = 0
 
         self.prev_time = time.time()
-        self.position_old = self.position
-        self.position_est_old = self.position_est
 
         self.U_integrated_prev = 0 #only for live_particle
         self.u_hist = [] #I don't want to easy scenarios in random roll out, so I only accept thos that had a negative u at some point
@@ -187,6 +185,7 @@ class character():
 
         #to debug
         #self.est_y.plot()
+        #self.est_z.plot()
 
         return not_done
 
@@ -292,6 +291,7 @@ class character():
             v_x = np.clip(v_x, -w_x, w_x)
             v_y = np.clip(v_y, -w_y, w_y)
             v_z = np.clip(v_z, -w_z + self.term_velocity[1], w_z + self.term_velocity[0])
+            self.velocity = [v_x, v_y, v_z]
 
             # update
             self.position += [v_x*self.delta_tn, v_y*self.delta_tn, v_z*self.delta_tn]
@@ -339,9 +339,6 @@ class character():
             self.update_est(force_est,self.c, self.delta_tn)
             self.set_measurement(self.est_x.wind(),self.est_y.wind())
 
-        self.velocity = (self.position - self.path[-self.n-1])/yaml_p['delta_t_logger']
-        self.velocity_est = (self.position_est - self.path_est[-self.n-1])/yaml_p['delta_t_logger']
-
         return not_done
 
     def live_particle(self):
@@ -384,12 +381,12 @@ class character():
         data = self.receive('data.txt')
 
         # update
-        self.position = np.array(data['position'])
+        self.position = np.array(data['position_est'])
         self.position_est = np.array(data['position_est'])
-        [self.p_x, self.p_y, self.p_z] = data['velocity']
+        [self.p_x, self.p_y, self.p_z] = data['velocity_est']
 
         # write down path in history
-        self.path = np.array(data['path'])
+        self.path = np.array(data['path_est'])
         self.path_est = np.array(data['path_est'])
 
         self.min_proj_dist = data['min_proj_dist']
@@ -410,12 +407,8 @@ class character():
         # update EKF
         self.set_measurement(data['measurement'][0],data['measurement'][1])
         last_idx = int(yaml_p['delta_t'] / yaml_p['delta_t_logger'])
-        if last_idx + 1 < len(self.path):
-            self.velocity = (self.position - self.path[-last_idx-1])/(last_idx*yaml_p['delta_t_logger'])
-            self.velocity_est = (self.position_est - self.path_est[-last_idx-1])/(last_idx*yaml_p['delta_t_logger'])
-
-        self.position_old = self.position
-        self.position_est_old = self.position_est
+        self.velocity = data['velocity_est']
+        self.velocity_est = data['velocity_est']
 
         return not_done
 
@@ -568,6 +561,7 @@ class character():
         self.est_y.one_cycle(0,self.position[1] + noise[1], c, delta_t)
         self.est_z.one_cycle(u,self.position[2] + noise[2], c, delta_t)
         self.position_est = np.array([self.est_x.xhat_0[0], self.est_y.xhat_0[0], self.est_z.xhat_0[0]])
+        self.velocity_est = np.array([self.est_x.xhat_0[1], self.est_y.xhat_0[1], self.est_z.xhat_0[1]])
 
         if np.linalg.norm(self.position) != 0:
             self.esterror_pos = np.linalg.norm(self.position - self.position_est)/np.linalg.norm(self.position)
