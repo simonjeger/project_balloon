@@ -132,7 +132,6 @@ class balloon3d(Env):
 
         else:
             reward_step = yaml_p['bounds'] + (init_proj_min - min_proj_dist)/init_proj_min*yaml_p['min_proj_dist']
-            self.character.t = 0
             success = 0
             done = True
 

@@ -30,6 +30,7 @@ class raspi_com():
 
 	def send_at(self,command,back,timeout):
 		self.rec_buff = ''
+		self.ser.flush()
 		self.ser.write((command+'\r\n').encode())
 		time.sleep(timeout)
 		if self.ser.inWaiting():

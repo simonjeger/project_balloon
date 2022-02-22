@@ -210,7 +210,16 @@ def plot_3d_path():
 
             # plot path in 3d
             ax.plot3D((df_loc_cut['position_x']-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y']-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z']*yaml_p['unit_z'], color=colors[c])
-            ax.scatter((df_loc_cut['position_x']-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y']-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z']*yaml_p['unit_z'], s=0.2, color='orange')
+
+            for i in range(len(df_loc_cut)):
+                if df_loc_cut['decision'].iloc[i]:
+                    color_scatter = 'orange'
+                    size_scatter = 10
+                else:
+                    color_scatter = 'yellow'
+                    size_scatter = 0.2
+                ax.scatter((df_loc_cut['position_x'].iloc[i]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[i]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[i]*yaml_p['unit_z'], s=size_scatter, color=color_scatter)
+
             if yaml_p['3d']:
                 ax.scatter3D((df_loc['target_x']-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc['target_y']-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc['target_z']*yaml_p['unit_z'], color='grey')
             else:

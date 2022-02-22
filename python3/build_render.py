@@ -71,7 +71,7 @@ class render():
         t_action = myfont.render('action: ' + str(np.round(character.action,3)), False, pygame.Color('LightGray'))
         t_diameter = myfont.render('diameter: ' + str(np.round(character.diameter,2)), False, pygame.Color('LightGray'))
         t_battery_level = myfont.render('battery_level: ' + str(np.round(character.battery_level,2)), False, pygame.Color('LightGray'))
-        t_time = myfont.render('time: ' + str(np.round(character.t,2)), False, pygame.Color('LightGray'))
+        t_time = myfont.render('time: ' + str(np.round((character.T - character.t)/60,2)) + ' / ' + str(np.round(character.T/60,2)) + ' min', False, pygame.Color('LightGray'))
         t_residual = myfont.render('residual: ' + str([round(num, 3) for num in character.state[0:3].tolist()]), False, pygame.Color('LightGray'))
         t_velocity = myfont.render('velocity: ' + str([round(num, 3) for num in character.state[3:6].tolist()]), False, pygame.Color('LightGray'))
 

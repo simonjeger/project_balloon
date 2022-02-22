@@ -26,6 +26,7 @@ class raspi_gps:
 
 	def send_at(self,command,back,timeout):
 		rec_buff = ''
+		self.ser.flush()
 		self.ser.write((command+'\r\n').encode())
 		time.sleep(timeout)
 		if self.ser.inWaiting():
