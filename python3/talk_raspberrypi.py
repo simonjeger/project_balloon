@@ -123,7 +123,7 @@ while True:
                 logger.error('com_fail, set action_overwrite = -1')
 
             # thrust fail
-            if (data['velocity'][2] < 0) & (data['u'] > 0):
+            if (data['velocity_est'][2] < 0) & (data['u'] > 0):
                 thrust_fail += 1
             else:
                 thrust_fail = 0
