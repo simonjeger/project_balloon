@@ -10,11 +10,11 @@ logger=logging.getLogger()
 class raspi_gps:
 	def __init__(self,path):
 		self.ser = serial.Serial('/dev/ttyUSB2',115200)
+		self.ser.timeout = 2
 		self.ser.flushInput()
 
 		self.path = path
 		self.power_key = 6
-		rec_buff = ''
 
 		try:
 			self.power_on()
@@ -24,16 +24,27 @@ class raspi_gps:
 			self.power_off()
 			GPIO.cleanup()
 
-	def send_at(self,command,back,timeout):
-		rec_buff = ''
+	def send_at(self,command,back):
+		rec_buff = b''
 		self.ser.flush()
 		self.ser.write((command+'\r\n').encode())
-		time.sleep(timeout)
+
+		"""
+		time.sleep(2)
 		if self.ser.inWaiting():
 			time.sleep(0.01 )
 			rec_buff = self.ser.read(self.ser.inWaiting())
+		"""
+
+		start = time.time()
+		while time.time() - start < 4:
+			rec_buff += self.ser.read_until(b'\r\n')
+			if ('OK'.encode() in rec_buff) | ('ERROR'.encode() in rec_buff):
+				break
+
+
 		if rec_buff != '':
-			if back not in rec_buff.decode():
+			if back.encode() not in rec_buff:
 				return 0, rec_buff
 			else:
 				return 1, rec_buff
@@ -43,7 +54,6 @@ class raspi_gps:
 
 	def init_gps_position(self,max_cycles=5):
 		answer = 0
-		rec_buff = ''
 		for c in range(max_cycles):
 			logger.info('GPS: getting fixture (' + str(c) + ' out of ' + str(max_cycles) + ' tries)')
 			pos = self.get_gps_position()
@@ -54,9 +64,8 @@ class raspi_gps:
 	def get_gps_position(self):
 		with FileLock(self.path + 'waveshare.lock'):
 			answer = 0
-			rec_buff = ''
-			self.send_at('AT+CGPS=1,1','OK',1.5)
-			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ',0.5)
+			self.send_at('AT+CGPS=1,1','OK')
+			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ')
 			if 1 == answer:
 				answer = 0
 				if ',,,,,,' in str(result):
@@ -83,9 +92,8 @@ class raspi_gps:
 					return lat,lon,height
 			else:
 				logger.error('GPS: error ' + str(result))
-				rec_buff = ''
-				self.send_at('AT+CGPS=0','OK',1.5)
-				self.send_at('AT+CGPS=1,1','OK',1.5)
+				self.send_at('AT+CGPS=0','OK')
+				#self.send_at('AT+CGPS=1,1','OK')
 
 	def convert_min_to_dec(self,lat_or_lon):
 		deg = str(lat_or_lon)[0:-9]

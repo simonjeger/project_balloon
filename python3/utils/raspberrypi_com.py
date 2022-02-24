@@ -11,6 +11,7 @@ logger=logging.getLogger()
 class raspi_com():
 	def __init__(self,phone_number,path):
 		self.ser = serial.Serial("/dev/ttyUSB2",115200)
+		self.ser.timeout = 2
 		self.ser.flushInput()
 
 		self.phone_number = phone_number
@@ -28,41 +29,44 @@ class raspi_com():
 				self.ser.close()
 			GPIO.cleanup()
 
-	def send_at(self,command,back,timeout):
-		self.rec_buff = ''
+	def send_at(self,command,back):
+		rec_buff = b''
 		self.ser.flush()
 		self.ser.write((command+'\r\n').encode())
-		time.sleep(timeout)
-		if self.ser.inWaiting():
-			time.sleep(0.01)
-			self.rec_buff = self.ser.read(self.ser.inWaiting())
-		if type(self.rec_buff) != str:
-			if back not in self.rec_buff.decode(errors='ignore'):
-				logger.error('COM: ' + command + ' ERROR')
-				logger.error('COM: ' + command + ' back:\t' + self.rec_buff.decode())
-				return 0
-			else:
-				return 1
-		else:
-			logger.error('COM: ' + command + ' string back:\t' + self.rec_buff)
+
+		start = time.time()
+		while time.time() - start < 4:
+			rec_buff += self.ser.read_until(b'\r\n')
+			if ('OK'.encode() in rec_buff) | ('ERROR'.encode() in rec_buff):
+				break
+		if back.encode() not in rec_buff:
+			logger.error('COM: ' + command + ' ERROR')
+			logger.error('COM: ' + command + ' back:\t' + rec_buff.decode())
 			return 0
+		else:
+			self.rec_buff = rec_buff
+			return 1
 
 	def update(self, message):
 		with FileLock(self.path + 'waveshare.lock'):
-			self.send_sms_nfl(message)
-			return self.receive_last_sms()
+			if self.signal_quality() >= 15:
+				self.send_sms_nfl(message)
+				answer = self.receive_last_sms()
+			else:
+				answer = None
+			return answer
 
 	def send_sms(self,text_message,phone_number=None):
 		with FileLock(self.path + 'waveshare.lock'):
 			text_message = text_message[0:160] #avoid sending too large messages which lead to an error
 			if phone_number is None:
 				phone_number = self.phone_number
-			self.send_at("AT+CMGF=1","OK",1)
-			answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",1.5)
+			self.send_at("AT+CMGF=1","OK")
+			answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">")
 			if 1 == answer:
 				self.ser.write(text_message.encode())
 				self.ser.write(b'\x1A')
-				answer = self.send_at('','OK',1.5)
+				answer = self.send_at('','OK')
 				if 1 == answer:
 					logger.info("COM: Sent SMS successfully")
 				else:
@@ -74,12 +78,12 @@ class raspi_com():
 		text_message = text_message[0:160] #avoid sending too large messages which lead to an error
 		if phone_number is None:
 			phone_number = self.phone_number
-		self.send_at("AT+CMGF=1","OK",1)
-		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">",1.5)
+		self.send_at("AT+CMGF=1","OK") #put into text mode
+		answer = self.send_at("AT+CMGS=\""+phone_number+"\"",">")
 		if 1 == answer:
 			self.ser.write(text_message.encode())
 			self.ser.write(b'\x1A')
-			answer = self.send_at('','OK',1.5)
+			answer = self.send_at('','OK')
 			if 1 == answer:
 				logger.info("COM: Sent SMS successfully")
 			else:
@@ -89,12 +93,12 @@ class raspi_com():
 
 	def receive_last_sms(self):
 		self.rec_buff = ''
-		#self.send_at("AT+CMGF=1","OK",1)
-		#self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
-		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1.5)
+		self.send_at("AT+CMGF=1","OK")
+		self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK') #details to where to storage SMS
+		answer = self.send_at('AT+CMGL="ALL"', '+CMGL:')
 		if 1 == answer:
 			answer = 0
-			if 'OK'.encode('utf-8') in self.rec_buff:
+			if 'OK'.encode() in self.rec_buff:
 				answer = 1
 				rec_string = str(self.rec_buff).split("\\")
 				last_ID = int(rec_string[-9].split(',')[0][8::])
@@ -118,12 +122,12 @@ class raspi_com():
 	def receive_sms(self,ID):
 		with FileLock(self.path + 'waveshare.lock'):
 			self.rec_buff = ''
-			self.send_at('AT+CMGF=1','OK',1)
-			self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK', 1)
-			answer = self.send_at('AT+CMGR=' + str(ID),'+CMGR:',1.5)
+			self.send_at('AT+CMGF=1','OK')
+			self.send_at('AT+CPMS=\"SM\",\"SM\",\"SM\"', 'OK')
+			answer = self.send_at('AT+CMGR=' + str(ID),'+CMGR:')
 			if 1 == answer:
 				answer = 0
-				if 'OK'.encode('utf-8') in self.rec_buff:
+				if 'OK'.encode() in self.rec_buff:
 					answer = 1
 					rec_string = str(self.rec_buff).split("\\")
 
@@ -147,7 +151,7 @@ class raspi_com():
 	def list_sms(self):
 		with FileLock(self.path + 'waveshare.lock'):
 			self.rec_buff = ''
-			answer = self.send_at('AT+CMGL="ALL"', '+CMGL:', 1.5)
+			answer = self.send_at('AT+CMGL="ALL"', '+CMGL:')
 			if 1 == answer:
 				answer = 0
 				if 'OK'.encode('utf-8') in self.rec_buff:
@@ -163,9 +167,17 @@ class raspi_com():
 	def delete_sms(self):
 		with FileLock(self.path + 'waveshare.lock'):
 			self.rec_buff = ''
-			answer = self.send_at('AT+CMGD=1,4', 'OK', 1.5)
+			answer = self.send_at('AT+CMGD=1,4', 'OK')
 			self.send_sms_nfl('inbox emptied', phone_number=self.simcard) #I can't read out an empty list
 			logger.info('COM: inbox emptied')
+
+	def signal_quality(self):
+		self.rec_buff = ''
+		answer = self.send_at('AT+CSQ', 'CSQ')
+		rec_string = str(self.rec_buff).split("\\")
+		strength = int(rec_string[3][7:9])
+		logger.info('COM: signal quality ' + str(strength))
+		return strength
 
 	def power_on(self):
 		with FileLock(self.path + 'waveshare.lock'):
