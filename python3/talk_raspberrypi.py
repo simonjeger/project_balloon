@@ -66,6 +66,7 @@ action_overwrite = False
 u_overwrite = False
 stop_logger = False
 com_fail = 0
+reboot = False
 thrust_fail = 0
 gps_hist = []
 gps_fail = 0
@@ -82,21 +83,21 @@ while True:
     t_start = time.time()
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/data.txt'):
-        time.sleep(5)
-        logger.info('Waiting for the low level controller to publish')
+        time.sleep(1)
     else:
         if bool_data == False:
+            logger.info('Low level controller ready')
             com.send_sms('Low level controller ready')
-        time.sleep(5)
+        time.sleep(1)
         bool_data = True
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
-        time.sleep(5)
-        logger.info('Waiting for the algorithm to publish')
+        time.sleep(1)
     else:
         if bool_action == False:
+            logger.info('Algorithm ready')
             com.send_sms('Algorithm ready')
-        time.sleep(5)
+        time.sleep(1)
         bool_action = True
 
     if (bool_data & bool_action):
@@ -105,22 +106,25 @@ while True:
             data = receive('data.txt')
 
             info = ''
-            info += 'act: ' + str(np.round(action['action'],3)) + ', '
-            info += 'act_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
+            if yaml_p['balloon'] == 'outdoor_balloon':
+                info += 'act: ' + str(np.round(action['action'],3)) + ', '
+            else:
+                info += 'act_asl: ' + str(np.round(action['action_asl'],1)) + 'm, '
             info += 'act_ow: ' + str(action['action_overwrite']) + ', '
             info += 'u_ow: ' + str(action['u_overwrite']) + ', '
-            info += 'lat: ' + str(np.round(data['gps_lat'],6)) + ', '
-            info += 'lon: ' + str(np.round(data['gps_lon'],6)) + ', '
+            info += 'http://maps.google.com/?q=' + str(np.round(data['gps_lat'],6)) + ',' + str(np.round(data['gps_lon'],6))+ ' '
             info += 'hei: ' + str(np.round(data['gps_height'],1)) + 'm, '
             info += 'rel_pos: ' + str(np.round(data['rel_pos_est'],3)) + ', '
             info += 'u: ' + str(np.round(data['u'],1)) + ', '
             info += 'stop_log: ' + str(action['stop_logger'])
 
             # com fail
-            if com_fail >= 5:
+            if com_fail >= 10:
+                com.min_signal = 0 #so sending out a message becomes more likely
                 action_overwrite = -1
                 info += ', com_err'
                 logger.error('com_fail, set action_overwrite = -1')
+                reboot = True
 
             # thrust fail
             if (data['velocity_est'][2] < 0) & (data['u'] > 0):
@@ -140,13 +144,12 @@ while True:
                 else:
                     gps_fail = 0
 
-            if gps_fail >= 5:
+            if gps_fail >= 1:
                 info += ', gps_warn'
                 logger.error('gps_fail')
 
             #receive
             try:
-                debug_time = time.time()
                 message, timestamp = com.update(info)
                 com_fail = 0
                 if timestamp > timestamp_start:
@@ -205,6 +208,13 @@ while True:
             if bool_start:
                 with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/start.txt', 'w') as f:
                     f.write('start')
+
+            if reboot:
+                logger.error('Rebooting communication')
+                com.power_off()
+                com.power_on()
+                com_fail = 0
+                reboot = False
 
             wait = interval - (time.time() - t_start)
             if wait > 0:

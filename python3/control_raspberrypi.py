@@ -109,6 +109,19 @@ while True: #search until found
     try:
         gps = raspi_gps(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
         lat,lon,height = gps.init_gps_position()
+
+        new_pos = np.array([np.nan,np.nan,np.nan])
+        deviation = np.nan
+        i = 0
+        while (deviation > 1) | (i < 5): #only continue if position is consistent to 1m and I want to get at least 5 fixtures before continuing
+            old_pos = new_pos[:]
+            lat,lon,height = gps.get_gps_position()
+            position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
+            new_pos = np.array([position_meas[0]*yaml_p['unit_xy'], position_meas[1]*yaml_p['unit_xy'], position_meas[2]*yaml_p['unit_z']])
+            deviation = np.linalg.norm(new_pos - old_pos)
+            logger.info('RBP: initial fixture nr. ' + str(i) + ' with deviation of ' + str(np.round(deviation,2)) + ' m')
+            time.sleep(yaml_p['delta_t_physics']) #simulate the regular time difference
+            i += 1
         break
     except:
         logger.error('RBP: failed to find GPS fixture, will try again')
@@ -162,7 +175,7 @@ while True:
     lat_start,lon_start = get_center()
 
     if not os.path.isfile(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/action.txt'):
-        time.sleep(1)
+        time.sleep(5)
         logger.info('RBP: waiting for the algorithm to publish at ' + str(int(time.time() - global_start)) + ' s after starting')
 
         position_est = update_est(position_meas, u, c, delta_t, delta_f_up, delta_f_down, mass_total, True, True)

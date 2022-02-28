@@ -16,6 +16,7 @@ class raspi_com():
 
 		self.phone_number = phone_number
 		self.simcard = '0791747954' #sim card in balloon
+		self.min_signal = 16
 		self.path = path
 		self.power_key = 6
 		self.rec_buff = ''
@@ -34,6 +35,7 @@ class raspi_com():
 		self.ser.flush()
 		self.ser.write((command+'\r\n').encode())
 
+		logger.info(40)
 		start = time.time()
 		while time.time() - start < 4:
 			rec_buff += self.ser.read_until(b'\r\n')
@@ -49,7 +51,7 @@ class raspi_com():
 
 	def update(self, message):
 		with FileLock(self.path + 'waveshare.lock'):
-			if self.signal_quality() >= 15:
+			if self.signal_strength() >= self.min_signal:
 				self.send_sms_nfl(message)
 				answer = self.receive_last_sms()
 			else:
@@ -73,6 +75,7 @@ class raspi_com():
 					logger.error('COM: Sending error')
 			else:
 				logger.error('COM: Sending error%d'%answer)
+			self.send_at('AT+CMGF=0','OK')
 
 	def send_sms_nfl(self,text_message,phone_number=None):
 		text_message = text_message[0:160] #avoid sending too large messages which lead to an error
@@ -90,6 +93,7 @@ class raspi_com():
 				logger.error('COM: Sending error')
 		else:
 			logger.error('COM: Sending error%d'%answer)
+		self.send_at('AT+CMGF=0','OK')
 
 	def receive_last_sms(self):
 		self.rec_buff = ''
@@ -114,9 +118,11 @@ class raspi_com():
 				timezone = pytz.timezone("Europe/Zurich")
 				timestamp = timezone.localize(timestamp)
 
+				self.send_at('AT+CMGF=0','OK')
 				return result, timestamp
 		else:
 			logger.error('COM: Error in receive_last_sms')
+			self.send_at('AT+CMGF=0','OK')
 			return None
 
 	def receive_sms(self,ID):
@@ -142,9 +148,12 @@ class raspi_com():
 					timestamp = datetime.datetime(year,month,day,hour,minute,second)
 					timezone = pytz.timezone("Europe/Zurich")
 					timestamp = timezone.localize(timestamp)
+
+					self.send_at('AT+CMGF=0','OK')
 					return result, timestamp
 			else:
 				logger.error('COM: Receiving error%d'%answer)
+				self.send_at('AT+CMGF=0','OK')
 				return False
 			return True
 
@@ -171,12 +180,12 @@ class raspi_com():
 			self.send_sms_nfl('inbox emptied', phone_number=self.simcard) #I can't read out an empty list
 			logger.info('COM: inbox emptied')
 
-	def signal_quality(self):
+	def signal_strength(self):
 		self.rec_buff = ''
 		answer = self.send_at('AT+CSQ', 'CSQ')
 		rec_string = str(self.rec_buff).split("\\")
 		strength = int(rec_string[3][7:9])
-		logger.info('COM: signal quality ' + str(strength))
+		logger.info('COM: signal strength ' + str(strength))
 		return strength
 
 	def power_on(self):

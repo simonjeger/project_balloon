@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 import serial
 import time
 from filelock import FileLock
+import numpy as np
 
 import logging
 logger=logging.getLogger()
@@ -29,19 +30,11 @@ class raspi_gps:
 		self.ser.flush()
 		self.ser.write((command+'\r\n').encode())
 
-		"""
-		time.sleep(2)
-		if self.ser.inWaiting():
-			time.sleep(0.01 )
-			rec_buff = self.ser.read(self.ser.inWaiting())
-		"""
-
 		start = time.time()
 		while time.time() - start < 4:
 			rec_buff += self.ser.read_until(b'\r\n')
 			if ('OK'.encode() in rec_buff) | ('ERROR'.encode() in rec_buff):
 				break
-
 
 		if rec_buff != '':
 			if back.encode() not in rec_buff:
@@ -52,7 +45,7 @@ class raspi_gps:
 			logger.error('GPS: not ready')
 			return 0, rec_buff
 
-	def init_gps_position(self,max_cycles=5):
+	def init_gps_position(self,max_cycles=60):
 		answer = 0
 		for c in range(max_cycles):
 			logger.info('GPS: getting fixture (' + str(c) + ' out of ' + str(max_cycles) + ' tries)')
@@ -65,7 +58,9 @@ class raspi_gps:
 		with FileLock(self.path + 'waveshare.lock'):
 			answer = 0
 			self.send_at('AT+CGPS=1,1','OK')
+			self.info()
 			answer, result = self.send_at('AT+CGPSINFO','+CGPSINFO: ')
+			#self.send_at('AT+CGPS=0','OK') this actually breaks the whole thing
 			if 1 == answer:
 				answer = 0
 				if ',,,,,,' in str(result):
@@ -89,17 +84,22 @@ class raspi_gps:
 						lat *= -1
 					if lon_dir == 'W':
 						lon *= -1
+
+					logger.info('GPS: lat ' + str(np.round(lat,6)) + ', lon ' + str(np.round(lon,6)) + ', height ' + str(np.round(height,2)) + ' m')
 					return lat,lon,height
 			else:
 				logger.error('GPS: error ' + str(result))
-				self.send_at('AT+CGPS=0','OK')
-				#self.send_at('AT+CGPS=1,1','OK')
 
 	def convert_min_to_dec(self,lat_or_lon):
 		deg = str(lat_or_lon)[0:-9]
 		min = str(lat_or_lon)[-9:-1]
 		res = float(deg) + float(min)/60
 		return res
+
+	def info(self):
+		answer, result = self.send_at('AT+CGPS?', 'CGPS')
+		rec_string = str(result).split("\\")
+		logger.info('GPS: info ' + str(rec_string))
 
 	def power_on(self):
 		with FileLock(self.path + 'waveshare.lock'):
