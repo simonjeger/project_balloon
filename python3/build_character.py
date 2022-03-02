@@ -185,7 +185,7 @@ class character():
 
         #to debug
         #self.est_y.plot()
-        #self.est_z.plot()
+        self.est_z.plot()
 
         return not_done
 
@@ -456,10 +456,8 @@ class character():
         return f_net #N
 
     def height_above_ground(self, est=False):
-        #self.terrain_est = self.f_terrain(self.position_est[0], self.position_est[1])[0]
-        self.terrain = self.f_terrain(self.start[0], self.start[1])[0]
-        #self.terrain = self.f_terrain(self.position_est[0], self.position[1])[0] #is used by the logger
-        self.terrain_est = self.f_terrain(self.start[0], self.start[1])[0]
+        self.terrain_est = self.f_terrain(self.position_est[0], self.position_est[1])[0]
+        self.terrain = self.f_terrain(self.position_est[0], self.position[1])[0] #is used by the logger
         if est:
             return self.position_est[2] - self.terrain_est
         else:

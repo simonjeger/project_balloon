@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt #for debugging only
 
 class ekf():
-    def __init__(self, x_0):
+    def __init__(self, x_0, noise_factor=1):
         self.xhat_0 = np.array([x_0,0,0,0])                                 #predicted state
 
-        self.z_hist = [x_0,x_0]                                                 #memory states
+        self.z_hist = [x_0,x_0]                                             #memory states
 
         self.P_0 = np.ones((4))                                             #error covariance (dim_x, dim_x)
         self.W_0 = np.ones((4))                                             #noise covariance (dim_x, dim_x)
@@ -15,10 +15,10 @@ class ekf():
         self.Q_0[2,2] = 1                                                   #the acceleration is not actually zero
         self.Q_0[3,3] = 1                                                   #the wind is not actually zero
         self.R_0 = np.eye((4))                                              #measurement noise (dim_z, dim_z)
-        self.R_0[0,0] = 20
-        self.R_0[1,1] = 40
-        self.R_0[2,2] = 100
-        self.R_0[3,3] = 10
+        self.R_0[0,0] = 20*noise_factor
+        self.R_0[1,1] = 40*noise_factor
+        self.R_0[2,2] = 100*noise_factor
+        self.R_0[3,3] = 10*noise_factor
         self.H_0 = np.eye((4))                                              #measurement function (dim_x, dim_x)
 
         self.hist_p = []                        #for plotting

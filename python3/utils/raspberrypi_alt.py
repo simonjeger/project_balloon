@@ -21,6 +21,7 @@ class raspi_alt:
     def __init__(self):
         i2c = board.I2C()
         self.bmp = adafruit_bmp3xx.BMP3XX_I2C(i2c, address=0x77)
+        self.prev_meas = None
 
     def set_QNH(self,terrain):
         QNH_min = 930
@@ -43,4 +44,6 @@ class raspi_alt:
         return abs(terrain*yaml_p['unit_z'] - self.bmp.altitude)
 
     def get_altitude(self):
-        return self.bmp.altitude
+        meas = self.bmp.altitude
+        logger.info('ALT: alt ' + str(np.round(meas,2)) + ' m')
+        return meas

@@ -35,7 +35,6 @@ class raspi_com():
 		self.ser.flush()
 		self.ser.write((command+'\r\n').encode())
 
-		logger.info(40)
 		start = time.time()
 		while time.time() - start < 4:
 			rec_buff += self.ser.read_until(b'\r\n')

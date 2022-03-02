@@ -66,7 +66,7 @@ action_overwrite = False
 u_overwrite = False
 stop_logger = False
 com_fail = 0
-reboot = False
+emergency_landing = False
 thrust_fail = 0
 gps_hist = []
 gps_fail = 0
@@ -121,10 +121,16 @@ while True:
             # com fail
             if com_fail >= 10:
                 com.min_signal = 0 #so sending out a message becomes more likely
-                action_overwrite = -1
                 info += ', com_err'
-                logger.error('com_fail, set action_overwrite = -1')
-                reboot = True
+                logger.error('com_fail, removing communication threshold')
+
+            else:
+                com.min_signal = 16 #setting threshold back to the original value
+
+            if (com_fail >= 15) | emergency_landing:
+                action_overwrite = -1
+                emergency_landing = True
+                logger.error('Emergency landing, overwriting action to: ' + str(action_overwrite))
 
             # thrust fail
             if (data['velocity_est'][2] < 0) & (data['u'] > 0):
@@ -208,13 +214,6 @@ while True:
             if bool_start:
                 with open(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/start.txt', 'w') as f:
                     f.write('start')
-
-            if reboot:
-                logger.error('Rebooting communication')
-                com.power_off()
-                com.power_on()
-                com_fail = 0
-                reboot = False
 
             wait = interval - (time.time() - t_start)
             if wait > 0:
