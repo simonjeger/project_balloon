@@ -153,6 +153,7 @@ class character():
         else:
             self.min_proj_dist = np.sqrt((self.residual[1]*self.render_ratio/self.radius_xy)**2 + (self.residual[2]/self.radius_z)**2)
             self.min_dist = np.sqrt((self.residual[1]*self.render_ratio)**2 + (self.residual[2])**2)
+
         #for move_particle (previous velocity is zero at the beginning)
         self.p_x = 0
         self.p_y = 0
@@ -162,6 +163,8 @@ class character():
 
         self.U_integrated_prev = 0 #only for live_particle
         self.u_hist = [] #I don't want to easy scenarios in random roll out, so I only accept thos that had a negative u at some point
+
+        self.pos_z_hist = (np.ones(int(yaml_p['delta_t']/yaml_p['delta_t_logger'])+1)*self.position[2]).tolist() #only for live particle velocity calculation in z dimension
 
     def update(self, action, world):
         self.action = action
@@ -339,6 +342,8 @@ class character():
             self.update_est(force_est,self.c, self.delta_tn)
             self.set_measurement(self.est_x.wind(),self.est_y.wind())
 
+        self.velocity_est[2] = (self.position_est[2] - self.path_est[-self.n][2])/yaml_p['delta_t_logger'] #from a logic point of view that's correct, but it should be delta_t. It's the same anyway during training
+
         return not_done
 
     def live_particle(self):
@@ -409,6 +414,10 @@ class character():
         last_idx = int(yaml_p['delta_t'] / yaml_p['delta_t_logger'])
         self.velocity = data['velocity_est']
         self.velocity_est = data['velocity_est']
+
+        self.pos_z_hist.append(self.position_est[2])
+        index = int(yaml_p['delta_t']/yaml_p['delta_t_logger'])
+        self.velocity_est[2] = (self.pos_z_hist[-1] - self.pos_z_hist[-index-1])/yaml_p['delta_t']
 
         return not_done
 
