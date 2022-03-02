@@ -190,7 +190,7 @@ def plot_3d_path():
     for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
 
         df_loc = df[df['epi_n'].isin([j])]
-        #end = np.argmin(df_loc['min_proj_dist'])
+        #end = 700
         end = -2 #plot the whole trajectory
         df_loc_cut = df_loc.iloc[1:end+1]
         draw = True
@@ -326,6 +326,10 @@ def plot_kml():
     for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
 
         df_loc = df[df['epi_n'].isin([j])]
+
+        #end = 700 #plot the whole trajectory
+        end = -2
+        df_loc = df_loc.iloc[0:end+1]
 
         coords = []
         for p in range(len(df_loc['position_x'])):

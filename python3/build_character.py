@@ -52,9 +52,9 @@ class character():
         self.velocity = np.array([0,0,0])
 
         self.ll_controler = ll_controler()
-        self.est_x = ekf(self.position[0])
-        self.est_y = ekf(self.position[1])
-        self.est_z = ekf(self.position[2])
+        self.est_x = ekf(self.position[0], yaml_p['delta_t_physics'])
+        self.est_y = ekf(self.position[1], yaml_p['delta_t_physics'])
+        self.est_z = ekf(self.position[2], yaml_p['delta_t_physics'])
 
         self.esterror_pos = 0
         self.esterror_vel = 0

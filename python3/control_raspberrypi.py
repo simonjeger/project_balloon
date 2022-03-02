@@ -134,9 +134,9 @@ terrain = f_terrain(position_meas[0], position_meas[1])[0]
 alt.set_QNH(terrain)
 position_meas[2] = alt.get_altitude()/yaml_p['unit_z']
 
-est_x = ekf(position_meas[0])
-est_y = ekf(position_meas[1])
-est_z = ekf(position_meas[2])
+est_x = ekf(position_meas[0], yaml_p['delta_t_physics'])
+est_y = ekf(position_meas[1], yaml_p['delta_t_physics'])
+est_z = ekf(position_meas[2], yaml_p['delta_t_physics'])
 
 offset = yaml_p['offset']
 scale = yaml_p['scale']
@@ -245,7 +245,7 @@ while True:
             terrain = f_terrain(position_est[0], position_est[1])[0]
 
             # degbug
-            est_z.plot()
+            #est_x.plot()
 
             rel_pos_est = (position_est[2] - terrain)/(ceiling-terrain)
             rel_vel_est = velocity_est[2] / (ceiling-terrain)

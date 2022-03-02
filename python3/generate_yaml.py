@@ -105,6 +105,9 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'offset: 0.1' + '\n'
     text = text + 'scale: 0.5' + '\n'
     text = text + 'phone number: "0786151786"' + '\n'
+    text = text + 'min_signal: 16' + '\n'
+    text = text + 'com_timeout_soft: 10' + '\n'
+    text = text + 'com_timeout_hard: 13' + '\n'
 
     text = text + '\n' + '# build data set' + '\n'
     text = text + 'h: ' + str(h) + '\n'

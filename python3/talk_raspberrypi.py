@@ -59,7 +59,7 @@ if os.path.exists(path):
     shutil.rmtree(path)
     os.makedirs(path)
 
-com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/')
+com = raspi_com(yaml_p['phone_number'], yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/communication/', yaml_p['min_signal'])
 interval_initial = 60 #s
 interval = interval_initial
 action_overwrite = False
@@ -119,15 +119,15 @@ while True:
             info += 'stop_log: ' + str(action['stop_logger'])
 
             # com fail
-            if com_fail >= 10:
+            if com_fail >= yaml_p['com_timeout_soft']:
                 com.min_signal = 0 #so sending out a message becomes more likely
                 info += ', com_err'
                 logger.error('com_fail, removing communication threshold')
 
             else:
-                com.min_signal = 16 #setting threshold back to the original value
+                com.min_signal = yaml_p['min_signal'] #setting threshold back to the original value
 
-            if (com_fail >= 15) | emergency_landing:
+            if (com_fail >= yaml_p['com_timeout_hard']) | emergency_landing:
                 action_overwrite = -1
                 emergency_landing = True
                 logger.error('Emergency landing, overwriting action to: ' + str(action_overwrite))

@@ -2,6 +2,7 @@ from build_character import character
 from build_render import render
 
 import pandas as pd
+import time
 import matplotlib.pyplot as plt
 from gym import Env, logger
 from gym.spaces import Discrete, Box
@@ -217,6 +218,7 @@ class balloon3d(Env):
             counter += 1
             if counter > 1000:
                 print("ERROR: Can't find a World that satisfies all the criteria")
+                time.sleep(1)
 
         # remove suffix and timestamp
         self.world_name = self.world_name[:-5]
