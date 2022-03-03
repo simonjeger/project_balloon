@@ -191,6 +191,9 @@ while True:
                             logger.info('Setting offset to: ' + str(offset))
                         except:
                             logger.error('Could not turn into float: ' + message)
+                    elif message == 'reset':
+                        com_fail = 0
+                        logger.info('Resetting com_fail manually')
                     else:
                         try:
                             action_overwrite = float(message)

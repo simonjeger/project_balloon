@@ -178,7 +178,7 @@ class raspi_com():
 		rec_string = str(self.rec_buff).split("\\")
 		strength = int(rec_string[3][7:9])
 
-		if strength >= self.min_signal:
+		if (strength >= self.min_signal) & (strength < 99):
 			logger.info('COM: continue with signal strength ' + str(strength))
 			return True
 		else:
