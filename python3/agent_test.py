@@ -87,9 +87,5 @@ time.sleep(100) #make sure the writing of tensorboard files is done
 if yaml_p['overview']:
     write_overview()
 
-dist_hist()
-plot_action()
-plot_kml()
-
 if yaml_p['mode'] == 'tuning':
     tuning()

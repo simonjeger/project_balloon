@@ -83,4 +83,3 @@ ag.save(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) 
 step_n = env.step_n
 
 plot_reward()
-plot_path()

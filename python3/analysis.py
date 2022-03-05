@@ -221,16 +221,16 @@ def plot_3d_path():
                 ax.scatter((df_loc_cut['position_x'].iloc[i]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[i]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[i]*yaml_p['unit_z'], s=size_scatter, color=color_scatter)
 
             if yaml_p['3d']:
-                ax.scatter3D((df_loc['target_x']-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc['target_y']-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc['target_z']*yaml_p['unit_z'], color='grey')
+                ax.scatter3D((yaml_p['target_test'][0]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (yaml_p['target_test'][1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], yaml_p['target_test'][2]*yaml_p['unit_z'], color='red')
             else:
-                ax.plot3D(np.linspace(0,yaml_p['size_x']*yaml_p['unit_xy'], 10), [(df_loc['target_y'].iloc[-1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy']]*10, [df_loc['target_z'].iloc[-1]*yaml_p['unit_z']]*10, color='grey')
+                ax.plot3D(np.linspace(0,yaml_p['size_x']*yaml_p['unit_xy'], 10), [(yaml_p['target_test'][1].iloc[-1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy']]*10, [yaml_p['target_test'][2].iloc[-1]*yaml_p['unit_z']]*10, color='red')
 
             closest_idx = np.argmin(df_loc_cut['min_dist'])
-            min_dist = yaml_p['unit_xy']*(df_loc_cut['position_x'] - df_loc['target_x'].iloc[-1])**2 + yaml_p['unit_xy']*(df_loc_cut['position_y'] - df_loc['target_y'].iloc[-1])**2 + yaml_p['unit_z']*(df_loc_cut['position_z'] - df_loc['target_z'].iloc[-1])**2
+            min_dist = np.sqrt((yaml_p['unit_xy']*(df_loc_cut['position_x'] - yaml_p['target_test'][0]))**2 + (yaml_p['unit_xy']*(df_loc_cut['position_y'] - yaml_p['target_test'][1]))**2 + (yaml_p['unit_z']*(df_loc_cut['position_z'] - yaml_p['target_test'][2]))**2)
             closest_idx = np.argmin(min_dist)
 
             ax.scatter3D((df_loc_cut['position_x'].iloc[closest_idx]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[closest_idx]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx]*yaml_p['unit_z'], color='green')
-            #ax.set_title('min_distance: ' + str(int(min_dist[closest_idx])) + ' m')
+            ax.set_title('min_distance: ' + str(int(min_dist[closest_idx])) + ' m')
 
             # mark the border of the box
             #ax.set_xlim3d(0, yaml_p['size_x'] - 1)
@@ -242,9 +242,21 @@ def plot_3d_path():
             #fig.suptitle(str(int(i/n_f*100)) + ' %')
             #plt.subplots_adjust(wspace=0.5, hspace=1)
 
+    # Find correct aspect ration
+    len_x = (np.max(df['position_x']) - np.min(df['position_x']))*yaml_p['unit_xy']
+    len_y = (np.max(df['position_y']) - np.min(df['position_y']))*yaml_p['unit_xy']
+    len_z = (np.max(df['position_z']) - np.min(df['position_z']))*yaml_p['unit_z']
+    ax.set_box_aspect(aspect = (1,len_y/len_x,len_z/len_x))
+
     # Build folder structure if it doesn't exist yet
-    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/3dpath.png'
-    plt.savefig(path, dpi=250)
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+
+    # Get the standard angle and then rotate
+    for i in range(4):
+        orient = [[0,0], [90,0], [0,90]]
+        if i > 0:
+            ax.view_init(orient[i-1][0], orient[i-1][1])
+        plt.savefig(path + '3dpath_' + str(i) + '.png', dpi=250)
     plt.show()
     plt.close()
 

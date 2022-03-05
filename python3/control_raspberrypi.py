@@ -113,7 +113,7 @@ while True: #search until found
         new_pos = np.array([np.nan,np.nan,np.nan])
         deviation = np.nan
         i = 0
-        while (deviation > 1) | (i < 5): #only continue if position is consistent to 1m and I want to get at least 5 fixtures before continuing
+        while (deviation > 1) | (i < 20): #only continue if position is consistent to 1m and I want to get at least N fixtures before continuing
             old_pos = new_pos[:]
             lat,lon,height = gps.get_gps_position()
             position_meas = gps_to_position(lat,lon,height,lat_start,lon_start)
