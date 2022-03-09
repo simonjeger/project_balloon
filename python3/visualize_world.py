@@ -55,8 +55,19 @@ def visualize_world(tensor, position, ceiling):
         if dim != 'xy':
             if yaml_p['balloon'] == 'outdoor_balloon':
                 limit = 20
+                quiver_scale = yaml_p['unit_xy']/5
+                quiver_headwidth = 2.5
+                quiver_width = 0.005
             elif yaml_p['balloon'] == 'indoor_balloon':
                 limit = 1.5
+                quiver_scale = yaml_p['unit_xy']/5
+                quiver_headwidth = 2.5
+                quiver_width = 0.005
+            elif yaml_p['balloon'] == 'hot_air_balloon':
+                limit = 20
+                quiver_scale = yaml_p['unit_xy']/2
+                quiver_headwidth = 1
+                quiver_width = 0.001
             else:
                 print('ERROR: Choose an existing balloon type')
 
@@ -93,7 +104,7 @@ def visualize_world(tensor, position, ceiling):
 
             X, Y = np.meshgrid(x, y)
             ax.contourf(X,Y,terrain.T, cmap=c_contour, extend=(0,local_size_x,0,local_size_y))
-            ax.quiver(X, Y, dir_x, dir_y, scale=yaml_p['unit_xy']/5, headwidth=2.5, width=0.005)
+            ax.quiver(X, Y, dir_x, dir_y, scale=quiver_scale, headwidth=quiver_headwidth, width=quiver_width)
 
         # save figure
         plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/render/render_' + dim + '.png', dpi=dpi, bbox_inches='tight', pad_inches=0)

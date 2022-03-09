@@ -260,7 +260,7 @@ class balloon3d(Env):
 
         if yaml_start == 'center':
             self.start = np.array([(self.size_x - 1)/2,(self.size_y - 1)/2,0], dtype=float)
-            self.start = np.floor(self.start) + np.append(np.random.uniform(-1,1,2),[0]) #randomize start position without touching the z-axis
+            self.start = np.floor(self.start) + [np.random.uniform(-self.size_x/10,self.size_x/10),np.random.uniform(-self.size_y/10,self.size_y/10),0] #randomize start position without touching the z-axis
 
         elif yaml_start == 'center_determ':
             self.start = np.array([(self.size_x - 1)/2,(self.size_y - 1)/2,0], dtype=float)

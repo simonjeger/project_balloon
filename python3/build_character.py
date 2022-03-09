@@ -81,6 +81,19 @@ class character():
             self.rest_consumption = 0.5 #W
             self.battery_capacity = 1798 #Ws
             self.c_w = 0.6714 #through experiment
+
+        elif yaml_p['balloon'] == 'hot_air_balloon':
+            self.mass_structure = 900 #kg
+            self.delta_f_up = 480 #N
+            self.delta_f_down = 480 #N
+            self.delay = 5
+            self.consumption_up = 5 #W
+            self.consumption_down = 5 #W
+            self.rest_consumption = 0.5 #W
+            self.battery_capacity = 1000000 #Ws
+            self.c_w = 0.6714 #through experiment
+            self.diameter_hab = 18
+
         else:
             print('ERROR: please choose one of the available balloons')
 
@@ -258,6 +271,8 @@ class character():
             if yaml_p['balloon'] == 'indoor_balloon':
                 u = self.ll_controler.pid(action, self.rel_pos, self.p_z)
             elif yaml_p['balloon'] == 'outdoor_balloon':
+                u = self.ll_controler.bangbang(action, self.rel_pos)
+            elif yaml_p['balloon'] == 'hot_air_balloon':
                 u = self.ll_controler.bangbang(action, self.rel_pos)
             self.u_hist.append(u)
 
@@ -448,7 +463,10 @@ class character():
         # volume
         volume_init = self.mass_structure/(rho_air_init - rho_gas_init) #m^3
         self.volume = volume_init*pressure_init/pressure*temp/temp_init #m^3
-        self.diameter = 2*(self.volume*3/(4*np.pi))**(1/3) #m
+        if yaml_p['balloon'] != 'hot_air_balloon':
+            self.diameter = 2*(self.volume*3/(4*np.pi))**(1/3) #m
+        else:
+            self.diameter = self.diameter_hab
         self.area = (self.diameter/2)**2*np.pi #m^2
         self.mass_total = self.mass_structure + volume_init*rho_gas_init #kg
         self.c = self.area*self.rho_air*self.c_w/(2*self.mass_total)/(1/yaml_p['unit_z'])
@@ -672,6 +690,8 @@ class character():
             c = 0.005
         elif yaml_p['balloon'] == 'indoor_balloon':
             c = 0.5
+        elif yaml_p['balloon'] == 'hot_air_balloon':
+            c = 0.0005
         else:
             print('ERROR: Choose an existing balloon type')
         return x/(abs(x) + c)

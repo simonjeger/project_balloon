@@ -43,7 +43,7 @@ def build_set(num, train_or_test):
 
     # generate center coordinates
     IDX_x = np.random.randint(0,global_size_x - size_x - 1,num*10) #just in case that some of them lie in the mountains
-    IDX_y = np.random.randint(0,global_size_y - size_y - 1,num*10) #just in case that some of them lie in the mountains
+    IDX_y = np.random.randint(0,global_size_y - size_y - 1,num*10)
 
     for h in range(len(list)):
         tensor = torch.load(yaml_p['process_path'] + 'data_cosmo/tensor/' + list[h])
@@ -87,7 +87,7 @@ def build_set(num, train_or_test):
                     name = name_lat + '_' + name_lon + '_' + str(o) + '_' + name_time + '.pt'
                     torch.save(world, yaml_p['data_path'] + train_or_test + '/tensor/' + name)
 
-                    print('generated ' + str(o*num + s + 1) + ' of ' + str(num*4) + ' maps at ' + name_time)
+                    print('generated ' + str(o*num + s + 1) + ' of ' + str(num*4) + ' maps at ' + name_time + ', so about ' + str(int(100*h/len(list))) + ' %')
                     s += 1
 
 build_set(1000, 'train')

@@ -43,34 +43,27 @@ def plot_reward():
     #rew_step = np.array(df['reward_step'])
 
     # plot mean reward
-    N_epi = 1
+    N_epi = 2000
     cumsum_rew = np.cumsum(np.insert(rew_epi, 0, 0))
     mean_reward_epi = (cumsum_rew[N_epi:] - cumsum_rew[:-N_epi]) / float(N_epi)
 
-    # plot big mean
-    N_epi_big = int(len(rew_epi)/10)
-    cumsum_rew_big = np.cumsum(np.insert(rew_epi, 0, 0))
-    mean_reward_epi_big = (cumsum_rew_big[N_epi_big:] - cumsum_rew_big[:-N_epi_big]) / float(N_epi_big)
-
     # plot
     fig, ax = plt.subplots(1,1)
-    ax.plot(rew_epi, alpha=0.3)
     ax.plot(mean_reward_epi)
-    ax.plot(mean_reward_epi_big)
 
     #ax.set_title('max. mean (' + str(N_epi) + '): ' + str(np.round(max(mean_reward_epi),5)) + '   avg. reward (' + str(N_epi) + '): ' + str(np.round(np.mean(rew_epi),5)))
     ax.set_xlabel('episode')
     ax.set_ylabel('reward')
     ax.tick_params(axis='y')
+    #ax.set_aspect(5000)
 
     ax.legend(
-        ['reward',
-        'running mean over ' + str(N_epi) + ' episodes, max: ' + str(np.round(max(mean_reward_epi),5)) + ', avg: ' + str(np.round(np.mean(rew_epi),5)),
-        'running mean over ' + str(N_epi_big) + ' episodes', 'reward_val']
-        )
+        ['Running mean over ' + str(N_epi) + ' episodes'
+        ])
 
     fig.tight_layout()
     plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.pdf')
+    #plt.savefig(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/learning_curve.png', dpi=500)
     plt.close()
 
 def plot_path():
@@ -257,6 +250,81 @@ def plot_3d_path():
         if i > 0:
             ax.view_init(orient[i-1][0], orient[i-1][1])
         plt.savefig(path + '3dpath_' + str(i) + '.png', dpi=250)
+    plt.show()
+    plt.close()
+
+def plot_3d_projection():
+    # read in logger file as pandas
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+
+    vmin = -1
+    vmax = 0
+
+    vn = 100
+    spectrum = np.linspace(vmin, vmax, vn)
+    colors = pl.cm.jet(np.linspace(0,1,vn))
+
+    ax_0 = plt.subplot(2,1,2)
+    ax_1 = plt.subplot(2,2,1)
+    ax_2 = plt.subplot(2,2,2)
+
+    for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
+
+        df_loc = df[df['epi_n'].isin([j])]
+        #end = 700
+        end = -2 #plot the whole trajectory
+        df_loc_cut = df_loc.iloc[1:end+1]
+
+        draw = True #remove if only certain things should be plotted
+
+        if draw:
+            c = np.argmin(np.abs(spectrum + df_loc['min_dist'].iloc[-1]))
+
+            # plot path
+            ax_0.plot((df_loc_cut['position_x']-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y']-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], color=colors[c], zorder=-1)
+            ax_1.plot((df_loc_cut['position_x']-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z']*yaml_p['unit_z'], color=colors[c], zorder=-1)
+            ax_2.plot((df_loc_cut['position_y']-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z']*yaml_p['unit_z'], color=colors[c], zorder=-1)
+
+            for i in range(len(df_loc_cut)):
+                if df_loc_cut['decision'].iloc[i]:
+                    ax_0.scatter((df_loc_cut['position_x'].iloc[i]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[i]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], s=10, color='orange')
+                    ax_1.scatter((df_loc_cut['position_x'].iloc[i]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[i]*yaml_p['unit_z'], s=10, color='orange')
+                    ax_2.scatter((df_loc_cut['position_y'].iloc[i]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[i]*yaml_p['unit_z'], s=10, color='orange')
+
+            ax_0.scatter((yaml_p['target_test'][0]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (yaml_p['target_test'][1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], s=10, color='red')
+            ax_1.scatter((yaml_p['target_test'][0]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], yaml_p['target_test'][2]*yaml_p['unit_z'], s=10, color='red')
+            ax_2.scatter((yaml_p['target_test'][1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], yaml_p['target_test'][2]*yaml_p['unit_z'], s=10, color='red')
+
+            closest_idx = np.argmin(df_loc_cut['min_dist'])
+            min_dist = np.sqrt((yaml_p['unit_xy']*(df_loc_cut['position_x'] - yaml_p['target_test'][0]))**2 + (yaml_p['unit_xy']*(df_loc_cut['position_y'] - yaml_p['target_test'][1]))**2 + (yaml_p['unit_z']*(df_loc_cut['position_z'] - yaml_p['target_test'][2]))**2)
+            closest_idx = np.argmin(min_dist)
+
+            ax_0.scatter((df_loc_cut['position_x'].iloc[closest_idx]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[closest_idx]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], s=10, color='green')
+            ax_1.scatter((df_loc_cut['position_x'].iloc[closest_idx]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx]*yaml_p['unit_z'], s=10, color='green')
+            ax_2.scatter((df_loc_cut['position_y'].iloc[closest_idx]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx]*yaml_p['unit_z'], s=10, color='green')
+
+            ax_0.set_xlabel('x [m]')
+            ax_0.set_ylabel('y [m]')
+            ax_1.set_xlabel('x [m]')
+            ax_1.set_ylabel('z [m]')
+            ax_2.set_xlabel('y [m]')
+            ax_2.set_ylabel('z [m]')
+
+    ax_0.set_aspect(1)
+    ax_1.set_aspect(1)
+    ax_2.set_aspect(1)
+
+    # Build folder structure if it doesn't exist yet
+    path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+
+    # Get the standard angle and then rotate
+    plt.suptitle('minimum distance: ' + str(int(min_dist[closest_idx])) + ' m')
+    plt.tight_layout()
+    plt.savefig(path + '2dproj.png', dpi=250)
     plt.show()
     plt.close()
 
