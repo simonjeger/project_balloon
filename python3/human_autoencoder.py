@@ -42,6 +42,8 @@ class HAE():
         elif yaml_p['autoencoder'] == 'HAE_bidir':
             self.bottleneck_wind = 2*4
         elif yaml_p['autoencoder'] == 'HAE_special':
+            self.window_size = 34
+            self.window_size_total = 70
             self.bottleneck_wind = (1+2*4)*2
         else:
             print('ERROR: please choose one of the available HAE')
@@ -104,6 +106,8 @@ class HAE():
             wind = self.compress_wind_ext_squished(window, position, ceiling)
         elif yaml_p['autoencoder'] == 'HAE_bidir':
             wind = self.compress_wind_bidir_squished(window, position, ceiling)
+        elif yaml_p['autoencoder'] == 'HAE_special':
+            wind = self.compress_wind_special_squished(window, position, ceiling)
         return wind
 
     def compress_est(self, data, position, ceiling):
@@ -275,62 +279,81 @@ class HAE():
             pred[idx[0]:idx[1]] = [h1/self.size_z,h2/self.size_z,m1,m2]
         return pred
 
-def compress_wind_special_squished(self, data, position,ceiling):
-    level = 2 #level = 0 would be only one central window
-    len_level_0 = 1
-    len_level_1 = 10
-    len_level_2 = 70
+    def compress_wind_special_squished(self, data, position,ceiling):
+        level = 2 #level = 0 would be only one central window
+        len_level_0 = 2
+        len_level_1 = 10
+        len_level_2 = 70
 
-    mean_x = data[-4,:,:]
-    mean_y = data[-3,:,:]
-    mean_z = data[-2,:,:]
-    sig_xz = data[-1,:,:]
+        mean_x = data[-4,:,:]
+        mean_y = data[-3,:,:]
+        mean_z = data[-2,:,:]
+        sig_xz = data[-1,:,:]
 
-    idx = np.arange(0,self.size_z, self.box_size)
-    if self.size_z%self.box_size != 0:
-        idx = idx[:-1]
+        idx = np.arange(0,self.size_z, self.box_size)
+        if self.size_z%self.box_size != 0:
+            idx = idx[:-1]
 
-    pred_x = np.zeros((level*4 + 1, len(idx)))
-    pred_y = np.zeros((level*4 + 1, len(idx)))
+        pred_x = np.zeros((level*4 + 1, len(idx)))
+        pred_y = np.zeros((level*4 + 1, len(idx)))
 
-    # wind
-    for i in range(len(data)):
-        for j in range(len(data[0])):
-            for k in range(len(idx)):
-                if (len_level_2/2 - len_level_0/2 <= i <= len_level_2/2 + len_level_0/2) & (len_level_2/2 - len_level_0/2 <= j <= len_level_2/2 + len_level_0/2):
-                    box_id = 0
-                elif (len_level_2/2 - len_level_1/2 <= i <= len_level_2/2) & (len_level_2/2 - len_level_0/2 <= j <= len_level_2/2):
-                    box_id = 1
-                elif (len_level_2/2 <= i <= len_level_2/2 + len_level_0/2) & (len_level_2/2 - len_level_0/2 <= j <= len_level_2/2):
-                    box_id = 2
-                elif (len_level_2/2 - len_level_1/2 <= i <= len_level_2/2) & (len_level_2/2 <= j <= len_level_2/2 + len_level_0/2):
-                    box_id = 3
-                elif (len_level_2/2 <= i <= len_level_2/2 + len_level_0/2) & (len_level_2/2 <= j <= len_level_2/2 + len_level_0/2):
-                    box_id = 4
-                elif (0 <= i <= len_level_2/2) & (0 <= j <= len_level_2/2):
-                    box_id = 5
-                elif (len_level_2/2 <= i <= len_level_2) & (0 <= j <= len_level_2/2):
-                    box_id = 6
-                elif (0 <= i <= len_level_2/2) & (len_level_2/2 <= j <= len_level_2):
-                    box_id = 7
-                elif (len_level_2/2 <= i <= len_level_2) & (len_level_2/2 <= j <= len_level_2):
-                    box_id = 8
-                with warnings.catch_warnings(): #I expect to see RuntimeWarnings in this block
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
+        # wind
+        fig, ax = plt.subplots(1)
 
-                    pred_x[i,j,k] = np.nanmean(mean_x[box_id,idx[k]:idx[k] + self.box_size])
-                    pred_y[i,j,k] = np.nanmean(mean_y[box_id,idx[k]:idx[k] + self.box_size])
+        for i in range(len(data[0])):
+            for j in range(len(data[0][0])):
+                for k in range(len(idx)):
+                    if (len_level_2/2 - len_level_0/2 <= i < len_level_2/2 + len_level_0/2) & (len_level_2/2 - len_level_0/2 <= j < len_level_2/2 + len_level_0/2):
+                        box_id = 0
+                        color = 'red'
+                    elif (len_level_2/2 - len_level_1/2 <= i < len_level_2/2) & (len_level_2/2 - len_level_1/2 <= j < len_level_2/2):
+                        box_id = 1
+                        color = 'green'
+                    elif (len_level_2/2 <= i < len_level_2/2 + len_level_1/2) & (len_level_2/2 - len_level_1/2 <= j < len_level_2/2):
+                        box_id = 2
+                        color = 'blue'
+                    elif (len_level_2/2 - len_level_1/2 <= i < len_level_2/2) & (len_level_2/2 <= j < len_level_2/2 + len_level_1/2):
+                        box_id = 3
+                        color = 'yellow'
+                    elif (len_level_2/2 <= i < len_level_2/2 + len_level_1/2) & (len_level_2/2 <= j < len_level_2/2 + len_level_1/2):
+                        box_id = 4
+                        color = 'pink'
+                    elif (0 <= i < len_level_2/2) & (0 <= j < len_level_2/2):
+                        box_id = 5
+                        color = 'black'
+                    elif (len_level_2/2 <= i < len_level_2) & (0 <= j < len_level_2/2):
+                        box_id = 6
+                        color = 'grey'
+                    elif (0 <= i < len_level_2/2) & (len_level_2/2 <= j < len_level_2):
+                        box_id = 7
+                        color = 'orange'
+                    elif (len_level_2/2 <= i < len_level_2) & (len_level_2/2 <= j < len_level_2):
+                        box_id = 8
+                        color = 'salmon'
+                    else:
+                        print("ERROR: couldn't match that to anything in the HAE_special")
 
-    pos_x = np.clip(int(position[0]),0,self.size_x - 1)
-    pos_y = np.clip(int(position[1]),0,self.size_y - 1)
+                    with warnings.catch_warnings(): #I expect to see RuntimeWarnings in this block
+                        warnings.simplefilter("ignore", category=RuntimeWarning)
 
-    rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling - data[0,self.window_size,self.window_size,0])])
-    size = (ceiling - data[0,self.window_size,self.window_size,0])/self.size_z
+                        ax.scatter(i,j,color=color)
 
-    pred = np.concatenate((pred_x.flatten(), pred_y.flatten()))
-    pred = torch.tensor(np.nan_to_num(pred,0))
+                        pred_x[box_id,k] = np.nanmean(mean_x[i,j,idx[k]:idx[k] + self.box_size])
+                        pred_y[box_id,k] = np.nanmean(mean_y[i,j,idx[k]:idx[k] + self.box_size])
 
-    return pred
+        plt.savefig('debug_HAE_special.png')
+        plt.close()
+
+        pos_x = np.clip(int(position[0]),0,self.size_x - 1)
+        pos_y = np.clip(int(position[1]),0,self.size_y - 1)
+
+        rel_pos = torch.tensor([(position[2]-data[0,self.window_size,self.window_size,0]) / (ceiling - data[0,self.window_size,self.window_size,0])])
+        size = (ceiling - data[0,self.window_size,self.window_size,0])/self.size_z
+
+        pred = np.concatenate((pred_x.flatten(), pred_y.flatten()))
+        pred = torch.tensor(np.nan_to_num(pred,0))
+
+        return pred
 
 def load_tensor(path):
     name_list = os.listdir(path)

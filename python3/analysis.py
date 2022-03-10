@@ -268,9 +268,13 @@ def plot_3d_projection():
     spectrum = np.linspace(vmin, vmax, vn)
     colors = pl.cm.jet(np.linspace(0,1,vn))
 
-    ax_0 = plt.subplot(2,1,2)
-    ax_1 = plt.subplot(2,2,1)
+    ax_0 = plt.subplot(1,2,1)
+    ax_1 = plt.subplot(2,2,4)
     ax_2 = plt.subplot(2,2,2)
+
+    ax_0.grid()
+    ax_1.grid()
+    ax_2.grid()
 
     for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
 
@@ -284,24 +288,28 @@ def plot_3d_projection():
         if draw:
             c = np.argmin(np.abs(spectrum + df_loc['min_dist'].iloc[-1]))
 
+            closest_idx = np.argmin(df_loc_cut['min_dist'])
+            min_dist = np.sqrt((yaml_p['unit_xy']*(df_loc_cut['position_x'] - yaml_p['target_test'][0]))**2 + (yaml_p['unit_xy']*(df_loc_cut['position_y'] - yaml_p['target_test'][1]))**2 + (yaml_p['unit_z']*(df_loc_cut['position_z'] - yaml_p['target_test'][2]))**2)
+            closest_idx = np.argmin(min_dist)
+
             # plot path
-            ax_0.plot((df_loc_cut['position_x']-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y']-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], color=colors[c], zorder=-1)
-            ax_1.plot((df_loc_cut['position_x']-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z']*yaml_p['unit_z'], color=colors[c], zorder=-1)
-            ax_2.plot((df_loc_cut['position_y']-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z']*yaml_p['unit_z'], color=colors[c], zorder=-1)
+            ax_0.plot((df_loc_cut['position_x'].iloc[0:closest_idx+1]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[0:closest_idx+1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], color='blue', zorder=-1)
+            ax_1.plot((df_loc_cut['position_x'].iloc[0:closest_idx+1]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[0:closest_idx+1]*yaml_p['unit_z'], color='blue', zorder=-1)
+            ax_2.plot((df_loc_cut['position_y'].iloc[0:closest_idx+1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[0:closest_idx+1]*yaml_p['unit_z'], color='blue', zorder=-1)
+
+            ax_0.plot((df_loc_cut['position_x'].iloc[closest_idx::]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[closest_idx::]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], color='blue', alpha=0.2, zorder=-1)
+            ax_1.plot((df_loc_cut['position_x'].iloc[closest_idx::]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx::]*yaml_p['unit_z'], color='blue', alpha=0.2, zorder=-1)
+            ax_2.plot((df_loc_cut['position_y'].iloc[closest_idx::]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx::]*yaml_p['unit_z'], color='blue', alpha=0.2, zorder=-1)
 
             for i in range(len(df_loc_cut)):
                 if df_loc_cut['decision'].iloc[i]:
-                    ax_0.scatter((df_loc_cut['position_x'].iloc[i]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[i]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], s=10, color='orange')
-                    ax_1.scatter((df_loc_cut['position_x'].iloc[i]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[i]*yaml_p['unit_z'], s=10, color='orange')
-                    ax_2.scatter((df_loc_cut['position_y'].iloc[i]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[i]*yaml_p['unit_z'], s=10, color='orange')
+                    ax_0.scatter((df_loc_cut['position_x'].iloc[i]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[i]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], s=3, color='orange')
+                    ax_1.scatter((df_loc_cut['position_x'].iloc[i]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[i]*yaml_p['unit_z'], s=3, color='orange')
+                    ax_2.scatter((df_loc_cut['position_y'].iloc[i]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[i]*yaml_p['unit_z'], s=3, color='orange')
 
             ax_0.scatter((yaml_p['target_test'][0]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (yaml_p['target_test'][1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], s=10, color='red')
             ax_1.scatter((yaml_p['target_test'][0]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], yaml_p['target_test'][2]*yaml_p['unit_z'], s=10, color='red')
             ax_2.scatter((yaml_p['target_test'][1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], yaml_p['target_test'][2]*yaml_p['unit_z'], s=10, color='red')
-
-            closest_idx = np.argmin(df_loc_cut['min_dist'])
-            min_dist = np.sqrt((yaml_p['unit_xy']*(df_loc_cut['position_x'] - yaml_p['target_test'][0]))**2 + (yaml_p['unit_xy']*(df_loc_cut['position_y'] - yaml_p['target_test'][1]))**2 + (yaml_p['unit_z']*(df_loc_cut['position_z'] - yaml_p['target_test'][2]))**2)
-            closest_idx = np.argmin(min_dist)
 
             ax_0.scatter((df_loc_cut['position_x'].iloc[closest_idx]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[closest_idx]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], s=10, color='green')
             ax_1.scatter((df_loc_cut['position_x'].iloc[closest_idx]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx]*yaml_p['unit_z'], s=10, color='green')
@@ -318,13 +326,16 @@ def plot_3d_projection():
     ax_1.set_aspect(1)
     ax_2.set_aspect(1)
 
+    ax_1.set_ylim(0,yaml_p['size_z']*yaml_p['unit_z'])
+    ax_2.set_ylim(0,yaml_p['size_z']*yaml_p['unit_z'])
+
     # Build folder structure if it doesn't exist yet
     path = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
 
     # Get the standard angle and then rotate
-    plt.suptitle('minimum distance: ' + str(int(min_dist[closest_idx])) + ' m')
+    #plt.suptitle('minimum distance: ' + str(int(min_dist[closest_idx])) + ' m')
     plt.tight_layout()
-    plt.savefig(path + '2dproj.png', dpi=250)
+    plt.savefig(path + '2dproj.png', dpi=400)
     plt.show()
     plt.close()
 
