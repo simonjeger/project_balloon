@@ -305,44 +305,30 @@ class HAE():
                 for k in range(len(idx)):
                     if (len_level_2/2 - len_level_0/2 <= i < len_level_2/2 + len_level_0/2) & (len_level_2/2 - len_level_0/2 <= j < len_level_2/2 + len_level_0/2):
                         box_id = 0
-                        color = 'red'
                     elif (len_level_2/2 - len_level_1/2 <= i < len_level_2/2) & (len_level_2/2 - len_level_1/2 <= j < len_level_2/2):
                         box_id = 1
-                        color = 'green'
                     elif (len_level_2/2 <= i < len_level_2/2 + len_level_1/2) & (len_level_2/2 - len_level_1/2 <= j < len_level_2/2):
                         box_id = 2
-                        color = 'blue'
                     elif (len_level_2/2 - len_level_1/2 <= i < len_level_2/2) & (len_level_2/2 <= j < len_level_2/2 + len_level_1/2):
                         box_id = 3
-                        color = 'yellow'
                     elif (len_level_2/2 <= i < len_level_2/2 + len_level_1/2) & (len_level_2/2 <= j < len_level_2/2 + len_level_1/2):
                         box_id = 4
-                        color = 'pink'
                     elif (0 <= i < len_level_2/2) & (0 <= j < len_level_2/2):
                         box_id = 5
-                        color = 'black'
                     elif (len_level_2/2 <= i < len_level_2) & (0 <= j < len_level_2/2):
                         box_id = 6
-                        color = 'grey'
                     elif (0 <= i < len_level_2/2) & (len_level_2/2 <= j < len_level_2):
                         box_id = 7
-                        color = 'orange'
                     elif (len_level_2/2 <= i < len_level_2) & (len_level_2/2 <= j < len_level_2):
                         box_id = 8
-                        color = 'salmon'
                     else:
                         print("ERROR: couldn't match that to anything in the HAE_special")
 
                     with warnings.catch_warnings(): #I expect to see RuntimeWarnings in this block
                         warnings.simplefilter("ignore", category=RuntimeWarning)
 
-                        ax.scatter(i,j,color=color)
-
                         pred_x[box_id,k] = np.nanmean(mean_x[i,j,idx[k]:idx[k] + self.box_size])
                         pred_y[box_id,k] = np.nanmean(mean_y[i,j,idx[k]:idx[k] + self.box_size])
-
-        plt.savefig('debug_HAE_special.png')
-        plt.close()
 
         pos_x = np.clip(int(position[0]),0,self.size_x - 1)
         pos_y = np.clip(int(position[1]),0,self.size_y - 1)
