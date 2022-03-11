@@ -223,7 +223,7 @@ def plot_3d_path():
             closest_idx = np.argmin(min_dist)
 
             ax.scatter3D((df_loc_cut['position_x'].iloc[closest_idx]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[closest_idx]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx]*yaml_p['unit_z'], color='green')
-            ax.set_title('min_distance: ' + str(int(min_dist[closest_idx])) + ' m')
+            ax.set_title('min_distance: ' + str(int(min_dist[closest_idx])) + ' m after ' + str(int(yaml_p['T'] - df_loc_cut['t'].iloc[-1])) + ' s')
 
             # mark the border of the box
             #ax.set_xlim3d(0, yaml_p['size_x'] - 1)
@@ -292,14 +292,18 @@ def plot_3d_projection():
             min_dist = np.sqrt((yaml_p['unit_xy']*(df_loc_cut['position_x'] - yaml_p['target_test'][0]))**2 + (yaml_p['unit_xy']*(df_loc_cut['position_y'] - yaml_p['target_test'][1]))**2 + (yaml_p['unit_z']*(df_loc_cut['position_z'] - yaml_p['target_test'][2]))**2)
             closest_idx = np.argmin(min_dist)
 
-            # plot path
-            ax_0.plot((df_loc_cut['position_x'].iloc[0:closest_idx+1]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[0:closest_idx+1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], color='blue', zorder=-1)
-            ax_1.plot((df_loc_cut['position_x'].iloc[0:closest_idx+1]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[0:closest_idx+1]*yaml_p['unit_z'], color='blue', zorder=-1)
-            ax_2.plot((df_loc_cut['position_y'].iloc[0:closest_idx+1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[0:closest_idx+1]*yaml_p['unit_z'], color='blue', zorder=-1)
+            overwrite_idx = np.argmax(df_loc_cut['action_overwrite'])
+            if overwrite_idx == 0:
+                overwrite_idx = len(df_loc_cut['action_overwrite'])
 
-            ax_0.plot((df_loc_cut['position_x'].iloc[closest_idx::]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[closest_idx::]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], color='blue', alpha=0.2, zorder=-1)
-            ax_1.plot((df_loc_cut['position_x'].iloc[closest_idx::]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx::]*yaml_p['unit_z'], color='blue', alpha=0.2, zorder=-1)
-            ax_2.plot((df_loc_cut['position_y'].iloc[closest_idx::]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[closest_idx::]*yaml_p['unit_z'], color='blue', alpha=0.2, zorder=-1)
+            # plot path
+            ax_0.plot((df_loc_cut['position_x'].iloc[0:overwrite_idx+1]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[0:overwrite_idx+1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], color='blue', zorder=-1)
+            ax_1.plot((df_loc_cut['position_x'].iloc[0:overwrite_idx+1]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[0:overwrite_idx+1]*yaml_p['unit_z'], color='blue', zorder=-1)
+            ax_2.plot((df_loc_cut['position_y'].iloc[0:overwrite_idx+1]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[0:overwrite_idx+1]*yaml_p['unit_z'], color='blue', zorder=-1)
+
+            ax_0.plot((df_loc_cut['position_x'].iloc[overwrite_idx::]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], (df_loc_cut['position_y'].iloc[overwrite_idx::]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], color='blue', alpha=0.2, zorder=-1)
+            ax_1.plot((df_loc_cut['position_x'].iloc[overwrite_idx::]-df_loc_cut['position_x'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[overwrite_idx::]*yaml_p['unit_z'], color='blue', alpha=0.2, zorder=-1)
+            ax_2.plot((df_loc_cut['position_y'].iloc[overwrite_idx::]-df_loc_cut['position_y'].iloc[0])*yaml_p['unit_xy'], df_loc_cut['position_z'].iloc[overwrite_idx::]*yaml_p['unit_z'], color='blue', alpha=0.2, zorder=-1)
 
             for i in range(len(df_loc_cut)):
                 if df_loc_cut['decision'].iloc[i]:
