@@ -571,8 +571,9 @@ class Agent:
                 self.HER_reward.append(reward)
                 self.HER_done.append(done)
 
-        if not self.HER_done[-1]:
-            self.HER_done[-1] = True
+        if len(self.HER_done) > 1:
+            if not self.HER_done[-1]:
+                self.HER_done[-1] = True
 
         # put them into the buffer
         i = 0
