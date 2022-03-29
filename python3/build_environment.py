@@ -105,6 +105,8 @@ class balloon3d(Env):
         init_proj_min = np.sqrt(((target[0] - start[0])*self.render_ratio/self.radius_xy)**2 + ((target[1] - start[1])*self.render_ratio/self.radius_xy)**2 + ((target[2] - start[2])/self.radius_z)**2)
         residual = target - position
 
+        """
+        #This used to be a thing, but I never used it
         proj = self.character.proj_action(position, target)
         proj_max = np.max(proj)
         proj_min = np.min(proj)
@@ -113,6 +115,7 @@ class balloon3d(Env):
             proj_action_bonus = (proj_action - proj_min)/(proj_max - proj_min) - 1 #so it is at the max = 0
         else:
             proj_action_bonus = 0.5 - 1 #if they are all the same, just give an average rating back
+        """
 
         if in_bounds:
             # calculate reward
@@ -122,7 +125,8 @@ class balloon3d(Env):
                 done = True
             else:
                 res = np.sqrt((residual[0]*self.render_ratio/self.radius_xy)**2 + (residual[1]*self.render_ratio/self.radius_xy)**2 + (residual[2]/self.radius_z)**2)
-                reward_step = yaml_p['step']*yaml_p['delta_t_logger'] + np.clip(abs(rel_pos - action),0,saturation)/saturation*yaml_p['delta_t_logger']*yaml_p['action'] + (init_proj_min - res)/init_proj_min*yaml_p['gradient'] + proj_action_bonus*yaml_p['proj_action']
+                #reward_step = yaml_p['step']*yaml_p['delta_t_logger'] + np.clip(abs(rel_pos - action),0,saturation)/saturation*yaml_p['delta_t_logger']*yaml_p['action'] + (init_proj_min - res)/init_proj_min*yaml_p['gradient'] + proj_action_bonus*yaml_p['proj_action']
+                reward_step = yaml_p['step']*yaml_p['delta_t_logger'] + np.clip(abs(rel_pos - action),0,saturation)/saturation*yaml_p['delta_t_logger']*yaml_p['action'] + (init_proj_min - res)/init_proj_min*yaml_p['gradient']
                 success = 0
                 done = False
 

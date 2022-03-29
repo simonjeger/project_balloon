@@ -73,7 +73,7 @@ while time.time() < init_time + yaml_p['time_train']:
 
     # save weight as a backup every N episodes
     if yaml_p['balloon'] == 'hot_air_balloon':
-        N = 3
+        N = 10
     else:
         N = 50
     if epi_n%N == 0:

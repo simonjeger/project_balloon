@@ -137,7 +137,7 @@ measurement_info = True
 
 prop_mag_min = 0.2
 
-process_nr = 10390
+process_nr = 10900
 global_buffer_N = 70
 global_buffer_nr = process_nr
 h = 0
@@ -156,7 +156,7 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                                 for bottleneck in [8]:
                                     for velocity in [0]:
                                         for prop_mag_max in [0.5]:
-                                            for wind_info in [True]:
+                                            for wind_info in [False]:
                                                 for world_est in [False]:
                                                     #for gradient in np.array([0.1, 1, 10])*abs(step + action):
                                                     for gradient in [0]:

@@ -342,8 +342,6 @@ class Agent:
             if yaml_p['environment'] != 'python3':
                 logger.warning('AGT: Reachability Study only makes sense in python3 environment')
             fig, ax = plt.subplots()
-            ax.scatter(0,0,color='white')
-            ax.scatter(self.env.size_x,self.env.size_y,color='white')
 
             x_global = []
             y_global = []
@@ -368,7 +366,7 @@ class Agent:
                     y.append(y_j)
                     x_global.append(x_j)
                     y_global.append(y_j)
-                ax.plot(x,y,color='black', linewidth=0.5)
+                ax.plot(x,y,color='lightsteelblue', linewidth=0.5)
                 logger.info('AGT: reachability_study: ' + str(np.round(i/yaml_p['reachability_study']*100,0)) + ' %')
 
             points = list(zip(x_global,y_global))
@@ -385,7 +383,7 @@ class Agent:
                 pickle.dump(alpha_shape, fid)
 
             # Plot alpha shape
-            ax.add_patch(PolygonPatch(alpha_shape, fc='grey', ec='grey'))
+            ax.add_patch(PolygonPatch(alpha_shape, fc='lightgrey', ec='grey'))
             ax.set_title(str(np.round(alpha_shape.area/(self.env.size_x*self.env.size_y)*100,2)) + '% reachable')
             ax.set_xlim(0,yaml_p['size_x'])
             ax.set_ylim(0,yaml_p['size_y'])
@@ -393,7 +391,7 @@ class Agent:
             plt.suptitle('take off time between ' + str(takeoff_hour).zfill(2) + ':00 and ' + str(takeoff_hour + 1).zfill(2) + ':00')
             ax.set_aspect('equal')
             plt.tight_layout()
-            plt.savefig(self.path_rs_png)
+            plt.savefig(self.path_rs_png, dpi=350)
 
             # Save pickled version for later edits
             with open(self.path_rs_pkl,'wb') as fid:
@@ -683,7 +681,7 @@ class Agent:
         vel_y = character.velocity[1]
 
         if p is None:
-            k_1 = 1
+            k_1 = 0.5
             k_2 = 0
 
             v_min = 0.1

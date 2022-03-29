@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 import cv2
 import random
 from pathlib import Path
@@ -229,21 +230,18 @@ def plot(UVW,N):
     #img = axs[0].imshow(U[0].T, vmin=vmin, vmax=vmax, interpolation='bilinear')
     #axs[1].imshow(V[0].T, vmin=vmin, vmax=vmax, interpolation='bilinear')
     #axs[2].imshow(W[0].T, vmin=vmin, vmax=vmax, interpolation='bilinear')
-    img = axs[0].imshow(U[0].T, vmin=vmin, vmax=vmax)
-    axs[1].imshow(V[0].T, vmin=vmin, vmax=vmax)
-    axs[2].imshow(W[0].T, vmin=vmin, vmax=vmax)
+    img = axs[0].imshow(U[0].T, vmin=vmin, vmax=vmax, extent=[0,yaml_p['size_x']*yaml_p['unit_xy'],0,yaml_p['size_z']*yaml_p['unit_z']])
+    axs[1].imshow(V[0].T, vmin=vmin, vmax=vmax, extent=[0,yaml_p['size_x']*yaml_p['unit_xy'],0,yaml_p['size_z']*yaml_p['unit_z']])
+    axs[2].imshow(W[0].T, vmin=vmin, vmax=vmax, extent=[0,yaml_p['size_x']*yaml_p['unit_xy'],0,yaml_p['size_z']*yaml_p['unit_z']])
 
-    #set xlabel
-    axs[0].set_xlabel('U: y @x=0')
-    axs[0].set_ylabel('U: z @x=0')
-    axs[1].set_xlabel('V: y @x=0')
-    axs[1].set_ylabel('V: z @x=0')
-    axs[2].set_xlabel('W: y @x=0')
-    axs[2].set_ylabel('W: z @x=0')
+    #set label
+    axs[0].set_ylabel('U')
+    axs[1].set_ylabel('V')
+    axs[2].set_ylabel('W')
 
-    axs[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
-    axs[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
-    axs[2].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
+    #axs[0].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
+    #axs[1].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
+    #axs[2].set_aspect(yaml_p['unit_z']/yaml_p['unit_noise_xy'])
 
     axs[3].axis('off')
     cbar = plt.colorbar(img, ax=axs[3], orientation='horizontal')
@@ -251,7 +249,6 @@ def plot(UVW,N):
     plt.tight_layout()
     plt.savefig('debug_noise.png', dpi=1000)
     plt.close()
-
 
 generate_noise(500, 'train')
 generate_noise(100, 'test')

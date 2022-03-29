@@ -29,6 +29,15 @@ with open(args.yaml_file, 'rt') as fh:
 
 class character():
     def __init__(self, size_x, size_y, size_z, start, target, radius_xy, radius_z, T, world, train_or_test, seed):
+
+        # Disturbance analysis
+        """
+        self.sens_degree = 0
+        self.sens_mag = 1
+        self.alpha_wind = np.random.uniform(-self.sens_degree,self.sens_degree)
+        self.mag_wind = self.sens_mag #np.random.uniform(1-self.sens_mag,1+self.sens_mag)
+        """
+
         if train_or_test == 'train': #only testing is affected by denser logging to avoid messing up the learning
             yaml_p['delta_t_logger'] = yaml_p['delta_t']
         self.n = int(yaml_p['delta_t_logger']/yaml_p['delta_t_physics'])
@@ -201,7 +210,7 @@ class character():
 
         #to debug
         #self.est_y.plot()
-        self.est_z.plot()
+        #self.est_z.plot()
 
         return not_done
 
@@ -246,6 +255,21 @@ class character():
             world_compressed[0:2] = self.world_compressed[0:2]*yaml_p['unit_xy']
             world_compressed[4:6] = self.world_compressed[4:6]*yaml_p['unit_xy']
         self.state = np.concatenate((self.normalize_pos(self.residual_est[0:2]),[self.res_z_squished], self.normalize_world(self.velocity_est).flatten(), boundaries.flatten(), self.normalize_world(self.measurement).flatten(), world_compressed), axis=0)
+
+        # Disturbance analysis
+        """
+        alpha_vel = np.random.uniform(-self.sens_degree,self.sens_degree)
+        alpha_meas = np.random.uniform(-self.sens_degree,self.sens_degree)
+        mag_vel = np.random.uniform(1-self.sens_mag,1+self.sens_mag)
+        mag_meas = np.random.uniform(1-self.sens_mag,1+self.sens_mag)
+
+        #self.state[3:6] = np.multiply(np.matmul([[np.cos(alpha_vel), -np.sin(alpha_vel), 0], [np.sin(alpha_vel), np.cos(alpha_vel), 0], [0, 0, np.sin(alpha_vel)]], self.state[3:6]),mag_vel)
+        #self.state[10:12] = np.multiply(np.matmul([[np.cos(alpha_meas), -np.sin(alpha_meas)], [np.sin(alpha_meas), np.cos(alpha_meas)]], self.state[10:12]),mag_meas)
+        dim_wind = int(len(world_compressed)/2)
+        for d in range(dim_wind):
+            self.state[12+d] = self.state[12+d]*np.cos(self.alpha_wind)*self.mag_wind - self.state[12+dim_wind+d]*np.sin(self.alpha_wind)*self.mag_wind
+            self.state[12+dim_wind+d] = self.state[12+d]*np.sin(self.alpha_wind)*self.mag_wind + self.state[12+dim_wind+d]*np.cos(self.alpha_wind)*self.mag_wind
+        """
 
         self.bottleneck = len(self.state)
         self.state = self.state.astype(np.float32)
