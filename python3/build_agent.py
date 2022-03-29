@@ -273,7 +273,8 @@ class Agent:
                     self.write_logger(action, done=True)
 
             sum_r = sum_r + reward
-            self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
+            if not yaml_p['HER_only']:
+                self.agent.observe(obs, reward, done, False) #False is b.c. termination via time is handeled by environment
             self.step_n += 1
             self.scheduler_policy.step()
             self.scheduler_qfunc.step()
@@ -314,6 +315,10 @@ class Agent:
 
                 self.epi_n += 1
                 break
+
+        if yaml_p['HER_only'] & (self.train_or_test == 'train'):
+            target = self.env.character.target
+            self.HER(target)
 
         if yaml_p['HER'] & (self.train_or_test == 'train'):
             idx = self.idx_on_path(self.env.character.path, self.env.character.start, self.env.character.u_hist)
@@ -506,6 +511,25 @@ class Agent:
             pickle.dump(ax, fid)
         plt.close()
 
+    def find_end_HER_only(self, target):
+        i_end = 0
+        min_proj_dist = np.inf
+        for i in range(len(self.HER_obs)):
+            position = self.HER_pos[i]
+            residual = target - position
+
+            #this is only an approximation because I don't look at all the points
+            min_proj_dist_prop = np.sqrt((residual[0]*self.render_ratio/self.env.character.radius_xy)**2 + (residual[1]*self.render_ratio/self.env.character.radius_xy)**2 + (residual[2]/self.env.character.radius_z)**2)
+            if min_proj_dist > min_proj_dist_prop:
+                min_proj_dist = min_proj_dist_prop
+                i_end = i
+
+        # In case it never got closer, I want to learn that the whole trajectory was bad
+        if i_end == 0:
+            i_end = len(self.HER_obs)
+        return i_end
+
+
     def HER(self, target):
         self.env.character.t = 1 #it can't be zero, otherwise the cost function thinks we are out of time
 
@@ -515,7 +539,12 @@ class Agent:
 
         # fix all the state spaces
         min_proj_dist = np.inf
-        for i in range(len(self.HER_obs)):
+
+        if yaml_p['HER_only']:
+            end = self.find_end_HER_only(target)
+        else:
+            end = len(self.HER_obs)
+        for i in range(end):
             position = self.HER_pos[i]
             rel_pos = self.HER_rel_pos[i]
             total_z = self.HER_total_z[i]
@@ -590,9 +619,9 @@ class Agent:
                 local_buffer = pfrl.replay_buffers.ReplayBuffer(capacity=int(yaml_p['buffer_size']))
                 if os.path.isfile(path + 'buffer'):
                     local_buffer.load(path + 'buffer')
-                steps_taken = self.step_n - self.old_step_n
-                start = int(min(self.old_buffer_size, yaml_p['buffer_size'] - steps_taken))
-                end = int(min(self.old_buffer_size + steps_taken, yaml_p['buffer_size']))
+                obs_made = len(self.agent.replay_buffer.memory) - self.old_buffer_size
+                start = int(min(self.old_buffer_size, yaml_p['buffer_size'] - obs_made))
+                end = int(min(self.old_buffer_size + obs_made, yaml_p['buffer_size']))
                 for i in range(start,end):
                     local_buffer.memory.append(self.agent.replay_buffer.memory[i])
                 local_buffer.save(path + 'buffer')

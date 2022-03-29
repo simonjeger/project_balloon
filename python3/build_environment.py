@@ -75,7 +75,6 @@ class balloon3d(Env):
         if yaml_p['time_dependency']:
             self.interpolate_world(self.character.t)
 
-        coord = [int(i) for i in np.round(self.character.position_est)] #convert position into int so I can use it as index
         done = False
 
         # move character
