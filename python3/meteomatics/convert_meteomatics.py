@@ -29,7 +29,7 @@ with open('credentials.txt') as json_file:
 username = credentials['username']
 password = credentials['password']
 
-big_file = False
+big_file = True
 
 # Input here the limiting coordinates of the extract you want to look at. You can also change the resolution.
 if big_file:
@@ -120,7 +120,7 @@ world = np.zeros(shape=(1+4,size_x,size_y,size_z))
 coord = np.zeros(shape=(2,size_x,size_y))
 
 # generate directory
-train_or_test = 'test'
+train_or_test = 'train'
 Path(yaml_p['data_path']).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + train_or_test).mkdir(parents=True, exist_ok=True)
 Path(yaml_p['data_path'] + train_or_test + '/tensor').mkdir(parents=True, exist_ok=True)

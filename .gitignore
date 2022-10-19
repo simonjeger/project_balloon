@@ -4,12 +4,12 @@
 # Folder
 __pycache__
 pfrl/
-yaml*/
+#yaml*/
 process*/
 buffer*/
 autoencoder/
-data*/
-noise*/
+#data*/
+#noise*/
 render/
 intel_wind-master/
 vae/

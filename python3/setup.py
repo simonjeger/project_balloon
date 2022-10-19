@@ -30,6 +30,6 @@ size_z = yaml_p['size_z']
 #import autoencoder_train
 #import autoencoder_test
 
-import agent_train
+#import agent_train
 import agent_test
 #import agent_importance

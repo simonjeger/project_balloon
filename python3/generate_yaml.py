@@ -9,9 +9,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
 
     # Write submit command
     file = open(path + '/submit.txt', "a")
-    #file.write('bsub -W 23:55 -R "rusage[mem=50000]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
     file.write('bsub -n 2 -W 23:55 -R "rusage[mem=15000, ngpus_excl_p=1]" python3 setup.py ' + path + '/' + name + '.yaml' + '\n')
-    #file.write('bsub -n 2 -W 23:55 -R "rusage[mem=8000, ngpus_excl_p=1]" python3 agent_test.py ' + path + '/' + name + '.yaml' + '\n')
     file.close()
 
     # Clear file
@@ -95,7 +93,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + '\n' + '# build_character' + '\n'
     text = text + 'balloon: ' + balloon + '\n'
     text = text + 'ceiling_width: 0' + '\n'
-    text = text + 'noise_path: "/cluster/scratch/sjeger/noise_20x20/"' + '\n'
+    text = text + 'noise_path: "noise_example/"' + '\n'
     text = text + 'prop_mag_min: ' + str(prop_mag_min) + '\n'
     text = text + 'prop_mag_max: ' + str(prop_mag_max) + '\n'
     text = text + 'world_est: ' + str(world_est) + '\n'
@@ -105,7 +103,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + '\n' + '# build_particle live' + '\n'
     text = text + 'offset: 0.1' + '\n'
     text = text + 'scale: 0.5' + '\n'
-    text = text + 'phone number: "0786151786"' + '\n'
+    text = text + 'phone number: "0796151786"' + '\n'
     text = text + 'min_signal: 16' + '\n'
     text = text + 'com_timeout_soft: 10' + '\n'
     text = text + 'com_timeout_hard: 13' + '\n'
@@ -116,7 +114,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     text = text + 'center_latlon: [47.045798, 7.243654]' + '\n'
 
     text = text + '\n' + '# logger' + '\n'
-    text = text + "process_path: '/cluster/scratch/sjeger/'" + '\n'
+    text = text + "process_path: ''" + '\n'
     text = text + "reuse_weights: True" + '\n'
     text = text + "log_world_est_error: False" + '\n'
     text = text + "log_frequency: 1" + '\n'
@@ -138,15 +136,15 @@ measurement_info = True
 
 prop_mag_min = 0.2
 
-process_nr = 11000
-global_buffer_N = 70
+process_nr = 0
+global_buffer_N = 50
 global_buffer_nr = process_nr
 h = 0
 m = 0
 
 radius_xy = 10
 
-for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
+for data_path in ["/data_example/"]:
     for delta_t in [180]:
         for burnin in ['advanced']:
             for HER in [False]:
@@ -160,16 +158,12 @@ for data_path in ["/cluster/scratch/sjeger/data_20x20/"]:
                                             for prop_mag_max in [0.5]:
                                                 for wind_info in [False]:
                                                     for world_est in [False]:
-                                                        #for gradient in np.array([0.1, 1, 10])*abs(step + action):
                                                         for gradient in [0]:
                                                             for proj_action in [0]:
                                                                 for replay_start_size in [10000]:
                                                                     for update_interval in [1]:
                                                                         for minibatch_size in [1000]:
                                                                             for repeat in range(global_buffer_N):
-                                                                                #for h in range(24):
-                                                                                #for m in range(1,13):
-                                                                                #global_buffer_nr = 0
                                                                                 write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottleneck, time_train, burnin, global_buffer_nr, global_buffer_N, HER, HER_only, width_depth, lr, replay_start_size, update_interval, minibatch_size, data_path, radius_xy, step, action, gradient, proj_action, min_proj_dist, velocity, balloon, prop_mag_min, prop_mag_max, wind_info, world_est, measurement_info, h, m)
                                                                                 process_nr += 1
                                                                             global_buffer_nr = process_nr

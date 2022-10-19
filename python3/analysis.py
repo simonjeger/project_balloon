@@ -1,3 +1,4 @@
+from tkinter import E
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
@@ -1276,6 +1277,60 @@ def disp_overview():
     plt.subplots_adjust(wspace=0.5, hspace=1)
     plt.show()
     plt.close()
+
+def save_csv():
+    path_logger = yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_test/'
+    name_list = os.listdir(path_logger)
+    for i in range(len(name_list)):
+        name_list[i] = path_logger + name_list[i]
+    df = many_logs2pandas(name_list)
+    df_save = pd.DataFrame()
+
+    min_dist_overview = []
+    d = 0
+    for j in range(int(df['epi_n'].dropna().iloc[-1]) + 1):
+        df_loc = df[df['epi_n'].isin([j])]
+        min_dist = np.sqrt((yaml_p['unit_xy']*(df_loc['position_x'] - yaml_p['target_test'][0]))**2 + (yaml_p['unit_xy']*(df_loc['position_y'] - yaml_p['target_test'][1]))**2 + (yaml_p['unit_z']*(df_loc['position_z'] - yaml_p['target_test'][2]))**2)
+        end = np.argmin(min_dist)
+        df_loc_cut = df_loc.iloc[0:end+1]
+        min_dist = min_dist[0:end+1]
+
+        draw = True
+        if len(df_loc) < 10:
+            draw = False
+        if (min(df_loc_cut['position_x']) < 0) | (max(df_loc_cut['position_x']) > yaml_p['size_x'] - 1):
+            draw = False
+        if (min(df_loc_cut['position_y']) < 0) | (max(df_loc_cut['position_y']) > yaml_p['size_y'] - 1):
+            draw = False
+        if len(df_loc['min_dist'].dropna()) == 0:
+            draw = False
+        if d > 9:
+            draw = False
+
+        if draw:
+            # min dist
+            #min_dist = np.sqrt((yaml_p['unit_xy']*(df_loc_cut['position_y'] - yaml_p['target_test'][1]))**2 + (yaml_p['unit_z']*(df_loc_cut['position_z'] - yaml_p['target_test'][2]))**2)
+            dic = {'min_dist': min_dist}
+            df_min_dist = pd.DataFrame(dic)
+            df_loc_cut = df_loc_cut.drop(["min_dist"], axis=1)
+            df_loc_cut = pd.concat([df_loc_cut, df_min_dist], axis=1)
+
+            # convert into meter
+            df_loc_cut["position_x"] *= yaml_p['unit_xy']
+            df_loc_cut["position_y"] *= yaml_p['unit_xy']
+            df_loc_cut["position_z"] *= yaml_p['unit_z']
+
+            # idx
+            df_loc_cut["epi_n"] = d
+            #df_save = pd.concat([df_save, df_loc_cut.loc[:,["epi_n","t","position_x","position_y","position_z","min_dist","action"]]])
+            df_save = pd.concat([df_save, df_loc_cut.loc[:,["t","position_x","position_y","position_z","min_dist","action"]]])
+            d += 1
+
+            min_dist_overview.append(min_dist.iat[-1])
+    
+    print("median min dist: " + str(np.median(min_dist_overview)))
+    df_save = df_save.dropna(axis=1)
+    df_save.to_csv(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/data.csv')
 
 def clear(train_or_test):
     dirpath = Path(yaml_p['process_path'] + 'process' + str(yaml_p['process_nr']).zfill(5) + '/logger_' + train_or_test)

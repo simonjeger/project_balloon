@@ -608,7 +608,7 @@ class Agent:
         if self.train_or_test == 'train':
             self.update_buffer(path)
 
-        logger.info('AGT: weights and buffer loaded at ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
+        logger.info('AGT: weights and buffer loaded ' + time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime()))
 
     def update_buffer(self,path):
         self.save_buffer(path)
