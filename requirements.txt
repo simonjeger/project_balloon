@@ -24,3 +24,4 @@ tzdata=2022e=h04d1e81_0
 wheel=0.37.1=pyhd3eb1b0_0
 xz=5.2.6=h5eee18b_0
 zlib=1.2.12=h5eee18b_3
+isodate=0.6.1=pypi_0

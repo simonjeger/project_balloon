@@ -5,7 +5,7 @@
 __pycache__
 pfrl/
 #yaml*/
-process*/
+#process*/
 buffer*/
 autoencoder/
 #data*/

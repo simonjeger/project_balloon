@@ -127,7 +127,7 @@ def write(process_nr, delta_t, delta_t_physics, autoencoder, window_size, bottle
     file.close()
 
 balloon = '"outdoor_balloon"'
-delta_t_physics = 4
+delta_t_physics = 5
 time_train = 20*60*60
 step = -0.00001
 action = -0.00015

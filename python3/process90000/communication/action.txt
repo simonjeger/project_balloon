@@ -1,0 +1,1 @@
+{"action": 0, "action_asl": 0, "action_overwrite": false, "u_overwrite": false, "target": [-10, -10, -10], "c": 15.006826122456646, "ceiling": 105.0, "delta_f_up": 2.5, "delta_f_down": 2.5, "mass_total": 1.2712374581939798, "stop_logger": false, "offset": 0.01}

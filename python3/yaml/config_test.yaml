@@ -9,9 +9,9 @@ unit_xy: 1100
 unit_z: 30.48
 unit_noise_xy: 250
 unit_noise_z: 15.24
-delta_t: 180
-delta_t_logger: 180
-delta_t_physics: 4
+delta_t: 60
+delta_t_logger: 60
+delta_t_physics: 5
 
 # autoencoder
 autoencoder: "HAE_avg"
@@ -21,19 +21,19 @@ bottleneck: 8
 
 # model_train
 time_train: 72000
-num_epochs_test: 300
+num_epochs_test: 10
 
 # build_agent
 mode: reinforcement_learning
-alt_resample: 750
+alt_resample: 1000
 burnin: advanced
 HER: False
 HER_only: True
 width: 512
 depth: 4
 gamma: 0.95
-global_buffer_nr: 0
-global_buffer_N: 50
+global_buffer_nr: 9630
+global_buffer_N: 1
 buffer_size: 5000000
 lr: 0.0030000000
 lr_scheduler: 999999999999
@@ -45,21 +45,21 @@ minibatch_size: 1000
 environment: python3
 3d: True
 data_path: data_example/
-real_time: False
 time_dependency: True
-T: 15000
+real_time: False
+T: 10000
 start_train: "center"
-start_test: "center"
+start_test: "center_determ"
 target_train: "random"
 target_test: "random"
 reachability_study: 0
 set_reachable_target: True
 radius_xy: 10
 radius_z: 10
-min_space: 0.7
+min_space: 0.5
 hit: 1
 step: -0.0000100000
-action: -0.0001500000
+action: -0.000300000
 overtime: -1
 bounds: -1
 min_proj_dist: 1
@@ -71,30 +71,25 @@ proj_action: 0
 balloon: "outdoor_balloon"
 ceiling_width: 0
 noise_path: "noise_example/"
-prop_mag_min: 0.2
+prop_mag_min: 0
 prop_mag_max: 0.5
 world_est: False
 measurement_info: True
-wind_info: False
+wind_info: True
 
-# build_particle live
-offset: 0.1
+# build_particle_live
 scale: 0.5
-phone number: "0796151786"
-min_signal: 16
-com_timeout_soft: 10
-com_timeout_hard: 13
+offset: 0.01
+phone_number: 0796151786
 
 # build data set
+center_latlon: [47.037441, 7.299657]
 h: 0
-m: 0
-center_latlon: [47.045798, 7.243654]
 
 # logger
 process_path: ''
 reuse_weights: True
 log_world_est_error: False
-log_frequency: 1
 duration: 30
 fps: 15
 overview: True
