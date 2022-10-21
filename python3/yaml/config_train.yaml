@@ -85,6 +85,7 @@ phone_number: 0796151786
 # build data set
 center_latlon: [47.037441, 7.299657]
 h: 0
+m: 1
 
 # logger
 process_path: ''

@@ -58,30 +58,36 @@ Can be turned on or off in config_NNNNN.py through the parameter ```render```.
 <img src="docs/render.png" alt="render" width="500"/>
 </p>
 
-## Downloading training data (requires meteomatics credentials)
-Due to licencing reasons we can not put up all the data used to train and test the algorithm.<br />
-Our training set consists of 1000 wind maps, our testing set of 300 wind maps. Each map consists of 24 files, one for each hour of the day.<br />
-To download your own, get a [meteomatics](https://www.meteomatics.com) licence.
+## Advanced steps
+### Generate config files for data acquisition or training.
+Multiple files are generated to allow data acquisition or training in parallel (e.g. on a cluster). If you're running this on a standard computer we suggest only training with a few config files at the same time.<br />
+If you are using a cluster, adapt and use the generated submit.txt file to submit jobs easier. The following command will store files in the ```yaml``` folder.
+```
+python3 generate_yaml.py
+```
+
+### Wind Data acquisition
+There are two modes of wind-data acquisition. Set ```big_file``` parameter in convert_meteomatics.py accordingly.<br />
+Either a single dataset with wind data of the current day is acquired, or a big file with data spanning over a month is downloaded which will then have to be further cut into peaces by build_set.py. <br />
+Daily wind data set:
 ```
 cd meteomatics
-python3 convert_meteomatics.py ../yaml/config_train.yaml
-python3 build_set.py ../yaml/config_train.yaml
+python3 meteomatics/convert_meteomatics.py ../yaml/config_NNNNN.py
+```
+For a big set over multiple months we suggest that you generate one config file for each month (parameter ```m``` in config file) and download them in parallel. <br />
+In our experiments we used data from a full year (2021). Our training set consists of 1000 wind maps, the testing set of 300 wind maps.<br />:
+```
+cd meteomatics
+python3 meteomatics/convert_meteomatics.py ../yaml/config_NNNN0.py
+python3 meteomatics/convert_meteomatics.py ../yaml/config_NNNN1.py
+...
+python3 meteomatics/convert_meteomatics.py ../yaml/config_NNN12.py
+python3 build_set.py ../yaml/config_NNNN0.py
 ```
 
-## Important files
-### generate_yaml.py
-This generates yaml files (config_NNNNN.py) that are needed for training and testing. All the important parameters can be set there.<br />
-Multiple files are generated to allow training in parallel (e.g. on a cluster). If you're running this on a standard computer we suggest only training with one yaml file at the same time.<br />
-If you are using a cluster, adapt and use the generated submit.txt file to submit jobs easier.
-
-### meteomatics/convert_meteomatics.py ../yaml/config_NNNNN.py
-This downloads either a big set of data (big_file = True) that then needs to be converted into a set using build_set.py or generates a dataset of wind data on the current day (big_file = False).
-
-### generate_noise.py
+### python3 generate_noise.py yaml/config_NNNNN.py
+### Generate noise
 This generates noise files (folder noise_MAPSIZE_XxMAPSIZE_Y) that are needed for training and testing.
-
-### setup.py yaml/config_NNNNN.py
-This generates the folder structure and trains the algorithm with a short testing at the end.
-
-### agent_test.py yaml/config_NNNNN.py
-This tests the trained weights.
+```
+python3 generate_noise.py
+```
